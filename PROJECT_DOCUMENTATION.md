@@ -7,50 +7,50 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Created initial architecture and deferred-item baseline for pre-code phase.
+Changes: Added Phase 1A Flutter shell architecture and validation scope.
 
 ## Quick Rules
-- Keep architecture sections aligned with real implementation.
-- Update this file when subsystem responsibilities or behavior contracts change.
+- Keep architecture aligned to implementation.
+- Keep shell UI touch-friendly and tool behavior placeholders-only until approved.
 
 ## Required Contract
-Required sections are present and initialized for Phase 0.
+Required sections are present and updated for Phase 1A.
 
 ## Overview
 - App Name: `NCD Photo Markup`
 - Purpose: `Touch-first field photo markup app with separate editable markup data and export outputs.`
 - Primary Users: `Field operators, internal reviewers, client-facing report producers`
-- Supported Platforms: `Windows tablet first; Android (Samsung tablet) later`
+- Supported Platforms: `Windows tablet first; Android later`
 
 ## Runtime Architecture
 | Subsystem | Responsibility | Source Path | Owner |
 |---|---|---|---|
-| UI | `Touch-first markup workflow and controls` | `lib/ui (planned)` | `NCD / M` |
-| API | `Future integration adapters (none in Phase 0)` | `lib/integration (planned)` | `NCD / M` |
-| Engine | `Markup model, tool behavior, undo/redo, export pipeline` | `lib/engine (planned)` | `NCD / M` |
-| Data | `Editable markup persistence separate from original image and exports` | `lib/data (planned)` | `NCD / M` |
+| UI | `Shell screen with app bar, canvas placeholder, and touch toolbar placeholders` | `app/lib/main.dart` | `NCD / M` |
+| API | `Not implemented in Phase 1A` | `app/lib (planned)` | `NCD / M` |
+| Engine | `Not implemented in Phase 1A` | `app/lib (planned)` | `NCD / M` |
+| Data | `Not implemented in Phase 1A` | `app/lib (planned)` | `NCD / M` |
 
 ## Core Features
 | Feature | Behavior | Primary Module | Test Evidence |
 |---|---|---|---|
-| `Phase 0 Bootstrap` | `Governance/docs baseline exists before feature code` | `Documentation` | `Manual doc review` |
-| `Dimension Line Tool (MVP)` | `Deferred` | `Planned` | `Not validated` |
-| `Arrow Tool (MVP)` | `Deferred` | `Planned` | `Not validated` |
+| `Phase 0 Bootstrap` | `Governance/docs baseline exists` | `Documentation` | `Manual doc review` |
+| `Phase 1A App Shell` | `Renders top bar, empty canvas placeholder, bottom touch toolbar placeholders` | `app/lib/main.dart` | `flutter test` |
+| `Open/Tool/Save/Export Buttons` | `Visible placeholders only; no markup behavior` | `app/lib/main.dart` | `Manual visual QA screenshot` |
 
 ## Data and Persistence Boundaries
-- Canonical data source: `App-local project files (future definition)`
-- Local cache policy: `To be defined during implementation`
-- Migration policy: `To be defined before schema versioning`
-- Backup/recovery policy: `Editable markup and exports treated as separate artifacts`
+- Canonical data source: `Not implemented in Phase 1A`
+- Local cache policy: `Not implemented in Phase 1A`
+- Migration policy: `Not implemented in Phase 1A`
+- Backup/recovery policy: `Not implemented in Phase 1A`
 
 ## Logging and Error Controls
 - Log schema: `Governance/LOGGING_AND_ERROR_POLICY.md`
-- Error code domain(s): `To be defined with runtime code`
-- User-safe error behavior: `No raw stack traces in user-facing messages`
+- Error code domain(s): `Not implemented in Phase 1A`
+- User-safe error behavior: `No stack traces surfaced in UI placeholders`
 
 ## Privacy and Sensitive Data Controls
 - Data classification: `Internal`
-- Redaction rules: `No sensitive data in screenshots/logs unless approved`
+- Redaction rules: `Screenshots and logs must avoid sensitive content`
 - Production data local-use policy: `Restricted`
 
 ## Governance and Release Artifacts
@@ -66,14 +66,17 @@ Required sections are present and initialized for Phase 0.
 |---|---|---|
 | `flutter pub get` | `Dependency install` | `Dependencies restored` |
 | `flutter analyze` | `Static analysis` | `No blocking issues` |
-| `flutter test` | `Unit tests` | `Tests pass` |
+| `flutter test` | `Widget tests` | `Tests pass` |
 | `flutter build windows --debug` | `Windows debug build` | `Build succeeds` |
+| `flutter run -d windows --debug --no-resident` | `Startup smoke test` | `App launches and syncs files` |
 
 ## Known Risks and Deferred Items
 | ID | Risk/Item | Owner | Target Date | Notes |
 |---|---|---|---|---|
-| `RISK-001` | `No runtime code exists yet; validation limited to doc/bootstrap` | `NCD / M` | `N/A` | `Expected for Phase 0` |
-| `RISK-002` | `Android support deferred until after Windows-first baseline` | `NCD / M` | `N/A` | `Intentional sequencing` |
+| `RISK-001` | `No real markup behavior yet` | `NCD / M` | `Phase 1B+` | `Intentional` |
+| `RISK-002` | `Android-specific polish deferred` | `NCD / M` | `Later phase` | `Intentional` |
 
 ## Visual and Runtime Behavior
-Phase 0 only: no app runtime/UI implementation exists yet. Visual/runtime behavior definitions will be expanded in Phase 1.
+- App bar shows `NCD Photo Markup` and `v0.1`.
+- Main area is a large canvas placeholder with message: `Open or import a photo to start marking it up.`
+- Bottom toolbar exposes placeholder buttons for the approved MVP tools/actions only.

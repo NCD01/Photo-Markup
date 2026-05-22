@@ -5,39 +5,50 @@ Version: `v0.1`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
-Purpose: Define app forms/screens and their responsibilities.
-Changes: Added initial draft of planned screens/components.
+Purpose: Define app forms/screens and responsibilities.
+Changes: Added implemented Phase 1A shell screen entry.
 
 ## Primary Forms/Screens
-- `Home / Project Picker (planned)`
-- `Photo Markup Workspace (planned)`
-- `Export / Save Dialog (planned)`
+- `Photo Markup Shell` (implemented)
+- `Photo Markup Workspace` (placeholder canvas region in shell)
+- `Export / Save Dialog` (planned)
 
 ## Field Work Forms
-### `Workspace` Forms
+### `Shell` Forms
 
-#### `Photo Markup Workspace`
-- Source path: `lib/ui/workspace (planned)`
-- Purpose: `Display photo, tool palette, and annotation canvas`
-- Parent/master form: `Root app shell`
+#### `Photo Markup Shell`
+- Source path: `app/lib/main.dart`
+- Purpose: `Provide top-level shell with app bar, canvas placeholder, and bottom touch toolbar placeholders`
+- Parent/master form: `Root app`
 - Child components:
-- `Tool palette`
-- `Canvas overlay`
+- `Canvas placeholder panel`
+- `Horizontal touch toolbar`
 - Related widgets/components:
-- `Dimension line tool`
-- `Arrow tool`
+- `_ToolbarPlaceholderButton`
 - Related services:
-- `Markup persistence service (planned)`
+- `None in Phase 1A`
 - Data sources:
-- `Editable markup file set (planned)`
+- `None in Phase 1A`
 - Route/name:
-- `workspace`
-- Read/write behavior: `MIXED`
+- `home`
+- Read/write behavior: `READ_ONLY`
 - Notes:
-- `Original photo remains untouched; markup stored separately`
+- `No markup behavior implemented yet`
+
+#### `Photo Markup Workspace (Placeholder)`
+- Source path: `app/lib/main.dart`
+- Purpose: `Display empty-state message and reserved area for future photo/canvas`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Empty-state icon`
+- `Placeholder text`
+- Read/write behavior: `READ_ONLY`
+- Notes:
+- `Message: Open or import a photo to start marking it up.`
 
 ## Dependency/Component Map
 | Name | Form | Purpose | Path |
 |---|---|---|---|
-| `Tool Palette` | `Photo Markup Workspace` | `Tool selection and actions` | `lib/ui/workspace/widgets (planned)` |
-| `Canvas Overlay` | `Photo Markup Workspace` | `Render/edit markups` | `lib/ui/workspace/canvas (planned)` |
+| `App Bar` | `Photo Markup Shell` | `Show app name and version` | `app/lib/main.dart` |
+| `Canvas Placeholder` | `Photo Markup Workspace` | `Reserve future photo/markup area` | `app/lib/main.dart` |
+| `Touch Toolbar` | `Photo Markup Shell` | `Expose tool/action placeholders` | `app/lib/main.dart` |

@@ -6,14 +6,16 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Track visual QA evidence for user-visible changes.
-Changes: Initialized Phase 0 visual QA record.
+Changes: Added Phase 1A shell visual evidence.
 
 ## Current Visual QA State
 | Task / Change | Visual QA Required | Owner Approval Required | Affected Screen / Scene | Normal Screenshot | Debug Overlay Screenshot | Responsive Screenshot | Owner Approved Screenshot | Visual Blockers |
 |---|---|---|---|---|---|---|---|---|
-| `Phase 0 documentation bootstrap` | `NO` | `NO` | `N/A` | `N/A` | `N/A` | `N/A` | `N/A` | `None` |
+| `Phase 1A Flutter shell` | `YES` | `NO` | `Photo Markup Shell` | `C:\apps\NCD_Photo_Markup\.agent_temp\screenshots\phase1a_shell_startup.png` | `N/A` | `N/A` | `PENDING` | `None` |
 
 ## Evidence Requirements
 | Requirement | Evidence | Status | Notes |
 |---|---|---|---|
-| `Capture screenshots for UI work once runtime exists` | `C:\apps\NCD_Photo_Markup\.agent_temp\screenshots` | `PENDING` | `Applies starting Phase 1 UI implementation` |
+| `App shell renders app bar with version` | `phase1a_shell_startup.png` | `PASS` | `Title + v0.1 visible` |
+| `Canvas placeholder and empty-state message visible` | `phase1a_shell_startup.png` | `PASS` | `Message text matches requirement` |
+| `Bottom touch toolbar placeholders visible` | `phase1a_shell_startup.png` | `PASS` | `All requested placeholder actions present` |

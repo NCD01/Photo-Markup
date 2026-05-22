@@ -6,24 +6,25 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Created initial draft for touch-first Windows-first UI direction.
+Changes: Added Phase 1A shell token usage and touch-target baseline.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
-- Keep markup tools clear, discoverable, and separated (Dimension Line and Arrow are distinct tools).
+- Keep markup tools clear, discoverable, and separated.
 - Keep UI minimal during field use; avoid clutter.
 
 ## Foundations
-- Brand color: `#1F4E79`
-- Typography: `To be finalized in implementation phase`
-- Spacing/size tokens: `To be defined in Flutter theme/tokens layer`
-- Component reuse: `Required for shared toolbar/tool controls`
+- Primary brand color: `#009ADA` (NCD Blue)
+- Neutral surface for tool strips: `#F2FAFE`
+- Typography: `Default Flutter Material typography for now`
+- Touch target minimum: `56px` height for primary toolbar buttons
+- Component reuse: `Use shared toolbar placeholder button pattern`
 
 ## Accessibility/Usability
 - Large tap targets for tablet use.
-- High contrast for outdoor/field readability.
-- Clear mode labeling for internal/client visibility states.
+- High contrast between action color and content surfaces.
+- Keep the empty state explicit and safe.
 
 ## Governance Notes
-- Do not hard-code business label presets; use configurable presets/favorites.
+- Do not hard-code business label presets; use configurable presets/favorites later.
 - Keep future Control Center integration behind a separate adapter/service.

@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Store project-specific facts for NCD Photo Markup governance and validation.
-Changes: Bootstrap profile for standalone Flutter app phase.
+Changes: Updated for Phase 1A Flutter shell in app/ and validated command paths.
 
 ## Quick Rules
 - Keep this file current as source of truth for commands, paths, and validation.
@@ -40,14 +40,14 @@ Changes: Bootstrap profile for standalone Flutter app phase.
 ## Required Commands
 | Purpose | Command | Expected Result |
 |---|---|---|
-| Dependency install | `flutter pub get` | `Dependencies restored` |
-| Static analysis/lint | `flutter analyze` | `No blocking issues` |
-| Unit tests | `flutter test` | `Tests pass` |
+| Dependency install | `cd app && flutter pub get` | `Dependencies restored` |
+| Static analysis/lint | `cd app && flutter analyze` | `No blocking issues` |
+| Unit tests | `cd app && flutter test` | `Tests pass` |
 | Integration tests | `Not configured yet` | `NOT_RUN` |
-| Build/package | `flutter build windows --debug` | `Debug Windows build succeeds` |
-| Runtime startup smoke test | `Manual launch after app shell exists` | `App opens to expected first screen` |
-| Runtime log review | `Review debug console output` | `No blocking runtime errors found` |
-| Visual QA capture | `Manual screenshots to .agent_temp/screenshots` | `Evidence captured for UI changes` |
+| Build/package | `cd app && flutter build windows --debug` | `Debug Windows build succeeds` |
+| Runtime startup smoke test | `cd app && flutter run -d windows --debug --no-resident` | `App launches and syncs files to Windows` |
+| Runtime log review | `Review flutter run/build terminal output` | `No blocking runtime errors found` |
+| Visual QA capture | `Capture screenshots to .agent_temp/screenshots` | `Evidence captured for UI changes` |
 | Responsive layout validation | `Manual resize/maximized checks` | `Controls visible and usable` |
 | Link/placeholders check | `rg "<[A-Z0-9_\\-/| ]+>" APP_PROFILE.md PROJECT_DOCUMENTATION.md README.md CHANGELOG.md MASTER_GUIDELINE.md AGENT_BASELINE.md Operations\*.md UI_STANDARDS.md FORM_DEFINITIONS.md` | `No unresolved placeholders` |
 
@@ -55,12 +55,12 @@ Changes: Bootstrap profile for standalone Flutter app phase.
 ### Required Startup Proof
 | Item | Value |
 |---|---|
-| Launch command or method | `flutter run -d windows` |
+| Launch command or method | `cd app && flutter run -d windows --debug --no-resident` |
 | Target platform/device | `Windows touchscreen tablet (primary)` |
 | Expected first screen/scene/route | `Main markup workspace shell` |
 | Expected startup log message | `None required` |
-| Required startup assets/files | `App assets once implemented` |
-| Required startup services | `None in Phase 0` |
+| Required startup assets/files | `Flutter shell assets from app/` |
+| Required startup services | `None in Phase 1A` |
 | Log source to review | `Flutter run console logs` |
 | Blocking error patterns | `Unhandled Exception; EXCEPTION CAUGHT; missing asset; missing file; failed assertion; startup crash` |
 | Screenshot/log evidence required | `Yes` |
@@ -151,3 +151,4 @@ Project-specific communication notes:
 | Live Data Commit Rule | `No live data yet; define before data files are introduced` |
 | Runtime/UI State Files | `To be defined once runtime/state files exist` |
 | Required Data Backup Scope | `To be defined before data/config commits` |
+
