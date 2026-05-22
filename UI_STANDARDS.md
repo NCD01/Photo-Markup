@@ -1,7 +1,7 @@
 ﻿# UI Standards
 
 Document Path: `C:\apps\NCD_Photo_Markup\UI_STANDARDS.md`
-Version: `v0.1`
+Version: `v0.2`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
@@ -28,3 +28,4 @@ Changes: Added Phase 1A shell token usage and touch-target baseline.
 ## Governance Notes
 - Do not hard-code business label presets; use configurable presets/favorites later.
 - Keep future Control Center integration behind a separate adapter/service.
+

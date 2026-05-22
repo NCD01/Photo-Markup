@@ -1,7 +1,7 @@
 ﻿# TODO Register
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\TODO_REGISTER.md`
-Version: `v0.1`
+Version: `v0.2`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
@@ -23,6 +23,8 @@ Changes: Marked Phase 1A shell bootstrap complete and queued next items.
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
 |---|---|---|---|---|---|
-| `1` | `Runtime` | `Phase 1A Flutter shell` | `Done` | `Owner approval` | `Unreleased changelog entry + screenshot` |
+| `1` | `Runtime` | `Phase 1A Flutter shell` | `Done` | `Owner approval` | `Changelog v0.2 entry + screenshot` |
 | `2` | `Docs` | `Phase 1A docs/validation update` | `Done` | `Validation complete` | `SESSION_2026-05-22_0002_phase1a_shell` |
 | `3` | `MVP Tools` | `Begin behavior implementation` | `Open` | `Owner approval for next phase` | `Not started` |
+
+

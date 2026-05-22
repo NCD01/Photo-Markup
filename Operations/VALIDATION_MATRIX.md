@@ -1,7 +1,7 @@
 ﻿# Validation Matrix
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\VALIDATION_MATRIX.md`
-Version: `v0.1`
+Version: `v0.2`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
@@ -22,3 +22,4 @@ Changes: Recorded Phase 1A Flutter shell validation results.
 | `VAL-009` | Visual QA | `Startup screenshot` | UI visible changes | Screenshot proves shell layout | `NCD / M` | `PASS` | `.agent_temp/screenshots/phase1a_shell_startup.png` |
 | `VAL-010` | Responsive Layout | `Manual review during startup` | Layout/resize changes | Primary content visible and usable | `NCD / M` | `PASS` | `Shell renders with visible canvas and toolbar` |
 | `VAL-011` | Temporary Artifact Review | `Folder review (.agent_temp)` | Temp files created | Temp files in approved folder | `NCD / M` | `PASS` | `.agent_temp/screenshots/phase1a_shell_startup.png` |
+

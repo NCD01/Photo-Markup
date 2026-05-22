@@ -1,7 +1,7 @@
 ﻿# App Profile
 
 Document Path: `C:\apps\NCD_Photo_Markup\APP_PROFILE.md`
-Version: `v0.1`
+Version: `v0.2`
 Pack File Version: `v1.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
@@ -151,4 +151,5 @@ Project-specific communication notes:
 | Live Data Commit Rule | `No live data yet; define before data files are introduced` |
 | Runtime/UI State Files | `To be defined once runtime/state files exist` |
 | Required Data Backup Scope | `To be defined before data/config commits` |
+
 

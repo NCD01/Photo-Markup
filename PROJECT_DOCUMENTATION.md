@@ -1,7 +1,7 @@
 ﻿# Project Documentation
 
 Document Path: `C:\apps\NCD_Photo_Markup\PROJECT_DOCUMENTATION.md`
-Version: `v0.1`
+Version: `v0.2`
 Pack File Version: `v1.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
@@ -77,6 +77,8 @@ Required sections are present and updated for Phase 1A.
 | `RISK-002` | `Android-specific polish deferred` | `NCD / M` | `Later phase` | `Intentional` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.1`.
+- App bar shows `NCD Photo Markup` and `v0.2`.
 - Main area is a large canvas placeholder with message: `Open or import a photo to start marking it up.`
 - Bottom toolbar exposes placeholder buttons for the approved MVP tools/actions only.
+
+

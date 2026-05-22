@@ -1,14 +1,14 @@
 ﻿# Changelog
 
 Document Path: `C:\apps\NCD_Photo_Markup\CHANGELOG.md`
-Version: `v0.1`
+Version: `v0.2`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1A shell-in-progress entry without version bump.
+Changes: Released Phase 1A shell at v0.2 and recorded version bump.
 
-## Unreleased - 2026-05-22 (Phase 1A)
+## v0.2 - 2026-05-22
 - Owner: NCD / M
 - Author: Codex
 - Type: Feature
@@ -18,9 +18,10 @@ Changes: Added Phase 1A shell-in-progress entry without version bump.
   - Phase 1A governance/doc updates
 - Changes:
   - Created Flutter app in `app/` with package name `ncd_photo_markup`.
-  - Implemented shell UI in `app/lib/main.dart` with app bar, canvas placeholder, toolbar placeholders, and visible `v0.1`.
+  - Implemented shell UI in `app/lib/main.dart` with app bar, canvas placeholder, toolbar placeholders, and visible `v0.2`.
   - Added/updated test for shell text.
   - Set display label/title to `NCD Photo Markup` for shell runtime contexts.
+  - Bumped visible app/docs version to `v0.2`.
 - Validation Evidence:
   - `flutter pub get`: `PASS`
   - `flutter analyze`: `PASS` (after fixing initial test reference)
@@ -52,3 +53,6 @@ Changes: Added Phase 1A shell-in-progress entry without version bump.
   - Flutter runtime/build validation not run because app code is not created yet.
 - Rollback / Recovery Notes:
   - Remove `C:\apps\NCD_Photo_Markup` folder if bootstrap must be restarted from scratch.
+
+
+

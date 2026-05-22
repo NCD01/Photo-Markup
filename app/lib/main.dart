@@ -38,7 +38,7 @@ class PhotoMarkupShellScreen extends StatelessWidget {
             padding: EdgeInsets.only(right: 16),
             child: Center(
               child: Text(
-                'v0.1',
+                'v0.2',
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -144,3 +144,4 @@ class _ToolbarPlaceholderButton extends StatelessWidget {
     );
   }
 }
+

@@ -1,7 +1,7 @@
 ﻿# NCD Photo Markup
 
 Document Path: `C:\apps\NCD_Photo_Markup\README.md`
-Version: `v0.1`
+Version: `v0.2`
 Pack File Version: `v1.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
@@ -31,6 +31,8 @@ From `C:\apps\NCD_Photo_Markup\app`:
 - `flutter run -d windows --debug --no-resident`
 
 ## Version Rules
-- Current version: `v0.1`
-- Use two-part versions only (`v0.1`, `v0.2`, ...)
+- Current version: `v0.2`
+- Use two-part versions only (`v0.1`, `v0.2`, `v0.3`, ...)
 - Do not bump version before owner validation/approval.
+
+
