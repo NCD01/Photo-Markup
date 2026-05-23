@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 
 typedef OpenFileCallback = Future<XFile?> Function();
@@ -98,9 +99,11 @@ class _StartupSplashGateState extends State<StartupSplashGate> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
-                    width: constraints.maxWidth *
+                    width:
+                        constraints.maxWidth *
                         UiLayoutConstants.splashImageWidthFactor,
-                    height: constraints.maxHeight *
+                    height:
+                        constraints.maxHeight *
                         UiLayoutConstants.splashImageHeightFactor,
                     child: Image.asset(
                       BrandingAssetConstants.splashV15AssetPath,
@@ -336,7 +339,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     });
   }
 
-  void _onDimensionEnd(Rect imageRect) {
+  Future<void> _onDimensionEnd(Rect imageRect) async {
     final Offset? start = _activeDimensionStart;
     final Offset? end = _activeDimensionCurrent;
     if (start == null || end == null) {
@@ -349,14 +352,89 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       imageRect: imageRect,
     );
 
+    int? newLineIndex;
     setState(() {
       _activeDimensionStart = null;
       _activeDimensionCurrent = null;
       if (line.lengthInRect(imageRect) >=
           UiLayoutConstants.dimensionTapDragMinDistance) {
         _dimensionLines.add(line);
+        newLineIndex = _dimensionLines.length - 1;
       }
     });
+
+    if (!mounted || newLineIndex == null) {
+      return;
+    }
+    await _promptForDimensionLabelForLine(newLineIndex!);
+  }
+
+  Future<void> _promptForDimensionLabelForLine(int lineIndex) async {
+    if (lineIndex < 0 || lineIndex >= _dimensionLines.length) {
+      return;
+    }
+
+    final String existingLabel = _dimensionLines[lineIndex].label ?? '';
+    final String? updatedLabel = await _showDimensionLabelDialog(
+      initialValue: existingLabel,
+    );
+
+    if (!mounted || updatedLabel == null) {
+      return;
+    }
+
+    final String normalized = DimensionLabelFormatter.format(updatedLabel);
+    setState(() {
+      _dimensionLines[lineIndex] = normalized.isEmpty
+          ? _dimensionLines[lineIndex].copyWith(clearLabel: true)
+          : _dimensionLines[lineIndex].copyWith(label: normalized);
+    });
+  }
+
+  Future<String?> _showDimensionLabelDialog({
+    required String initialValue,
+  }) async {
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return _DimensionLabelDialog(initialValue: initialValue);
+      },
+    );
+  }
+
+  Future<void> _onDimensionTap(Offset point, Rect imageRect) async {
+    if (!_canDrawDimensionLine(imageRect) || _dimensionLines.isEmpty) {
+      return;
+    }
+
+    final int lineIndex = _findNearestLineIndex(point, imageRect);
+    if (lineIndex == -1) {
+      return;
+    }
+
+    await _promptForDimensionLabelForLine(lineIndex);
+  }
+
+  int _findNearestLineIndex(Offset point, Rect imageRect) {
+    int bestIndex = -1;
+    double bestDistance = double.infinity;
+
+    for (int i = 0; i < _dimensionLines.length; i++) {
+      final double distance = _dimensionLines[i].distanceToPointInRect(
+        point,
+        imageRect,
+      );
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = i;
+      }
+    }
+
+    if (bestDistance > DimensionLineConstants.labelTapSelectDistance) {
+      return -1;
+    }
+
+    return bestIndex;
   }
 
   bool _canDrawDimensionLine(Rect imageRect) {
@@ -614,6 +692,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                       onUpdate: (Offset point) =>
                           _onDimensionUpdate(point, imageRect),
                       onEnd: () => _onDimensionEnd(imageRect),
+                      onTap: (Offset point) =>
+                          _onDimensionTap(point, imageRect),
                     ),
                   ],
                 );
@@ -687,6 +767,82 @@ class _ToolbarActionButton extends StatelessWidget {
         ),
         child: Text(label),
       ),
+    );
+  }
+}
+
+class _DimensionLabelDialog extends StatefulWidget {
+  const _DimensionLabelDialog({required this.initialValue});
+
+  final String initialValue;
+
+  @override
+  State<_DimensionLabelDialog> createState() => _DimensionLabelDialogState();
+}
+
+class _DimensionLabelDialogState extends State<_DimensionLabelDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submitLabel() {
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).pop(_controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(UiCopyConstants.dimensionLabelDialogTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: TextField(
+              controller: _controller,
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submitLabel(),
+              style: const TextStyle(
+                fontSize: UiLayoutConstants.dimensionLabelFontSize,
+              ),
+              decoration: const InputDecoration(
+                hintText: UiCopyConstants.dimensionLabelHint,
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.all(
+                  UiLayoutConstants.dimensionLabelDialogFieldPadding,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: UiLayoutConstants.dimensionLabelDialogButtonTopGap,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text(UiCopyConstants.dimensionLabelSkipButton),
+        ),
+        FilledButton(
+          onPressed: _submitLabel,
+          child: const Text(UiCopyConstants.dimensionLabelSaveButton),
+        ),
+      ],
     );
   }
 }

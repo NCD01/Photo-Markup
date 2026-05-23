@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\TODO_REGISTER.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-22`
+Last Updated: `2026-05-23`
 Purpose: Track planned and in-progress work items.
-Changes: Closed Phase 1C manual dimension-validation and Windows icon packaging follow-up items after owner feedback and icon resource replacement.
+Changes: Added future icon standard/taskbar redesign TODO and marked Phase 1D icon iteration stop decision.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -25,17 +25,22 @@ Changes: Closed Phase 1C manual dimension-validation and Windows icon packaging 
 | `TODO-008` | `Governance` | `Reconcile governance source metadata mismatch (requested v1.7 vs source VERSION v1.8)` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-009` | `Manual QA` | `Owner-side interactive validation for Phase 1C dimension draw + undo workflow` | `High` | `NCD / M` | `Done` | `N/A` | `2026-05-22` |
 | `TODO-010` | `Branding` | `Complete Windows executable icon packaging from approved v1.5 icon asset (.ico pipeline), if owner wants platform icon replacement` | `Medium` | `NCD / M` | `Done` | `DECISION-006` | `2026-05-22` |
+| `TODO-011` | `Input` | `Evaluate low-risk voice-to-text option for dimension labels` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-012` | `Measurement` | `Assess broader feet/inches parsing rules beyond lightweight Phase 1D formatter` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-013` | `Branding` | `Create and use transparent v1.5-derived icon source for Windows .ico regeneration` | `High` | `NCD / M` | `Done` | `DECISION-008` | `2026-05-23` |
+| `TODO-014` | `Branding` | `Future Icon Standard / Taskbar Icon Redesign` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
 |---|---|---|---|---|---|
 | `1` | `Runtime` | `Phase 1B image import` | `Done` | `Validation run complete` | `Changelog v0.3 entry + phase1b screenshot` |
 | `2` | `Manual QA` | `Interactive picker cancel/select validation` | `Open` | `Owner interactive pass` | `Pending` |
-| `3` | `MVP Tools` | `Dimension line MVP implemented; arrow and remaining tools pending` | `In Progress` | `Owner validation and next-phase approval` | `Phase 1C code + tests complete` |
+| `3` | `MVP Tools` | `Dimension line + manual label flow implemented; arrow and remaining tools pending` | `In Progress` | `Owner validation and next-phase approval` | `Phase 1D code + tests complete` |
 | `4` | `Structure` | `Lean-root + governance sync completion` | `Done` | `M-approved dirty-state continuation` | `Session + validation evidence` |
 | `5` | `Governance` | `Tunable constants standard adoption` | `Done` | `Governance v1.7 effective update` | `Constants file + policy/addendum sync` |
 | `6` | `Manual QA` | `Dimension line interactive field validation` | `Done` | `Owner Windows interactive run` | `Owner reported manual items 1-6 PASS + bounds fix PASS` |
 | `7` | `Branding` | `Windows platform icon packaging follow-up` | `Done` | `Approved icon v1.5 source` | `app/windows/runner/resources/app_icon.ico replaced from approved asset` |
+| `8` | `Branding` | `Taskbar icon visual readability redesign standard` | `Open` | `Future simplified icon standard approval` | `Tracked in TODO-014` |
 
 
 
@@ -56,4 +61,12 @@ Changes: Closed Phase 1C manual dimension-validation and Windows icon packaging 
 - Implement future integration behind isolated adapters/services.
 - Support future open-from-client/project context workflow.
 - Support future separate saves for original photo, editable markup file, client-facing export, and internal export.
+
+### Future Icon Standard / Taskbar Icon Redesign
+- Define a simplified taskbar-first icon standard for Windows small sizes.
+- Require a transparent master source for packaging.
+- Require vector or high-resolution source artwork for downscaling quality.
+- Avoid tiny unreadable text at `16/24/32 px`.
+- Verify alpha transparency and visual quality as separate validation gates.
+- Document Windows icon cache troubleshooting steps for validation and owner QA.
 

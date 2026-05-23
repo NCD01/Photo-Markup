@@ -457,6 +457,213 @@ Changes: Added Phase 1A Flutter app shell session.
 - No project-folder autosave added.
 - No Apple/HEIC implementation added.
 
+# SESSION_2026-05-23_0013_phase1d_dimension_labels
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add Phase 1D manual dimension text labels with touch-friendly entry flow and keep Phase 1C bounds behavior intact.
+
+## Preflight
+- Ran `git status --short`.
+- Working tree was clean before Phase 1D implementation.
+
+## Actions
+- Added label field and helper behaviors to dimension model:
+  - `app/lib/features/markup/models/dimension_line.dart`
+  - Added `label`, `copyWith`, midpoint and distance helpers.
+- Added lightweight measurement formatter:
+  - `app/lib/features/markup/utils/dimension_label_formatter.dart`
+  - Normalizes common entries such as `72`, `72 in`, `6 ft`, `6'-0"` into clean outputs.
+- Updated overlay drawing/input:
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - Renders label chips near line midpoint.
+  - Keeps labels clipped/clamped within displayed image rect as much as practical.
+  - Supports tap detection to edit existing line labels.
+- Updated app flow:
+  - `app/lib/main.dart`
+  - After creating a line, opens `Dimension Label` dialog with `Save` and `Skip`.
+  - Stores formatted label on save.
+  - Allows tapping near an existing line to edit its label.
+  - Undo still removes the latest line and associated label.
+- Centralized new tunables/copy in:
+  - `app/lib/core/constants/app_constants.dart`
+- Added formatter tests:
+  - `app/test/dimension_label_formatter_test.dart`
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+- Runtime screenshot artifact: `PASS`
+  - `.agent_temp/screenshots/phase1d_dimension_label_runtime_screen.png`
+- Full owner interactive manual label workflow: `NOT_VALIDATED` in this environment
+- Android runtime/device behavior: `NOT_VALIDATED`
+
+## Logging/Debug Notes
+- No blocking compile/runtime errors during implementation.
+- `flutter pub get` reports newer incompatible package versions available (informational warning).
+
+## Constraints Confirmed
+- No save/export behavior added.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+- No commit/push/version bump performed.
+
+# SESSION_2026-05-23_0016_phase1d_blocking_fixes_label_crash_and_icon_transparency
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Resolve blocking label Save crash and verify icon transparency feasibility from current approved icon set.
+
+## Crash Root Cause
+- Previous dialog flow created `TextEditingController` in parent method scope and disposed it immediately after `showDialog` returned.
+- Under Save/Enter timing, dialog subtree could still reference the controller during teardown/rebuild, causing:
+  - `A TextEditingController was used after being disposed.`
+
+## Crash Fix
+- Replaced parent-owned controller dialog with dedicated stateful dialog widget:
+  - `_DimensionLabelDialog` in `app/lib/main.dart`
+  - Controller lifecycle now owned by dialog state (`initState`/`dispose`).
+- Enter and Save now share one safe submit callback (`_submitLabel`).
+- Skip/Cancel still return null safely.
+
+## Icon Transparency Verification
+- Checked all icon candidates in `System/Documentation/Images`:
+  - v1.0, v1.2, v1.3, v1.4, v1.4b, v1.5
+- Result for all: `srgb 3.0`, `opaque=True`, `type=TrueColor` (no alpha).
+- Existing `app/windows/runner/resources/app_icon.ico` scenes are fully opaque alpha.
+- Outcome: transparent icon remains blocked until transparent source icon is provided.
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Logging/Debug Notes
+- No blocking errors after dialog lifecycle fix.
+- Icon transparency work is blocked by missing alpha channel in approved icon sources, not by build/runtime steps.
+- Windows icon cache may still display stale icon in pinned/taskbar contexts, but cache cannot create true transparency from opaque source assets.
+
+## Constraints Confirmed
+- No save/export behavior added.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+- No commit/push/version bump performed.
+
+# SESSION_2026-05-23_0015_phase1d_icon_transparency_check
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Continue approved dirty Phase 1D work and apply icon transparency correction if source transparency is present.
+
+## Preflight
+- Ran `git status --short`.
+- Dirty files matched approved Phase 1D work-in-progress scope.
+
+## Icon Transparency Verification
+- Source inspected:
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5.png`
+- Result:
+  - `Channels: 3.0`, `Type: TrueColor`, PNG color type `2 (Truecolor)`.
+  - No alpha channel present in source PNG.
+- ICO inspected:
+  - `app/windows/runner/resources/app_icon.ico`
+  - Alpha channel min/max/mean reported fully opaque (`255`) across icon scenes.
+- Outcome:
+  - True transparent icon regeneration is blocked by non-alpha source asset.
+  - Stopped transparency regeneration per instruction and documented follow-up requirement.
+
+## Additional Validation (Phase 1D polish)
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS` (after one transient lock rerun)
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Logging/Debug Notes
+- `flutter run` first attempt failed due transient MSBuild lock on tlog (`unsuccessfulbuild` in use).
+- Rerun after process cleanup succeeded.
+- Windows may cache old icons in shell/pinned entries; cache steps are advisory only until a transparent source icon is provided.
+
+## Constraints Confirmed
+- No save/export behavior added.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+- No commit/push/version bump performed.
+
+# SESSION_2026-05-23_0014_phase1d_label_polish_enter_and_inches
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Apply required Phase 1D polish: Enter-to-save in label dialog and quick-entry normalization to inches.
+
+## Actions
+- Updated label dialog submit behavior in `app/lib/main.dart`:
+  - Enter/Done (`onSubmitted`) now saves label same as Save button.
+  - Save button uses same submit path.
+- Updated `app/lib/features/markup/utils/dimension_label_formatter.dart`:
+  - `72`, `72 in`, `72 inches`, `72"` -> `72"`
+  - `6 0` -> `72"`
+  - `6 6` -> `78"`
+  - `5 10` -> `70"`
+  - `6 ft`, `6'`, `6'-0"` normalize to inches output.
+  - Free text stays unchanged.
+- Updated formatter tests:
+  - `app/test/dimension_label_formatter_test.dart`
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS` (after transient lock recovery)
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Logging/Debug Notes
+- One transient `flutter run` build lock occurred (`unsuccessfulbuild` tlog file in use).
+- Re-run after process cleanup succeeded.
+
+## Constraints Confirmed
+- No save/export behavior added.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+- No commit/push/version bump performed.
+
 # SESSION_2026-05-23_0012_phase1c_commit_approval_validation_rerun
 
 ## Context
@@ -543,6 +750,226 @@ Changes: Added Phase 1A Flutter app shell session.
 - No commit/push/version bump performed.
 - No save/export behavior added.
 - No text labels implemented.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+
+# SESSION_2026-05-23_0017_phase1d_blocking_icon_transparency_resolution
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Resolve remaining Phase 1D blockers: icon transparency and label-save crash stability confirmation.
+
+## Preflight
+- Ran `git status --short` and continued from M-approved Phase 1D dirty state only.
+
+## Actions
+- Confirmed label dialog controller lifecycle fix remains in place (`_DimensionLabelDialog` state owns/disposes controller).
+- Diagnosed existing `app/windows/runner/resources/app_icon.ico` as effectively opaque in all extracted frames.
+- Scanned all repo icon candidates (`v1.0, v1.2, v1.3, v1.4, v1.4b, v1.5, app/assets/branding/icon_v1_5.png`) and confirmed no native alpha source exists.
+- Derived transparent source from approved v1.5 artwork by removing edge-connected background only:
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-transparent.png`
+- Regenerated `app/windows/runner/resources/app_icon.ico` from transparent source with sizes `16,24,32,48,64,128,256`.
+- Extracted and verified generated ICO frames under:
+  - `.agent_temp/diagnostics/icon_alpha_check/generated_ico_preview/`
+- Re-ran full validation suite including clean rebuild and Windows runtime launch.
+
+## Validation
+- `cd app && flutter clean`: `PASS`
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Logging/Debug Notes
+- Current ICO diagnostics (pre-fix): `.agent_temp/diagnostics/icon_alpha_check/current_ico_preview/` (opaque)
+- Generated ICO diagnostics (post-fix): `.agent_temp/diagnostics/icon_alpha_check/generated_ico_preview/` (transparent alpha present)
+
+## Constraints Confirmed
+- No save/export behavior added.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+- No commit/push/version bump performed.
+
+# SESSION_2026-05-23_0018_phase1d_icon_quality_refinement
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Improve Windows icon quality while preserving transparent background before Phase 1D commit.
+
+## Preflight
+- Ran `git status --short`; dirty files remained in approved Phase 1D working set.
+
+## Actions
+- Audited all icon candidates across `System/Documentation/Images` and `app/assets/branding`.
+- Confirmed all original candidates are high-resolution (`1254x1254`) but opaque.
+- Selected `System/Documentation/Images/NCD Photo Markup Icon v1.5.png` as highest-quality source.
+- Built high-quality transparent master from v1.5 source:
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-transparent-master.png`
+- Updated runtime branding icon from master:
+  - `app/assets/branding/icon_v1_5.png`
+- Regenerated `app/windows/runner/resources/app_icon.ico` using per-size frames from master (`16,24,32,48,64,128,256`) with LanczosSharp + light unsharp.
+- Produced icon quality diagnostics/contact sheets:
+  - `.agent_temp/diagnostics/icon_alpha_check/generated_quality_preview/`
+
+## Validation
+- `cd app && flutter clean`: `PASS`
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+
+## Logging/Debug Notes
+- Per-size ICO frame extraction confirms alpha preserved for all frames.
+- Quality evidence saved in diagnostics/contact sheets for owner visual review.
+
+## Constraints Confirmed
+- No save/export behavior added.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+- No commit/push/version bump performed.
+
+# SESSION_2026-05-23_0019_phase1d_taskbar_icon_variant_visual_qa
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Produce a taskbar-optimized transparent icon variant with improved small-size readability before Phase 1D commit.
+
+## Preflight
+- Ran `git status --short` and confirmed work continued from approved Phase 1D dirty set.
+
+## Actions
+- Audited icon candidates for dimensions, alpha presence, and suitability.
+- Selected high-resolution approved concept lineage and created a taskbar-focused master variant:
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-taskbar-master.png`
+- Updated runtime icon source:
+  - `app/assets/branding/icon_v1_5.png`
+- Regenerated `app/windows/runner/resources/app_icon.ico` for sizes `16,24,32,48,64,128,256` from taskbar master.
+- Generated required contact sheets and quality diagnostics:
+  - `.agent_temp/diagnostics/icon_alpha_check/generated_quality_preview/contact_sheet_sizes_16_256_pixel_preview.png`
+  - `.agent_temp/diagnostics/icon_alpha_check/generated_quality_preview/contact_sheet_source_master_and_sizes.png`
+- Did not change splash assets/behavior or app runtime behavior.
+
+## Validation
+- `cd app && flutter clean`: `PASS`
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- ICO alpha verification (`16/24/32/48/64/128/256`): `PASS`
+
+## Logging/Debug Notes
+- Initial aggressive scale caused edge-corner alpha loss at very small sizes; adjusted master padding to restore true transparency on all frames.
+- Final ICO extract confirms transparent corners in each required frame.
+
+## Constraints Confirmed
+- No save/export behavior added.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+- No commit/push/version bump performed.
+
+# SESSION_2026-05-23_0020_phase1d_icon_correction_preserve_approved_design
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Correct icon output to preserve approved v1.5 design while improving transparency and fit (blocking visual QA fix).
+
+## Preflight
+- Ran `git status --short` and confirmed continuation from approved Phase 1D dirty state.
+
+## Actions
+- Used approved source concept only:
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5.png`
+- Built corrected transparent approved-design master:
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-transparent-approved-design-master.png`
+- Preserved approved design composition and elements; removed only unwanted outer opaque background.
+- Increased fit within frame via controlled scaling (`104%`) while keeping balanced padding.
+- Updated runtime icon and Windows ICO from corrected master:
+  - `app/assets/branding/icon_v1_5.png`
+  - `app/windows/runner/resources/app_icon.ico`
+- Generated required comparison sheet including original, prior wrong/simplified variant, corrected master, and required ICO sizes.
+
+## Validation
+- `cd app && flutter clean`: `PASS`
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- ICO alpha verification (`16/24/32/48/64/128/256`): `PASS`
+- Tunable constants gate: `PASS` (no new app constants required for icon asset correction)
+
+## Logging/Debug Notes
+- Early overly aggressive fit variants were rejected in diagnostics to avoid clipping/touching edges.
+- Final corrected master chosen from approved-design transparent set with balanced edge spacing.
+
+## Constraints Confirmed
+- Label workflow unchanged.
+- No save/export behavior added.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+- No commit/push/version bump performed.
+
+# SESSION_2026-05-23_0021_phase1d_closeout_stop_icon_iteration_commit_prep
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Stop icon iteration per owner direction, clean icon artifacts, and prepare Phase 1D code/docs/tests + version-bump commit flow.
+
+## Actions
+- Classified current dirty state as approved Phase 1D scope.
+- Removed experimental icon artifacts from commit scope:
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-taskbar-master.png`
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-transparent-master.png`
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-transparent.png`
+- Kept final MVP icon assets:
+  - `app/assets/branding/icon_v1_5.png`
+  - `app/windows/runner/resources/app_icon.ico`
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-transparent-approved-design-master.png`
+- Updated docs and backlog to defer taskbar/icon redesign to future phase (`TODO-014`, `DECISION-009`).
+
+## Validation
+- Full validation rerun executed before commit (see latest matrix rows).
+
+## Constraints Confirmed
+- No save/export behavior added.
 - No Control Center integration added.
 - No project-folder autosave added.
 - No Apple/HEIC implementation added.

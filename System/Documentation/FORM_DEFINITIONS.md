@@ -4,14 +4,15 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\FORM_DEFINITIONS.m
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-22`
+Last Updated: `2026-05-23`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1C startup-window maximize behavior and final larger splash scaling note.
+Changes: Added Phase 1D approved-design icon correction note; no form interaction changes in this pass.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
 - `Photo Canvas Area` (implemented with image display)
 - `Dimension Overlay Layer` (implemented)
+- `Dimension Label Dialog` (implemented)
 - `Export / Save Dialog` (planned)
 
 ## Field Work Forms
@@ -25,6 +26,7 @@ Changes: Added Phase 1C startup-window maximize behavior and final larger splash
 - `Canvas area`
 - `Horizontal touch toolbar`
 - `Dimension overlay interaction layer`
+- `Dimension label prompt flow`
 - Related widgets/components:
 - `_ToolbarPlaceholderButton`
 - `DimensionLinesOverlay`
@@ -72,6 +74,27 @@ Changes: Added Phase 1C startup-window maximize behavior and final larger splash
 - `Supports multiple lines and undo-last-line behavior`
 - `Pointer start/update is clamped to displayed image rectangle`
 - `Painter clips draw operations to displayed image rectangle`
+- `Line labels render near midpoint with readable chip styling`
+- `Tap-near-line can trigger label edit flow`
+
+#### `Dimension Label Dialog`
+- Source path: `app/lib/main.dart`
+- Purpose: `Collect manual measurement/note text for a new or existing dimension line`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Large text entry field`
+- `Save action`
+- `Skip action`
+- Related widgets/components:
+- `AlertDialog` + `TextField`
+- `DimensionLabelFormatter`
+- Read/write behavior: `MIXED`
+- Notes:
+- `Shown automatically after line creation`
+- `Can be opened by tapping near an existing line`
+- `Skips are allowed; labels are optional`
+- `Enter/Done key submits label as Save`
+- `Dialog owns/disposes its own TextEditingController to avoid disposed-controller crashes during close/rebuild`
 
 ## Dependency/Component Map
 | Name | Form | Purpose | Path |
@@ -84,9 +107,14 @@ Changes: Added Phase 1C startup-window maximize behavior and final larger splash
 | `Touch Toolbar` | `Photo Markup Shell` | `Expose tool actions with selected/disabled state` | `app/lib/main.dart` |
 | `Dimension Overlay` | `Dimension Overlay Layer` | `Render and capture dimension line interactions` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` |
 | `Dimension Model` | `Dimension Overlay Layer` | `Store start/end coordinates for each line` | `app/lib/features/markup/models/dimension_line.dart` |
+| `Dimension Label Dialog` | `Dimension Label Dialog` | `Collect manual label text with Save/Skip` | `app/lib/main.dart` |
+| `Dimension Label Formatter` | `Dimension Label Dialog` | `Normalize common feet/inches inputs` | `app/lib/features/markup/utils/dimension_label_formatter.dart` |
 
-## Phase 1C Review Note
-- Dimension overlay behavior is implemented as an additive layer above image rendering.
+## Phase 1D Review Note
+- Dimension label entry/edit behavior is implemented on top of existing dimension overlay.
 - Non-dimension tools remain placeholders in this phase.
+- Icon quality refinement in this pass changed branding assets only (no form flow changes).
+- Taskbar icon variant pass changed only branding image assets and Windows icon packaging (no form flow changes).
+- Approved-design icon correction pass also changed only branding image assets and Windows icon packaging (no form flow changes).
 
 

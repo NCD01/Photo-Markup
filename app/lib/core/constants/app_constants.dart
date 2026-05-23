@@ -61,6 +61,10 @@ class UiCopyConstants {
   static const String emptyStateMessage =
       'Open or import a photo to start marking it up.';
   static const String splashFallbackLabel = 'NCD Photo Markup';
+  static const String dimensionLabelDialogTitle = 'Dimension Label';
+  static const String dimensionLabelHint = 'Example: 72" or 6\'-0"';
+  static const String dimensionLabelSaveButton = 'Save';
+  static const String dimensionLabelSkipButton = 'Skip';
 }
 
 class ToolbarConstants {
@@ -121,6 +125,15 @@ class UiLayoutConstants {
   static const double dimensionEndpointOuterRadius = 5;
   static const double dimensionEndpointInnerRadius = 2.5;
   static const double dimensionTapDragMinDistance = 6;
+  static const double dimensionLabelFontSize = 15;
+  static const double dimensionLabelVerticalPadding = 6;
+  static const double dimensionLabelHorizontalPadding = 10;
+  static const double dimensionLabelBorderRadius = 8;
+  static const double dimensionLabelOffsetFromLine = 14;
+  static const double dimensionLabelClampPadding = 4;
+  static const double dimensionLabelDialogFieldMinHeight = 64;
+  static const double dimensionLabelDialogFieldPadding = 12;
+  static const double dimensionLabelDialogButtonTopGap = 8;
 }
 
 class DimensionLineConstants {
@@ -130,4 +143,10 @@ class DimensionLineConstants {
   static const double strokeWidth = 3;
   static const double endpointStrokeWidth = 1.2;
   static const Color endpointFillColor = Colors.white;
+  static const Color labelTextColor = Colors.black87;
+  static const Color labelBackgroundColor = Color(0xD9FFFFFF);
+  static const Color labelBorderColor = Color(0xFF005C85);
+  static const double labelBorderWidth = 1;
+  static const double labelTapSelectDistance = 26;
+  static const double tapMoveThreshold = 8;
 }

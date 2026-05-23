@@ -4,9 +4,126 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-22`
+Last Updated: `2026-05-23`
 Purpose: Canonical changelog for project changes.
-Changes: Added uncommitted Phase 1C startup-window maximize behavior and final splash size polish details.
+Changes: Added Phase 1D closeout decision to stop icon iteration, keep current transparent icon for MVP, and defer redesign.
+
+## Unreleased - 2026-05-23 (Phase 1D Icon Iteration Stop + Deferral)
+- Owner: NCD / M
+- Author: Codex
+- Type: Documentation
+- Reason: Stop further Phase 1D icon iteration; accept current MVP icon and defer taskbar-readability redesign.
+- Scope:
+  - `System/Documentation/PROJECT_DOCUMENTATION.md`
+  - `Operations/TODO_REGISTER.md`
+  - `Operations/SESSION.md`
+  - `Operations/VALIDATION_MATRIX.md`
+- Changes:
+  - Kept current runtime icon packaging (`app/assets/branding/icon_v1_5.png`, `app/windows/runner/resources/app_icon.ico`).
+  - Kept final approved-design transparent master (`System/Documentation/Images/NCD Photo Markup Icon v1.5-transparent-approved-design-master.png`).
+  - Removed experimental icon master artifacts from commit scope.
+  - Added future taskbar icon standard/redesign backlog item (TODO-014).
+  - Recorded that Phase 1D icon quality/readability limits stem from mini-logo detail at small sizes.
+
+## Unreleased - 2026-05-23 (Phase 1D Approved-Design Icon Correction)
+- Owner: NCD / M
+- Author: Codex
+- Type: Visual QA Fix
+- Reason: Prior taskbar variant was rejected as wrong/simplified design despite quality/transparency pass.
+- Scope:
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-transparent-approved-design-master.png`
+  - `app/assets/branding/icon_v1_5.png`
+  - `app/windows/runner/resources/app_icon.ico`
+  - visual QA diagnostics + documentation updates
+- Changes:
+  - Rebased icon work on approved source concept `NCD Photo Markup Icon v1.5.png`.
+  - Removed only outer opaque background and preserved approved design language.
+  - Increased icon fit within frame (balanced padding) without redesigning symbol.
+  - Kept experimental taskbar/simplified variant as reference only; not used as final runtime icon.
+  - Regenerated multi-size ICO (`16,24,32,48,64,128,256`) from corrected approved-design master.
+- Validation Evidence:
+  - `flutter clean`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - Comparison contact sheet: `.agent_temp/diagnostics/icon_alpha_check/approved_design_correction/comparison_contact_sheet_original_wrong_corrected_and_frames.png`
+
+## Unreleased - 2026-05-23 (Phase 1D Taskbar Icon Variant)
+- Owner: NCD / M
+- Author: Codex
+- Type: Visual QA Fix
+- Reason: Transparency passed but icon readability/quality needed taskbar optimization before commit.
+- Scope:
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-taskbar-master.png`
+  - `app/assets/branding/icon_v1_5.png`
+  - `app/windows/runner/resources/app_icon.ico`
+  - Validation/session documentation updates
+- Changes:
+  - Audited icon source quality and confirmed high-resolution source availability.
+  - Built a taskbar-optimized transparent master variant with larger central mark and removed tiny `NCD PM` text dependency.
+  - Regenerated multi-size ICO (`16,24,32,48,64,128,256`) from the new taskbar master.
+  - Generated required size contact-sheet artifacts for owner visual QA review.
+- Validation Evidence:
+  - `flutter clean`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - Contact sheet: `.agent_temp/diagnostics/icon_alpha_check/generated_quality_preview/contact_sheet_sizes_16_256_pixel_preview.png`
+
+## Unreleased - 2026-05-23 (Phase 1D Icon Quality Refinement)
+- Owner: NCD / M
+- Author: Codex
+- Type: Fix
+- Reason: Improve Windows icon quality while preserving transparency before Phase 1D commit.
+- Scope:
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-transparent-master.png`
+  - `app/assets/branding/icon_v1_5.png`
+  - `app/windows/runner/resources/app_icon.ico`
+  - Ops/doc validation updates
+- Changes:
+  - Audited all icon candidates for resolution/alpha/suitability.
+  - Selected high-resolution `v1.5` original artwork as source and derived a new transparent master.
+  - Generated per-size icon frames (`16,24,32,48,64,128,256`) directly from master using LanczosSharp + light unsharp.
+  - Rebuilt Windows ICO from those master-derived frames and captured quality preview contact sheets.
+  - Re-ran full Flutter validation cycle after icon quality refresh.
+- Validation Evidence:
+  - `flutter clean`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - Diagnostics: `.agent_temp/diagnostics/icon_alpha_check/generated_quality_preview/`
+
+## Unreleased - 2026-05-23 (Phase 1D Blocking Fixes)
+- Owner: NCD / M
+- Author: Codex
+- Type: Fix
+- Reason: Resolve Phase 1D blockers before commit (label save crash + icon transparency).
+- Scope:
+  - `app/lib/main.dart`
+  - `app/windows/runner/resources/app_icon.ico`
+  - `System/Documentation/Images/NCD Photo Markup Icon v1.5-transparent.png`
+  - `Operations/*` and `System/Documentation/*` updates
+- Changes:
+  - Reworked dimension label dialog into a dialog-owned stateful widget so controller lifecycle is safe.
+  - Unified Enter and Save through one submit path; Skip/Cancel return safely with no controller reuse.
+  - Verified all existing icon candidates were opaque, then derived a true transparent v1.5 source by removing edge-connected square background.
+  - Regenerated Windows ICO from transparent source with common sizes (`16,24,32,48,64,128,256`) and verified alpha in extracted frames.
+- Validation Evidence:
+  - `flutter clean`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - ICO diagnostics: `.agent_temp/diagnostics/icon_alpha_check/current_ico_preview/` and `.agent_temp/diagnostics/icon_alpha_check/generated_ico_preview/`
+- Risks / Known Gaps:
+  - Windows shell/taskbar may still cache older icon visuals until icon cache refresh.
 
 ## Unreleased - 2026-05-22
 - Owner: NCD / M
@@ -94,6 +211,61 @@ Changes: Added uncommitted Phase 1C startup-window maximize behavior and final s
 - Risks / Known Gaps:
   - Full owner-interactive manual validation still required for complete field workflow confirmation.
   - Other markup tools remain intentionally unimplemented.
+
+## Unreleased - 2026-05-23 (Phase 1D)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Add manual text labels to dimension lines with lightweight measurement formatting.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/dimension_line.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/lib/features/markup/utils/dimension_label_formatter.dart`
+  - `app/test/dimension_label_formatter_test.dart`
+  - Required project/governance docs
+- Changes:
+  - Added touch-friendly label entry dialog after creating each dimension line:
+    - title: `Dimension Label`
+    - hint: `Example: 72" or 6'-0"`
+    - actions: `Save` and `Skip`
+  - Added manual label storage on each dimension line.
+  - Added label rendering near line midpoint with high-contrast background chip.
+  - Added clamp logic so label chip stays inside displayed image bounds as much as practical.
+  - Added tap-to-edit support for existing dimension line labels.
+  - Kept undo behavior intact: undo removes latest line and its label.
+  - Added lightweight formatter support for common manual inputs:
+    - `72`, `72 in`, `72 inches`, `72"` -> `72"`
+    - `6 0` -> `72"`
+    - `6 6` -> `78"`
+    - `5 10` -> `70"`
+    - `6 ft`, `6'`, `6'-0"` -> inches output
+  - Kept free-text labels unchanged when they are not numeric measurement-only input.
+  - Centralized dialog/label style tunables in constants.
+  - Added Enter/Done submit behavior in label dialog to match Save button action.
+  - Fixed blocking label-save crash by moving `TextEditingController` ownership into a dedicated stateful dialog widget lifecycle.
+  - Updated measurement quick-entry normalization to inches output:
+    - `6 0` -> `72"`
+    - `6 6` -> `78"`
+    - `5 10` -> `70"`
+  - Verified icon transparency request and found source-asset blocker:
+    - Icon candidates checked: v1.0, v1.2, v1.3, v1.4, v1.4b, v1.5.
+    - All icon candidates currently have no alpha channel (`srgb 3.0`, `opaque=True`).
+    - Existing generated ICO scenes are fully opaque alpha.
+- Validation Evidence:
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS` (formatter + widget suite)
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - Screenshot artifact: `C:\apps\NCD_Photo_Markup\.agent_temp\screenshots\phase1d_dimension_label_runtime_screen.png`
+  - Icon source/ICO transparency checks: `FAIL` (blocked by source icon alpha absence)
+  - Full interactive manual label workflow: `NOT_VALIDATED` in this environment
+  - Android runtime/device behavior: `NOT_VALIDATED`
+- Risks / Known Gaps:
+  - Owner-side interactive field validation is still required for full line-label entry/edit confirmation.
+  - Voice-to-text and advanced measurement parsing remain deferred.
 
 ## v0.3 - 2026-05-22
 - Owner: NCD / M
