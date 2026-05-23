@@ -372,3 +372,15 @@ Changes: Added Phase 1D closeout decision to stop icon iteration, keep current t
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.6 - 2026-05-23
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve Phase 1D Dimension Labels and defer icon redesign
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.

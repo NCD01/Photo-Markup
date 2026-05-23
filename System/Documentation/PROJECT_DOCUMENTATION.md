@@ -96,7 +96,7 @@ Required sections are present and updated through Phase 1D.
 | `RISK-005` | `Approved v1.5 icon is mini-logo style (small text/detail/padding), so taskbar-size readability is limited without a simplified icon standard` | `NCD / M` | `Future icon redesign phase` | `MVP accepts current transparent icon; redesign tracked in TODO-014` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.5`.
+- App bar shows `NCD Photo Markup` and `v0.6`.
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
 - Windows app icon resource uses a transparent approved-design master derived from v1.5:
