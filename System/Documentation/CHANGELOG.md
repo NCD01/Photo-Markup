@@ -122,3 +122,15 @@ Changes: Added uncommitted Phase 1A.1 lean-root/governance-sync structural updat
 
 
 
+
+## v0.4 - 2026-05-22
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve governance sync and lean root cleanup
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
