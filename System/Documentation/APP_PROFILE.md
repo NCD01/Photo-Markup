@@ -1,13 +1,13 @@
 ﻿# App Profile
 
 Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\APP_PROFILE.md`
-Version: `v0.3`
+Version: `v0.4`
 Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Store project-specific facts for NCD Photo Markup governance and validation.
-Changes: Added tunable-constants governance references and centralized-constants validation command for Flutter code.
+Changes: Added Phase 1C dimension-line MVP validation scope and updated tunable-constants verification command.
 
 ## Quick Rules
 - Keep this file current as source of truth for commands, paths, and validation.
@@ -50,7 +50,7 @@ Changes: Added tunable-constants governance references and centralized-constants
 | Visual QA capture | `Capture screenshots to .agent_temp/screenshots` | `Evidence captured for UI changes` |
 | Responsive layout validation | `Manual resize/maximized checks` | `Controls visible and usable` |
 | Link/placeholders check | `rg "<[A-Z0-9_\\-/| ]+>" README.md System\\Documentation\\*.md Governance\\*.md Operations\\*.md` | `No unresolved placeholders` |
-| Tunable constants check | `rg "NCD Photo Markup|v0.3|Open Photo|jpg|jpeg|png|webp|Could not open this image|009ADA" app/lib/main.dart` | `No repeated tunables left in app logic; values live in constants file` |
+| Tunable constants check | `rg "NCD Photo Markup|v0.4|Open Photo|Dimension|Undo|jpg|jpeg|png|webp|Could not open this image|009ADA|005C85" app/lib/main.dart app/lib/core/constants/app_constants.dart` | `No repeated tunables left in app logic; values live in constants file` |
 
 ## Runtime Startup Smoke Test
 ### Required Startup Proof

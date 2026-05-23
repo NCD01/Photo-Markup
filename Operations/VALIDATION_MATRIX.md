@@ -1,12 +1,12 @@
 ﻿# Validation Matrix
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\VALIDATION_MATRIX.md`
-Version: `v0.3`
+Version: `v0.4`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-22`
+Last Updated: `2026-05-23`
 Purpose: Track required validation activities and outcomes.
-Changes: Added governance v1.7 tunable-constants adoption checks and centralized-constants verification gate evidence.
+Changes: Added final Phase 1C pre-commit validation rerun with larger splash scaling and startup-window maximize checks.
 
 ## Validation Matrix
 | ID | Validation | Command/Method | Trigger | Pass Criteria | Owner | Status | Evidence Path |
@@ -39,5 +39,26 @@ Changes: Added governance v1.7 tunable-constants adoption checks and centralized
 | `VAL-026` | Flutter Tunable Constants Gate | `Manual review against Governance/CODE_FILE_STRUCTURE_POLICY.md and Governance/Language_Addendums/DART_FLUTTER_ADDENDUM.md` | Flutter UI code touched | Tunable Flutter/Dart values are centralized in constants/config blocks | `NCD / M` | `PASS` | `Governance policies synced + constants grouped by domain` |
 | `VAL-027` | Remaining Repeated Literals Review | `Manual review of app/lib/main.dart` | Tunable extraction pass complete | Remaining repeats are intentional one-off/deferred and documented | `NCD / M` | `PASS` | `Intentional inline Flutter style/framework one-offs documented in PROJECT_DOCUMENTATION` |
 | `VAL-028` | Governance Source Version Alignment | `Manual check of C:\Games\Governance\VERSION and owner-requested baseline` | Governance sync update requested | Source version and requested baseline are reconciled or tracked | `NCD / M` | `NOT_VALIDATED` | `Source VERSION is v1.8 while request said effective v1.7; tracked in TODO-008` |
+| `VAL-029` | Phase 1C Dependency Restore | `cd app && flutter pub get` | Markup overlay/tooling updates | Dependencies restore successfully | `NCD / M` | `PASS` | `Terminal output 2026-05-22 (Phase 1C)` |
+| `VAL-030` | Phase 1C Static Analysis | `cd app && flutter analyze` | Markup code changes | No blocking analysis issues | `NCD / M` | `PASS` | `No issues found (Phase 1C)` |
+| `VAL-031` | Phase 1C Automated Tests | `cd app && flutter test` | Markup behavior changes | Tests pass | `NCD / M` | `PASS` | `3 tests passed (Phase 1C)` |
+| `VAL-032` | Phase 1C Windows Build | `cd app && flutter build windows --debug` | Markup code changes | Build succeeds | `NCD / M` | `PASS` | `Built build/windows/x64/runner/Debug/ncd_photo_markup.exe (Phase 1C)` |
+| `VAL-033` | Phase 1C Startup Smoke | `cd app && flutter run -d windows --debug --no-resident -v` | Runtime changes | App launches and sync completes without blocking runtime errors | `NCD / M` | `PASS` | `VM service and sync completed; exit code 0` |
+| `VAL-034` | Phase 1C Manual Interactive Markup Flow | Launch app, open JPG/PNG, select Dimension, drag line, confirm overlay persistence, Undo | Dimension MVP behavior changes | Full operator workflow verified interactively | `NCD / M` | `PASS` | `Owner report: manual test items 1-6 PASS (2026-05-22)` |
+| `VAL-035` | Phase 1C Screenshot Artifact | Save screenshot artifact under `.agent_temp/screenshots` | UI-visible markup changes | Artifact exists and is not committed | `NCD / M` | `PASS` | `.agent_temp/screenshots/phase1c_dimension_overlay_artifact.png` |
+| `VAL-036` | Phase 1C Tunable Constants Gate | `Manual review + rg scan` | New tunable values added | Dimension tool/line tunables centralized and editable without hunting logic | `NCD / M` | `PASS` | `app/lib/core/constants/app_constants.dart` |
+| `VAL-037` | .agent_temp Ignore Rule (Phase 1C) | `git check-ignore -v .agent_temp ...` | Screenshot/diagnostics artifacts created | `.agent_temp` remains ignored | `NCD / M` | `PASS` | `.gitignore:1 .agent_temp/` |
+| `VAL-038` | Branding Asset Inventory | `Get-ChildItem System/Documentation/Images` | Approved image assets added | Approved source images are identified and tracked | `NCD / M` | `PASS` | `System/Documentation/Images file listing (2026-05-22)` |
+| `VAL-039` | Branding Asset Registration | `Manual review of app/assets + pubspec + constants refs` | Splash/icon integration work | App uses app-local branding assets and assets are registered | `NCD / M` | `PASS` | `app/assets/branding/* + app/pubspec.yaml + BrandingAssetConstants` |
+| `VAL-040` | Dimension Bounds Clamp/Clip Gate | `Code review of main + overlay + model` | Bounds-fix work | Drag points and rendering are constrained to displayed image rect | `NCD / M` | `PASS` | `main.dart + dimension_line.dart + dimension_lines_overlay.dart` |
+| `VAL-041` | Phase 1C Revalidation Cycle | `cd app && flutter pub get/analyze/test/build/run` | Branding and bounds updates | All required commands pass after updates | `NCD / M` | `PASS` | `Terminal output 2026-05-22` |
+| `VAL-042` | Phase 1C Owner Manual Interactive Flow | Launch app, open photo, drag toward white canvas, confirm edge clamp and branding visibility | Bounds and branding UX updates | Lines stop at photo edge and branding appears where implemented | `NCD / M` | `PASS` | `Owner report: dimension bounds fix PASS (2026-05-22)` |
+| `VAL-043` | Phase 1C Windows Icon Resource Replacement | `magick <approved v1.5 png> -> app/windows/runner/resources/app_icon.ico` + Windows build | Icon polish before commit | Built Windows runner uses non-default app icon resource | `NCD / M` | `PASS` | `app/windows/runner/resources/app_icon.ico regenerated from approved v1.5 source` |
+| `VAL-044` | Phase 1C Splash Duration Tuning | `Constants review + runtime smoke` | Splash polish before commit | Startup splash duration centralized and increased to tuned value | `NCD / M` | `PASS` | `BrandingAssetConstants.startupSplashDurationMs=2200` |
+| `VAL-045` | Phase 1C Revalidation After Polish | `cd app && flutter pub get/analyze/test/build/run` | Icon/splash polish applied | Validation suite passes after polish updates | `NCD / M` | `PASS` | `Terminal output 2026-05-22` |
+| `VAL-046` | Phase 1C Final Revalidation Before Commit | `cd app && flutter pub get/analyze/test/build/run` | Final pre-commit check after splash-size/window-size tweak | All required validation commands pass | `NCD / M` | `PASS` | `Terminal output 2026-05-23` |
+| `VAL-047` | Startup Splash Large-Footprint Gate | `Constants + widget layout review` | Requested splash-size increase | Splash scales to fill most of startup window without hard-coded one-size cap | `NCD / M` | `PASS` | `splashImageWidthFactor=0.97, splashImageHeightFactor=0.88, main.dart LayoutBuilder sizing` |
+| `VAL-048` | Windows Startup-Screen Size Gate | `Runner show-mode review + runtime smoke` | Requested app-window sizing change | App window opens maximized at launch | `NCD / M` | `PASS` | `win32_window.cpp Show() uses SW_MAXIMIZE + flutter run PASS` |
+| `VAL-049` | Phase 1C Commit-Approval Validation Rerun | `cd app && flutter pub get/analyze/test/build/run` + ignore/tunable checks | Owner approved Phase 1C commit flow | Validation rerun remains green immediately before committing | `NCD / M` | `PASS` | `Terminal output 2026-05-23 (commit-approval rerun)` |
 
 

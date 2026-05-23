@@ -1,21 +1,21 @@
 ﻿# Project Documentation
 
 Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\PROJECT_DOCUMENTATION.md`
-Version: `v0.3`
+Version: `v0.4`
 Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added governance v1.7 tunable-constants standard adoption and centralized Flutter tunables without behavior change.
+Changes: Added Phase 1C startup-window maximize behavior and larger splash footprint notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
-- Keep non-Open toolbar actions as placeholders until approved.
+- Keep non-approved toolbar actions as placeholders until approved.
 - Structure/governance cleanup must not change runtime behavior.
 
 ## Required Contract
-Required sections are present and updated through Phase 1B.
+Required sections are present and updated through Phase 1C.
 
 ## Overview
 - App Name: `NCD Photo Markup`
@@ -26,8 +26,10 @@ Required sections are present and updated through Phase 1B.
 ## Runtime Architecture
 | Subsystem | Responsibility | Source Path | Owner |
 |---|---|---|---|
-| UI | `Shell screen, image import/open flow, canvas display, toolbar placeholders` | `app/lib/main.dart` | `NCD / M` |
-| UI Config | `Centralized tunable constants for app copy/layout/theme/import labels/extensions` | `app/lib/core/constants/app_constants.dart` | `NCD / M` |
+| UI | `Shell screen, image import/open flow, canvas display, toolbar, and dimension overlay behavior` | `app/lib/main.dart` | `NCD / M` |
+| UI Config | `Centralized tunable constants for app copy/layout/theme/import labels/extensions/markup line styling` | `app/lib/core/constants/app_constants.dart` | `NCD / M` |
+| Markup Model | `Dimension line state entity and tool enum` | `app/lib/features/markup/models/` | `NCD / M` |
+| Markup Widget | `Dimension lines overlay input capture and custom rendering` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `NCD / M` |
 | API | `Not implemented` | `app/lib (planned)` | `NCD / M` |
 | Engine | `Not implemented` | `app/lib (planned)` | `NCD / M` |
 | Data | `No persistence yet; runtime-only selected file path` | `app/lib/main.dart` | `NCD / M` |
@@ -37,8 +39,13 @@ Required sections are present and updated through Phase 1B.
 |---|---|---|---|
 | `Open Photo` | `Opens Windows-compatible file picker and loads image into canvas` | `app/lib/main.dart` | `flutter analyze/test/build + runtime smoke` |
 | `Canvas Image Display` | `Shows selected image centered with BoxFit.contain (no default cropping)` | `app/lib/main.dart` | `Loaded-image screenshot` |
+| `Dimension Tool Selection` | `Dimension button toggles active drawing mode with visible selected state` | `app/lib/main.dart` | `Widget tests + runtime smoke` |
+| `Dimension Line Draw` | `Drag on overlay creates persistent straight dimension lines above image, clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Widget test drag callbacks + runtime smoke` |
+| `Undo Dimension` | `Undo removes most recently added dimension line` | `app/lib/main.dart` | `Widget tests` |
 | `Cancel Handling` | `Picker cancel leaves state stable and no crash` | `app/lib/main.dart` | `Runtime automation attempt + no runtime errors` |
-| `Other Toolbar Buttons` | `Remain placeholders with no markup behavior` | `app/lib/main.dart` | `Code review + runtime observation` |
+| `Other Toolbar Buttons` | `Remain placeholders with no markup behavior` | `app/lib/main.dart` | `Code review + widget/runtime observation` |
+| `Branding Assets` | `Startup splash and app bar icon load from app-local branding assets` | `app/assets/branding/` + `app/lib/main.dart` + `app/pubspec.yaml` | `Runtime smoke + asset registration review` |
+| `Windows App Icon` | `Executable/runner icon uses approved v1.5 branding source` | `app/windows/runner/resources/app_icon.ico` | `Windows build + resource replacement review` |
 
 ## Data and Persistence Boundaries
 - Canonical data source: `User-selected local image file path at runtime`
@@ -78,15 +85,23 @@ Required sections are present and updated through Phase 1B.
 ## Known Risks and Deferred Items
 | ID | Risk/Item | Owner | Target Date | Notes |
 |---|---|---|---|---|
-| `RISK-001` | `Markup tools not implemented yet` | `NCD / M` | `Phase 1C+` | `Intentional` |
+| `RISK-001` | `Only Dimension tool MVP exists; other tools still placeholders` | `NCD / M` | `Phase 1D+` | `Intentional` |
 | `RISK-002` | `Android runtime behavior not validated` | `NCD / M` | `Later phase` | `Intentional` |
 | `RISK-003` | `Manual picker cancel/select steps not fully automatable in this environment` | `Codex` | `Next interactive validation` | `OS SendKeys blocked` |
+| `RISK-004` | `Interactive Windows manual drawing/open-photo validation still needed` | `NCD / M` | `Next owner interactive run` | `Automated tests cover logic but not full operator flow` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.3`.
+- App bar shows `NCD Photo Markup` and `v0.4`.
+- Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
+- Windows app window now opens maximized to match startup-screen size.
 - If no image loaded, canvas shows: `Open or import a photo to start marking it up.`
 - Open Photo launches picker for `jpg`, `jpeg`, `png`, `webp`.
 - Loaded photo is displayed in-canvas with preserved aspect ratio and contain fit.
+- Dimension tool can be selected before photo load without crash.
+- When a photo is loaded and Dimension is selected, pointer drag creates a straight line overlay with endpoint markers.
+- Dimension drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
+- Overlay painter clips drawing to the displayed image rectangle to prevent render bleed into white canvas.
+- Undo removes the most recently created dimension line.
 - Loaded-photo indicator shows selected file name.
 - Unsupported/unreadable image shows field-safe error message.
 
@@ -99,7 +114,12 @@ Required sections are present and updated through Phase 1B.
   - UI copy strings
   - tool labels
   - layout/spacing/sizing
-- Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages.
+  - dimension line styling and drag thresholds
+- Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages and are tracked in validation notes.
+- Splash duration remains tunable through `BrandingAssetConstants.startupSplashDurationMs`.
+- Splash footprint remains tunable through:
+  - `UiLayoutConstants.splashImageWidthFactor`
+  - `UiLayoutConstants.splashImageHeightFactor`
 
 
 

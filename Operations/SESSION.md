@@ -293,3 +293,256 @@ Changes: Added Phase 1A Flutter app shell session.
 - `cd app && flutter run -d windows --debug --no-resident`: PASS
 - Tunable literal scan: PASS (`main.dart` references centralized constants)
 - `.agent_temp` ignore check: PASS
+
+# SESSION_2026-05-22_0008_phase1c_dimension_line_mvp
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Implement Phase 1C Dimension Line MVP while keeping standalone scope and no save/export or integration behavior.
+
+## Preflight
+- Ran `git status --short` before edits.
+- Working tree was clean before Phase 1C work started.
+
+## Actions
+- Added markup model and tool types:
+  - `app/lib/features/markup/models/dimension_line.dart`
+  - `app/lib/features/markup/models/markup_tool.dart`
+- Added overlay widget for drawing layer and pointer interaction:
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+- Updated app shell logic in `app/lib/main.dart`:
+  - dimension tool selection state
+  - persistent dimension lines list
+  - active-drag line preview
+  - undo-last-dimension-line action
+  - toolbar selected/disabled visual states
+  - overlay rendering above image via `Stack`
+- Kept original image handling unchanged (no image write/copy/save logic added).
+- Extended centralized tunables in `app/lib/core/constants/app_constants.dart` for dimension styling and thresholds.
+- Added widget tests for:
+  - empty-state shell render
+  - selecting Dimension without image crash-safety
+  - dimension overlay drag callback behavior
+- Generated Phase 1C screenshot artifact:
+  - `C:\apps\NCD_Photo_Markup\.agent_temp\screenshots\phase1c_dimension_overlay_artifact.png`
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident -v`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Placeholder scan: `PASS` (instructional template placeholder mention only)
+- Tunable constants gate: `PASS`
+- Full owner-interactive manual Open Photo + drag + Undo flow: `NOT_VALIDATED` in this environment
+- Android runtime/device behavior: `NOT_VALIDATED`
+
+## Logging/Debug Notes
+- `flutter run` non-verbose call timed out once; verbose run completed and confirmed successful launch/sync.
+- Widget-test screenshot capture via repaint boundary was unstable/hanging in this environment; replaced with stable overlay behavior test and local artifact generation.
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No save/export behavior added.
+- No text label system added.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+
+# SESSION_2026-05-22_0009_phase1c_branding_assets_and_bounds_fix
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Continue Phase 1C using approved image assets and fix dimension line bounds so lines remain inside the displayed photo rectangle.
+
+## Preflight
+- Ran `git status --short` before this continuation step.
+- Continued from previously approved Phase 1C dirty working set.
+
+## Actions
+- Confirmed approved image source files in `System/Documentation/Images`.
+- Selected and copied v1.5 branding assets into app-local runtime folder:
+  - `app/assets/branding/icon_v1_5.png`
+  - `app/assets/branding/splash_v1_5.png`
+- Registered branding assets in `app/pubspec.yaml`.
+- Added centralized branding asset paths and splash timing to `app/lib/core/constants/app_constants.dart`.
+- Updated `app/lib/main.dart` to:
+  - show splash asset during startup gate
+  - show icon asset in app bar
+  - compute displayed image rectangle from `BoxFit.contain`
+  - clamp dimension drag start/end to displayed image bounds
+  - keep overlay drawing clipped to displayed image bounds
+- Kept original image unmodified and kept non-dimension tools as placeholders.
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Placeholder scan on project docs: `PASS` (template placeholders only in template files)
+- Full owner-interactive bounds/branding manual flow: `NOT_VALIDATED` in this environment
+
+## Logging/Debug Notes
+- No blocking runtime/build/test errors during this continuation pass.
+- Startup/run output confirms branding assets are bundled and app launch completes.
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No save/export behavior added.
+- No text labels added to dimension lines.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+
+# SESSION_2026-05-22_0010_phase1c_icon_and_splash_polish
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Complete Phase 1C polish before commit by replacing default Windows app icon and extending startup splash duration.
+
+## Preflight
+- Ran `git status --short` before edits.
+- Dirty files matched approved ongoing Phase 1C + documentation working set.
+
+## Actions
+- Replaced Windows icon resource using only approved source asset:
+  - Source: `System/Documentation/Images/NCD Photo Markup Icon v1.5.png`
+  - Target: `app/windows/runner/resources/app_icon.ico`
+  - Conversion: ImageMagick `.png -> .ico` multi-size icon file.
+- Increased splash display duration constant:
+  - `BrandingAssetConstants.startupSplashDurationMs: 1200 -> 2200`
+  - File: `app/lib/core/constants/app_constants.dart`
+- Kept all other behavior unchanged.
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS` (after resolving one transient file-lock)
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+- Owner manual report: test items 1-6 `PASS`; dimension bounds fix `PASS`
+
+## Logging/Debug Notes
+- One build attempt failed with `LNK1168` due to running `ncd_photo_markup.exe` lock.
+- Resolved by stopping only the locked process and rebuilding successfully.
+- Evidence artifacts generated:
+  - `.agent_temp/screenshots/phase1c_windows_icon_v1_5_preview.png`
+  - `.agent_temp/screenshots/phase1c_splash_v1_5_asset_preview.png`
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No save/export behavior added.
+- No text labels implemented.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+
+# SESSION_2026-05-23_0012_phase1c_commit_approval_validation_rerun
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Execute approved Phase 1C commit flow by re-running required validation before split commits.
+
+## Preflight
+- Ran `git status --short`.
+- Dirty files matched approved Phase 1C scope only:
+  - Dimension MVP/bounds code
+  - Branding assets/icon/splash polish
+  - Windows maximize startup behavior
+  - Required docs/operations updates
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+- Owner manual status carried forward:
+  - Manual items 1-6: `PASS`
+  - Dimension bounds fix: `PASS`
+
+## Logging/Debug Notes
+- No blocking validation errors in this rerun.
+- `flutter pub get` reports newer incompatible package versions available (informational warning only).
+
+## Constraints Confirmed
+- No save/export behavior added.
+- No text labels added.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+
+# SESSION_2026-05-23_0011_phase1c_final_validation_precommit
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Apply requested final splash-size tweak and startup-window sizing behavior, then run full Phase 1C validation before commit approval.
+
+## Preflight
+- Ran `git status --short` before edits.
+- Dirty files were confirmed as approved Phase 1C working set only (docs/constants/markup/assets/icon updates).
+
+## Actions
+- Increased splash image footprint tunables:
+  - `UiLayoutConstants.splashImageWidthFactor: 0.94 -> 0.97`
+  - `UiLayoutConstants.splashImageHeightFactor: 0.82 -> 0.88`
+- Updated Windows startup show mode:
+  - `app/windows/runner/win32_window.cpp` `ShowWindow(..., SW_MAXIMIZE)`
+- Kept all other feature behavior unchanged.
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+- Dimension bounds guardrails still present (`clampToRect` + `clipRect(imageRect)`): `PASS` (code verification)
+- Owner-provided manual status:
+  - Manual items 1-6: `PASS`
+  - Dimension bounds fix: `PASS`
+
+## Logging/Debug Notes
+- Full validation suite completed cleanly in this pass.
+- `flutter pub get` still reports newer incompatible package versions available (non-blocking warning only).
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No save/export behavior added.
+- No text labels implemented.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.

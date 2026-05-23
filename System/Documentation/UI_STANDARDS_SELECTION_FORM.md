@@ -1,13 +1,13 @@
 ﻿# UI Standards Selection Form
 
 Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS_SELECTION_FORM.md`
-Version: `v0.3`
+Version: `v0.4`
 Pack File Version: `v1.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Owner-selection form for finalizing enforced UI standards.
-Changes: Completed baseline selection and reconfirmed during Phase 1A.1 structure/governance cleanup.
+Changes: Reconfirmed baseline selections with Phase 1C startup maximize and larger splash presentation.
 
 ## Purpose
 Use this form to select baseline UI standards before broad UI modernization.
@@ -151,7 +151,7 @@ Status colors:
 ## 17. Final Approval
 Approved by: `NCD / M`
 Date: `2026-05-22`
-Approved version: `v0.3`
+Approved version: `v0.4`
 Notes: `Baseline selections applied for Windows-first workflow; can be revised before broad UI modernization.`
 
 ## 18. Open Questions

@@ -1,8 +1,13 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 
 typedef OpenFileCallback = Future<XFile?> Function();
 
@@ -18,13 +23,20 @@ class NcdPhotoMarkupApp extends StatelessWidget {
     super.key,
     this.initialImagePath,
     this.openFileOverride,
+    this.showStartupSplash = true,
   });
 
   final String? initialImagePath;
   final OpenFileCallback? openFileOverride;
+  final bool showStartupSplash;
 
   @override
   Widget build(BuildContext context) {
+    final Widget shell = PhotoMarkupShellScreen(
+      initialImagePath: initialImagePath,
+      openFileOverride: openFileOverride,
+    );
+
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
@@ -32,9 +44,96 @@ class NcdPhotoMarkupApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: AppThemeConstants.ncdBlue,
       ),
-      home: PhotoMarkupShellScreen(
-        initialImagePath: initialImagePath,
-        openFileOverride: openFileOverride,
+      home: showStartupSplash ? StartupSplashGate(child: shell) : shell,
+    );
+  }
+}
+
+class StartupSplashGate extends StatefulWidget {
+  const StartupSplashGate({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<StartupSplashGate> createState() => _StartupSplashGateState();
+}
+
+class _StartupSplashGateState extends State<StartupSplashGate> {
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(
+      const Duration(
+        milliseconds: BrandingAssetConstants.startupSplashDurationMs,
+      ),
+      () {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _showSplash = false;
+        });
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_showSplash) {
+      return widget.child;
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: UiLayoutConstants.splashImageHorizontalPadding,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: constraints.maxWidth *
+                        UiLayoutConstants.splashImageWidthFactor,
+                    height: constraints.maxHeight *
+                        UiLayoutConstants.splashImageHeightFactor,
+                    child: Image.asset(
+                      BrandingAssetConstants.splashV15AssetPath,
+                      fit: BoxFit.contain,
+                      errorBuilder:
+                          (
+                            BuildContext context,
+                            Object error,
+                            StackTrace? stackTrace,
+                          ) {
+                            return const Icon(
+                              Icons.photo_camera_outlined,
+                              size: UiLayoutConstants.emptyStateIconSize,
+                              color: AppThemeConstants.ncdBlue,
+                            );
+                          },
+                    ),
+                  ),
+                  const SizedBox(height: UiLayoutConstants.splashTitleTopGap),
+                  const Text(
+                    UiCopyConstants.splashFallbackLabel,
+                    style: TextStyle(
+                      fontSize: UiLayoutConstants.emptyStateBodyFontSize,
+                      fontWeight: FontWeight.w700,
+                      color: AppThemeConstants.ncdBlue,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -59,6 +158,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   String? _loadedFileName;
   String? _errorMessage;
   bool _isPickingFile = false;
+  Size? _loadedImagePixelSize;
+
+  MarkupTool _selectedTool = MarkupTool.none;
+  final List<DimensionLine> _dimensionLines = <DimensionLine>[];
+  Offset? _activeDimensionStart;
+  Offset? _activeDimensionCurrent;
 
   @override
   void initState() {
@@ -114,27 +219,6 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     }
   }
 
-  void _setLoadError() {
-    setState(() {
-      _errorMessage = ImageImportConstants.openErrorMessage;
-      _isPickingFile = false;
-    });
-  }
-
-  String _fileExtension(String path) {
-    final List<String> parts = path.split('.');
-    if (parts.length < 2) {
-      return '';
-    }
-    return parts.last.toLowerCase();
-  }
-
-  String _fileNameFromPath(String path) {
-    final String normalized = path.replaceAll('\\', '/');
-    final List<String> parts = normalized.split('/');
-    return parts.isEmpty ? path : parts.last;
-  }
-
   Future<void> _loadImageFromPath(
     String path, {
     bool showErrorForFailure = true,
@@ -155,14 +239,166 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       return;
     }
 
+    final Size? imageSize = await _readImagePixelSize(path);
+    if (imageSize == null) {
+      if (showErrorForFailure) {
+        _setLoadError();
+      }
+      return;
+    }
+
     if (!mounted) {
       return;
     }
     setState(() {
       _imagePath = path;
       _loadedFileName = _fileNameFromPath(path);
+      _loadedImagePixelSize = imageSize;
       _errorMessage = null;
+      _activeDimensionStart = null;
+      _activeDimensionCurrent = null;
+      _dimensionLines.clear();
     });
+  }
+
+  Future<Size?> _readImagePixelSize(String imagePath) async {
+    try {
+      final Uint8List bytes = await File(imagePath).readAsBytes();
+      final ui.Codec codec = await ui.instantiateImageCodec(bytes);
+      final ui.FrameInfo frame = await codec.getNextFrame();
+      final Size size = Size(
+        frame.image.width.toDouble(),
+        frame.image.height.toDouble(),
+      );
+      frame.image.dispose();
+      codec.dispose();
+      return size;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _setLoadError() {
+    setState(() {
+      _errorMessage = ImageImportConstants.openErrorMessage;
+      _isPickingFile = false;
+    });
+  }
+
+  void _onToolbarPressed(String label) {
+    if (label == ToolbarConstants.openPhoto) {
+      _openPhoto();
+      return;
+    }
+
+    if (label == ToolbarConstants.dimension) {
+      setState(() {
+        _selectedTool = MarkupTool.dimension;
+      });
+      return;
+    }
+
+    if (label == ToolbarConstants.undo) {
+      _undoMostRecentDimensionLine();
+      return;
+    }
+  }
+
+  void _undoMostRecentDimensionLine() {
+    if (_dimensionLines.isEmpty) {
+      return;
+    }
+    setState(() {
+      _dimensionLines.removeLast();
+    });
+  }
+
+  void _onDimensionStart(Offset startPoint, Rect imageRect) {
+    if (!_canDrawDimensionLine(imageRect) || !imageRect.contains(startPoint)) {
+      return;
+    }
+    final Offset clamped = DimensionLine.clampToRect(startPoint, imageRect);
+    setState(() {
+      _activeDimensionStart = clamped;
+      _activeDimensionCurrent = clamped;
+    });
+  }
+
+  void _onDimensionUpdate(Offset currentPoint, Rect imageRect) {
+    if (_activeDimensionStart == null || !_canDrawDimensionLine(imageRect)) {
+      return;
+    }
+    setState(() {
+      _activeDimensionCurrent = DimensionLine.clampToRect(
+        currentPoint,
+        imageRect,
+      );
+    });
+  }
+
+  void _onDimensionEnd(Rect imageRect) {
+    final Offset? start = _activeDimensionStart;
+    final Offset? end = _activeDimensionCurrent;
+    if (start == null || end == null) {
+      return;
+    }
+
+    final DimensionLine line = DimensionLine.fromCanvasPoints(
+      startPoint: start,
+      endPoint: end,
+      imageRect: imageRect,
+    );
+
+    setState(() {
+      _activeDimensionStart = null;
+      _activeDimensionCurrent = null;
+      if (line.lengthInRect(imageRect) >=
+          UiLayoutConstants.dimensionTapDragMinDistance) {
+        _dimensionLines.add(line);
+      }
+    });
+  }
+
+  bool _canDrawDimensionLine(Rect imageRect) {
+    return _selectedTool == MarkupTool.dimension &&
+        _imagePath != null &&
+        imageRect.width > 0 &&
+        imageRect.height > 0;
+  }
+
+  bool _isUndoEnabled() {
+    return _dimensionLines.isNotEmpty;
+  }
+
+  String _fileExtension(String path) {
+    final List<String> parts = path.split('.');
+    if (parts.length < 2) {
+      return '';
+    }
+    return parts.last.toLowerCase();
+  }
+
+  String _fileNameFromPath(String path) {
+    final String normalized = path.replaceAll('\\', '/');
+    final List<String> parts = normalized.split('/');
+    return parts.isEmpty ? path : parts.last;
+  }
+
+  Rect _computeDisplayedImageRect(Size canvasSize) {
+    final Size? sourceSize = _loadedImagePixelSize;
+    if (sourceSize == null || sourceSize.width <= 0 || sourceSize.height <= 0) {
+      return Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height);
+    }
+
+    final FittedSizes fitted = applyBoxFit(
+      BoxFit.contain,
+      sourceSize,
+      canvasSize,
+    );
+    final Size destination = fitted.destination;
+    final double left = (canvasSize.width - destination.width) / 2;
+    final double top = (canvasSize.height - destination.height) / 2;
+    return Rect.fromLTWH(left, top, destination.width, destination.height);
   }
 
   @override
@@ -171,6 +407,19 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       appBar: AppBar(
         backgroundColor: AppThemeConstants.ncdBlue,
         foregroundColor: Colors.white,
+        leading: Padding(
+          padding: const EdgeInsets.all(
+            UiLayoutConstants.appBarBrandingIconPadding,
+          ),
+          child: Image.asset(
+            BrandingAssetConstants.iconV15AssetPath,
+            fit: BoxFit.contain,
+            errorBuilder:
+                (BuildContext context, Object error, StackTrace? stackTrace) {
+                  return const Icon(Icons.photo_camera_outlined);
+                },
+          ),
+        ),
         title: const Text(AppConstants.appName),
         actions: [
           if (_loadedFileName != null)
@@ -179,7 +428,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                 maxWidth: UiLayoutConstants.loadedNameMaxWidth,
               ),
               child: Padding(
-                padding: EdgeInsets.only(
+                padding: const EdgeInsets.only(
                   right: UiLayoutConstants.appBarLoadedNameRightPadding,
                 ),
                 child: Center(
@@ -245,11 +494,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                       padding: const EdgeInsets.symmetric(
                         horizontal: UiLayoutConstants.toolbarButtonGap,
                       ),
-                      child: _ToolbarPlaceholderButton(
+                      child: _ToolbarActionButton(
                         label: label,
-                        onPressed: label == ToolbarConstants.openPhoto
-                            ? _openPhoto
-                            : () {},
+                        isSelected:
+                            label == ToolbarConstants.dimension &&
+                            _selectedTool == MarkupTool.dimension,
+                        isDisabled:
+                            label == ToolbarConstants.undo && !_isUndoEnabled(),
+                        onPressed: () => _onToolbarPressed(label),
                       ),
                     ),
                 ],
@@ -323,22 +575,49 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(UiLayoutConstants.imageAreaPadding),
-            child: Center(
-              child: Image.file(
-                File(_imagePath!),
-                fit: BoxFit.contain,
-                errorBuilder: (_, Object error, StackTrace? stackTrace) {
-                  return const Text(
-                    ImageImportConstants.openErrorMessage,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppThemeConstants.errorAccent,
-                      fontSize: UiLayoutConstants.messageFontSize,
-                      fontWeight: FontWeight.w600,
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                final Size canvasSize = Size(
+                  constraints.maxWidth,
+                  constraints.maxHeight,
+                );
+                final Rect imageRect = _computeDisplayedImageRect(canvasSize);
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Center(
+                      child: Image.file(
+                        File(_imagePath!),
+                        fit: BoxFit.contain,
+                        errorBuilder:
+                            (_, Object error, StackTrace? stackTrace) {
+                              return const Text(
+                                ImageImportConstants.openErrorMessage,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppThemeConstants.errorAccent,
+                                  fontSize: UiLayoutConstants.messageFontSize,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              );
+                            },
+                      ),
                     ),
-                  );
-                },
-              ),
+                    DimensionLinesOverlay(
+                      lines: _dimensionLines,
+                      imageRect: imageRect,
+                      activeStart: _activeDimensionStart,
+                      activeEnd: _activeDimensionCurrent,
+                      isEnabled: _canDrawDimensionLine(imageRect),
+                      onStart: (Offset point) =>
+                          _onDimensionStart(point, imageRect),
+                      onUpdate: (Offset point) =>
+                          _onDimensionUpdate(point, imageRect),
+                      onEnd: () => _onDimensionEnd(imageRect),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -364,28 +643,43 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   }
 }
 
-class _ToolbarPlaceholderButton extends StatelessWidget {
-  const _ToolbarPlaceholderButton({
+class _ToolbarActionButton extends StatelessWidget {
+  const _ToolbarActionButton({
     required this.label,
     required this.onPressed,
+    required this.isSelected,
+    required this.isDisabled,
   });
 
   final String label;
   final VoidCallback onPressed;
+  final bool isSelected;
+  final bool isDisabled;
 
   @override
   Widget build(BuildContext context) {
+    final Color foregroundColor = isDisabled ? Colors.black38 : Colors.black87;
+    final Color borderColor = isSelected
+        ? AppThemeConstants.ncdBlue
+        : AppThemeConstants.ncdBlue.withValues(alpha: 0.75);
+    final double borderWidth = isSelected
+        ? UiLayoutConstants.toolbarButtonSelectedBorderWidth
+        : 1;
+
     return SizedBox(
       height: UiLayoutConstants.toolbarButtonHeight,
       child: OutlinedButton(
-        onPressed: onPressed,
+        onPressed: isDisabled ? null : onPressed,
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(
             UiLayoutConstants.toolbarButtonMinWidth,
             UiLayoutConstants.toolbarButtonHeight,
           ),
-          side: const BorderSide(color: AppThemeConstants.ncdBlue),
-          foregroundColor: Colors.black87,
+          side: BorderSide(color: borderColor, width: borderWidth),
+          backgroundColor: isSelected
+              ? AppThemeConstants.ncdBlue.withValues(alpha: 0.12)
+              : Colors.white,
+          foregroundColor: foregroundColor,
           textStyle: const TextStyle(
             fontSize: UiLayoutConstants.toolbarButtonFontSize,
             fontWeight: FontWeight.w600,

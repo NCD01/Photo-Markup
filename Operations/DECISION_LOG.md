@@ -1,12 +1,12 @@
 ﻿# Decision Log
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\DECISION_LOG.md`
-Version: `v0.3`
+Version: `v0.4`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Record material architecture/process decisions.
-Changes: Added tunable-constants governance adoption decision for Flutter shell.
+Changes: Added Phase 1C decision for displayed-image bounds clamping and app-local branding asset usage.
 
 ## DECISION-001
 - Date: 2026-05-22
@@ -66,5 +66,35 @@ Changes: Added tunable-constants governance adoption decision for Flutter shell.
 - Impact: App title/version/theme/labels/extensions/copy/layout values now have clear edit points.
 - Rollback or Reversal: Move values back inline if owner rejects constants approach.
 - Related Changes: Governance v1.7 tunable constants adoption (uncommitted workspace)
+- Review Date: N/A
+
+## DECISION-005
+- Date: 2026-05-22
+- Status: Accepted
+- Owner: NCD / M
+- Area: Markup MVP Architecture
+- Decision: Implement Phase 1C dimension line using a separate overlay/model layer with no changes to original image files.
+- Alternatives Considered:
+- Draw directly into image pixels.
+- Keep all markup logic inline in one widget without model separation.
+- Rationale: Preserves original photo and keeps a clean expansion path for future tools.
+- Impact: Added `DimensionLine` model, `MarkupTool` enum, and `DimensionLinesOverlay` widget; Undo removes latest line state.
+- Rollback or Reversal: Revert feature files and toolbar tool-state wiring if owner rejects current MVP interaction.
+- Related Changes: Phase 1C dimension MVP (uncommitted workspace)
+- Review Date: N/A
+
+## DECISION-006
+- Date: 2026-05-22
+- Status: Accepted
+- Owner: NCD / M
+- Area: UI/Runtime Boundaries
+- Decision: Constrain dimension drawing to the actual displayed image rectangle and load splash/icon branding from app-local assets.
+- Alternatives Considered:
+- Allow lines to extend into non-image canvas space.
+- Load runtime branding directly from `System/Documentation/Images`.
+- Rationale: Prevents false markups outside photo bounds and keeps runtime assets decoupled from documentation storage.
+- Impact: Drag points are clamped, overlay is clipped to image rect, branding assets are copied into `app/assets/branding/`, Windows runner icon is replaced from approved v1.5 source, and splash duration remains tunable via constants.
+- Rollback or Reversal: Remove clamp/clip logic and revert branding references if owner requests a different workflow.
+- Related Changes: Phase 1C approved image assets + dimension bounds fix (uncommitted workspace)
 - Review Date: N/A
 

@@ -1,12 +1,12 @@
 ﻿# Changelog
 
 Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
-Version: `v0.3`
+Version: `v0.4`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Canonical changelog for project changes.
-Changes: Added uncommitted Phase 1A.1 lean-root/governance-sync structural update notes (no version bump).
+Changes: Added uncommitted Phase 1C startup-window maximize behavior and final splash size polish details.
 
 ## Unreleased - 2026-05-22
 - Owner: NCD / M
@@ -40,6 +40,60 @@ Changes: Added uncommitted Phase 1A.1 lean-root/governance-sync structural updat
 - Risks / Known Gaps:
   - Android runtime behavior remains `NOT_VALIDATED`.
   - No feature behavior changes are included.
+
+## Unreleased - 2026-05-22 (Phase 1C)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Implement Dimension Line MVP behavior without adding unrelated tools or persistence.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/dimension_line.dart`
+  - `app/lib/features/markup/models/markup_tool.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/test/widget_test.dart`
+  - Required project/governance docs
+- Changes:
+  - Added tool selection state for Dimension in toolbar.
+  - Added dimension line overlay rendering above image without modifying original image.
+  - Added persistent dimension line state and pointer drag behavior.
+  - Added displayed-image-rect clamping so dimension lines stay inside photo bounds and do not draw into white canvas space.
+  - Added overlay clipping to displayed image rect as an additional draw safeguard.
+  - Added undo-last-dimension-line behavior via Undo button.
+  - Kept non-dimension tools as placeholders.
+  - Kept image import flow intact.
+  - Added app-consumed branding assets under `app/assets/branding/` and wired:
+    - startup splash asset (`splash_v1_5.png`)
+    - app bar icon asset (`icon_v1_5.png`)
+  - Registered branding assets in `app/pubspec.yaml`.
+  - Replaced Windows runner icon resource with approved v1.5 icon:
+    - `app/windows/runner/resources/app_icon.ico` generated from `System/Documentation/Images/NCD Photo Markup Icon v1.5.png`
+  - Increased startup splash duration to `2200 ms` (centralized constant).
+  - Increased splash image footprint again to fill most of startup screen:
+    - `splashImageWidthFactor: 0.97`
+    - `splashImageHeightFactor: 0.88`
+  - Updated Windows runner show behavior to open maximized (startup-screen size) via `SW_MAXIMIZE`.
+  - Centralized tunable dimension values in constants (line color, stroke, endpoint sizes, drag threshold).
+- Validation Evidence:
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident -v`: `PASS`
+  - Final rerun after larger splash + startup maximize updates:
+    - `flutter pub get`: `PASS`
+    - `flutter analyze`: `PASS`
+    - `flutter test`: `PASS`
+    - `flutter build windows --debug`: `PASS`
+    - `flutter run -d windows --debug --no-resident`: `PASS`
+  - Commit-approval validation rerun (`2026-05-23`): `PASS`
+  - Screenshot artifact: `C:\apps\NCD_Photo_Markup\.agent_temp\screenshots\phase1c_dimension_overlay_artifact.png`
+  - Manual full interactive Open Photo + draw flow: `NOT_VALIDATED` in this environment
+  - Android runtime/device behavior: `NOT_VALIDATED`
+- Risks / Known Gaps:
+  - Full owner-interactive manual validation still required for complete field workflow confirmation.
+  - Other markup tools remain intentionally unimplemented.
 
 ## v0.3 - 2026-05-22
 - Owner: NCD / M

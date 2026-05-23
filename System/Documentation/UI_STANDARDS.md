@@ -1,12 +1,12 @@
 ﻿# UI Standards
 
 Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS.md`
-Version: `v0.3`
+Version: `v0.4`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Reconfirmed standards during Phase 1A.1 lean-root/governance sync; no new UI pattern introduced.
+Changes: Added Phase 1C startup maximize behavior and near-full-screen splash scaling note.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -18,20 +18,27 @@ Changes: Reconfirmed standards during Phase 1A.1 lean-root/governance sync; no n
 - Neutral surface for tool strips: `#F2FAFE`
 - Typography: `Default Flutter Material typography for now`
 - Touch target minimum: `56px` height for primary toolbar buttons
-- Component reuse: `Use shared toolbar placeholder button pattern`
+- Component reuse: `Use shared toolbar action button pattern with selected/disabled states`
+- Dimension line color baseline: `#005C85`
+- Dimension stroke baseline: `3px` with endpoint markers
+- Startup splash and app-bar icon should use app-local branding assets, not doc-folder runtime paths.
+- Startup splash should visually occupy most of the launch window while keeping full image visible (`BoxFit.contain`).
 
 ## Accessibility/Usability
 - Large tap targets for tablet use.
 - High contrast between action color and content surfaces.
 - Keep the empty state explicit and safe.
+- Selected tool state must remain visually distinguishable for field use.
 
 ## Governance Notes
 - Do not hard-code business label presets; use configurable presets/favorites later.
 - Keep future Control Center integration behind a separate adapter/service.
 
-## Phase 1A.1 Review Note
-- UI standards remain active and unchanged.
-- This phase did not alter app visuals or interaction behavior.
+## Phase 1C Review Note
+- Added selected-state styling pattern for tool buttons.
+- Added baseline visual pattern for dimension lines and endpoint markers.
+- Added pattern rule: overlay drawings must remain inside displayed image bounds.
+- Other tool visuals remain placeholders.
 
 
 
