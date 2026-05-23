@@ -1,7 +1,7 @@
 ﻿# Runtime Startup Smoke Test
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\RUNTIME_STARTUP_SMOKE_TEST.md`
-Version: `v0.2`
+Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
@@ -33,4 +33,5 @@ Changes: Recorded successful Phase 1A startup run and screenshot evidence.
 - Blocking Errors Found: None
 - Result: PASS
 - Evidence Path: `C:\apps\NCD_Photo_Markup\.agent_temp\screenshots\phase1a_shell_startup.png`
+
 

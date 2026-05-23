@@ -1,7 +1,7 @@
 ﻿# Visual QA
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\VISUAL_QA.md`
-Version: `v0.2`
+Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
@@ -19,5 +19,6 @@ Changes: Added Phase 1A shell visual evidence.
 | `App shell renders app bar with version` | `phase1a_shell_startup.png` | `PASS` | `Title + version visible` |
 | `Canvas placeholder and empty-state message visible` | `phase1a_shell_startup.png` | `PASS` | `Message text matches requirement` |
 | `Bottom touch toolbar placeholders visible` | `phase1a_shell_startup.png` | `PASS` | `All requested placeholder actions present` |
+
 
 

@@ -1,14 +1,14 @@
 ﻿# Changelog
 
 Document Path: `C:\apps\NCD_Photo_Markup\CHANGELOG.md`
-Version: `v0.2`
+Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1B image import entry (no version bump).
+Changes: Released Phase 1B image import at v0.3 and recorded version bump.
 
-## Unreleased - 2026-05-22 (Phase 1B)
+## v0.3 - 2026-05-22
 - Owner: NCD / M
 - Author: Codex
 - Type: Feature
@@ -24,6 +24,7 @@ Changes: Added Phase 1B image import entry (no version bump).
   - Displayed selected image in canvas using contain-fit/aspect-preserving behavior.
   - Added loaded-photo filename indicator and field-safe load-failure messaging.
   - Kept all non-Open toolbar actions as placeholders.
+  - Bumped visible app/docs version to `v0.3`.
 - Validation Evidence:
   - `flutter pub get`: `PASS`
   - `flutter analyze`: `PASS`
@@ -84,3 +85,6 @@ Changes: Added Phase 1B image import entry (no version bump).
   - Flutter runtime/build validation not run because app code is not created yet.
 - Rollback / Recovery Notes:
   - Remove `C:\apps\NCD_Photo_Markup` folder if bootstrap must be restarted from scratch.
+
+
+

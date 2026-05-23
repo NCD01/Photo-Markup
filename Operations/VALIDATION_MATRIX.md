@@ -1,7 +1,7 @@
 ﻿# Validation Matrix
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\VALIDATION_MATRIX.md`
-Version: `v0.2`
+Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
@@ -24,3 +24,4 @@ Changes: Recorded Phase 1B image import validation results.
 | `VAL-011` | Temporary Artifact Review | `Folder review (.agent_temp)` | Temp files created | Temp files in approved folder | `NCD / M` | `PASS` | `.agent_temp/screenshots + .agent_temp/scratch` |
 | `VAL-012` | Manual Picker Cancel/Select Flow | Interactive: open app, cancel picker, reopen picker, select JPG/PNG | Image import flow changes | Cancel is graceful and selected image displays via picker | `NCD / M` | `NOT_VALIDATED` | `Automation blocked by OS SendKeys access denied; owner interactive pass required` |
 | `VAL-013` | Android Runtime/Device Behavior | Android device/emulator runtime test | Platform behavior changes | App launches and imports image on Android | `NCD / M` | `NOT_VALIDATED` | `Not executed in this phase` |
+

@@ -1,7 +1,7 @@
 ﻿# Form Definitions
 
 Document Path: `C:\apps\NCD_Photo_Markup\FORM_DEFINITIONS.md`
-Version: `v0.2`
+Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
@@ -55,3 +55,4 @@ Changes: Added Phase 1B image import behavior details.
 | `Open Photo Action` | `Photo Markup Shell` | `Launch picker and request image file` | `app/lib/main.dart` |
 | `Canvas Image View` | `Photo Canvas Area` | `Render selected photo with BoxFit.contain` | `app/lib/main.dart` |
 | `Touch Toolbar` | `Photo Markup Shell` | `Expose tool/action placeholders` | `app/lib/main.dart` |
+

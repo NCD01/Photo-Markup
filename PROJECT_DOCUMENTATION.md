@@ -1,7 +1,7 @@
 ﻿# Project Documentation
 
 Document Path: `C:\apps\NCD_Photo_Markup\PROJECT_DOCUMENTATION.md`
-Version: `v0.2`
+Version: `v0.3`
 Pack File Version: `v1.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
@@ -79,9 +79,11 @@ Required sections are present and updated through Phase 1B.
 | `RISK-003` | `Manual picker cancel/select steps not fully automatable in this environment` | `Codex` | `Next interactive validation` | `OS SendKeys blocked` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.2`.
+- App bar shows `NCD Photo Markup` and `v0.3`.
 - If no image loaded, canvas shows: `Open or import a photo to start marking it up.`
 - Open Photo launches picker for `jpg`, `jpeg`, `png`, `webp`.
 - Loaded photo is displayed in-canvas with preserved aspect ratio and contain fit.
 - Loaded-photo indicator shows selected file name.
 - Unsupported/unreadable image shows field-safe error message.
+
+

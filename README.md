@@ -1,7 +1,7 @@
 ﻿# NCD Photo Markup
 
 Document Path: `C:\apps\NCD_Photo_Markup\README.md`
-Version: `v0.2`
+Version: `v0.3`
 Pack File Version: `v1.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
@@ -38,7 +38,9 @@ Optional validation-only startup image preload:
 - `file_selector` for Windows-compatible image picking.
 
 ## Version Rules
-- Current version: `v0.2`
-- Use two-part versions only (`v0.1`, `v0.2`, `v0.3`, ...)
+- Current version: `v0.3`
+- Use two-part versions only (`v0.1`, `v0.2`, `v0.3`, `v0.4`, ...)
 - Do not bump version before owner validation/approval.
+
+
 

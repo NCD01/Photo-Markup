@@ -1,7 +1,7 @@
 ﻿# TODO Register
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\TODO_REGISTER.md`
-Version: `v0.2`
+Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
@@ -24,6 +24,8 @@ Changes: Marked Phase 1B image import complete and queued follow-up validation/t
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
 |---|---|---|---|---|---|
-| `1` | `Runtime` | `Phase 1B image import` | `Done` | `Validation run complete` | `Unreleased changelog entry + phase1b screenshot` |
+| `1` | `Runtime` | `Phase 1B image import` | `Done` | `Validation run complete` | `Changelog v0.3 entry + phase1b screenshot` |
 | `2` | `Manual QA` | `Interactive picker cancel/select validation` | `Open` | `Owner interactive pass` | `Pending` |
 | `3` | `MVP Tools` | `Begin markup tool behavior` | `Open` | `Owner approval for next phase` | `Not started` |
+
+

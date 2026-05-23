@@ -204,7 +204,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
             padding: EdgeInsets.only(right: 16),
             child: Center(
               child: Text(
-                'v0.2',
+                'v0.3',
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -378,3 +378,4 @@ class _ToolbarPlaceholderButton extends StatelessWidget {
     );
   }
 }
+

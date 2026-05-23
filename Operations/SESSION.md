@@ -1,7 +1,7 @@
 ﻿# Session Log
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\SESSION.md`
-Version: `v0.2`
+Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
@@ -133,3 +133,4 @@ Changes: Added Phase 1A Flutter app shell session.
 - Assumptions made: NONE
 - Unknowns remaining: Manual picker path UX under owner interactive run
 - Governance conflicts: NONE
+
