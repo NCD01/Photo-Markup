@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Track planned and in-progress work items.
-Changes: Marked Phase 1A shell bootstrap complete and queued next items.
+Changes: Marked Phase 1B image import complete and queued follow-up validation/tool work.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -18,13 +18,12 @@ Changes: Marked Phase 1A shell bootstrap complete and queued next items.
 | `TODO-001` | `Bootstrap` | `Finalize Phase 0 governance baseline` | `High` | `NCD / M` | `Done` | `DECISION-001` | `2026-05-22` |
 | `TODO-002` | `Flutter Setup` | `Create Flutter app shell (no feature tooling yet)` | `High` | `NCD / M` | `Done` | `DECISION-002` | `2026-05-22` |
 | `TODO-003` | `MVP Tools` | `Implement Dimension Line and Arrow as separate tools` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
-| `TODO-004` | `Shell UX` | `Add non-functional placeholder wiring/state model for toolbar selection` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-004` | `Image Import` | `Implement Open Photo import to canvas with safe error handling` | `High` | `NCD / M` | `Done` | `N/A` | `2026-05-22` |
+| `TODO-005` | `Manual QA` | `Owner-side interactive picker validation (cancel/select JPG/PNG)` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
 |---|---|---|---|---|---|
-| `1` | `Runtime` | `Phase 1A Flutter shell` | `Done` | `Owner approval` | `Changelog v0.2 entry + screenshot` |
-| `2` | `Docs` | `Phase 1A docs/validation update` | `Done` | `Validation complete` | `SESSION_2026-05-22_0002_phase1a_shell` |
-| `3` | `MVP Tools` | `Begin behavior implementation` | `Open` | `Owner approval for next phase` | `Not started` |
-
-
+| `1` | `Runtime` | `Phase 1B image import` | `Done` | `Validation run complete` | `Unreleased changelog entry + phase1b screenshot` |
+| `2` | `Manual QA` | `Interactive picker cancel/select validation` | `Open` | `Owner interactive pass` | `Pending` |
+| `3` | `MVP Tools` | `Begin markup tool behavior` | `Open` | `Owner approval for next phase` | `Not started` |

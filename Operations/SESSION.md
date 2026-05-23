@@ -82,3 +82,54 @@ Changes: Added Phase 1A Flutter app shell session.
 - Unknowns remaining: NONE
 - Governance conflicts: NONE
 
+
+# SESSION_2026-05-22_0003_phase1b_image_import
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Implement Phase 1B image import so Open Photo can load and display images in the canvas.
+
+## Actions
+- Confirmed clean git status before edits.
+- Added `file_selector` dependency for Windows-compatible file picking.
+- Implemented stateful image import flow in `app/lib/main.dart`.
+- Made Open Photo functional while keeping all other toolbar actions as placeholders.
+- Added support checks for jpg/jpeg/png/webp and safe load-failure messaging.
+- Added loaded-photo filename indicator.
+- Kept no-copy/no-save behavior (runtime file path only).
+- Ran validation commands and captured loaded-image screenshot evidence.
+
+## Files Changed
+- `app/lib/main.dart`
+- `app/pubspec.yaml`
+- `app/pubspec.lock`
+- `app/test/widget_test.dart`
+- Required governance/project docs for Phase 1B
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- Runtime startup smoke: `PASS`
+- Loaded-image screenshot: `C:\apps\NCD_Photo_Markup\.agent_temp\screenshots\phase1b_loaded_image.png`
+- Manual picker automation: `NOT_VALIDATED` (`SendKeys` access denied in this environment)
+- Android runtime behavior: `NOT_VALIDATED`
+
+## Risks/Blockers
+- Owner interactive picker validation still needed for full manual flow confirmation.
+
+## Next Exact Action
+- Wait for owner validation before any commit/version bump.
+
+## Closeout
+- Status: COMPLETE
+- Response style used: CONCISE
+- Assumptions made: NONE
+- Unknowns remaining: Manual picker path UX under owner interactive run
+- Governance conflicts: NONE

@@ -6,7 +6,38 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Canonical changelog for project changes.
-Changes: Released Phase 1A shell at v0.2 and recorded version bump.
+Changes: Added Phase 1B image import entry (no version bump).
+
+## Unreleased - 2026-05-22 (Phase 1B)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Add image import/open-photo behavior to the canvas without implementing markup tools yet.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/pubspec.yaml`, `app/pubspec.lock`
+  - `app/test/widget_test.dart`
+  - Required project/governance docs
+- Changes:
+  - Made `Open Photo` button functional via `file_selector`.
+  - Added supported image extension handling (`jpg`, `jpeg`, `png`, `webp`).
+  - Displayed selected image in canvas using contain-fit/aspect-preserving behavior.
+  - Added loaded-photo filename indicator and field-safe load-failure messaging.
+  - Kept all non-Open toolbar actions as placeholders.
+- Validation Evidence:
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - Startup smoke: `PASS`
+  - Loaded-image screenshot: `C:\apps\NCD_Photo_Markup\.agent_temp\screenshots\phase1b_loaded_image.png`
+  - Manual picker cancel/select automation: `NOT_VALIDATED` (OS keyboard automation blocked)
+  - Android runtime/device behavior: `NOT_VALIDATED`
+- Risks / Known Gaps:
+  - Markup tool behavior still intentionally unimplemented.
+  - Manual picker click/cancel/select flow still needs owner-side interactive validation.
+- Rollback / Recovery Notes:
+  - Revert `app/lib/main.dart` + `file_selector` dependency changes and related docs.
 
 ## v0.2 - 2026-05-22
 - Owner: NCD / M
@@ -53,6 +84,3 @@ Changes: Released Phase 1A shell at v0.2 and recorded version bump.
   - Flutter runtime/build validation not run because app code is not created yet.
 - Rollback / Recovery Notes:
   - Remove `C:\apps\NCD_Photo_Markup` folder if bootstrap must be restarted from scratch.
-
-
-
