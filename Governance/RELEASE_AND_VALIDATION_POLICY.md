@@ -1,4 +1,4 @@
-# Release and Validation Policy
+﻿# Release and Validation Policy
 
 Document Path: `<PRIMARY_PATH>/Governance/RELEASE_AND_VALIDATION_POLICY.md`
 Version: `<VERSION>`
@@ -13,7 +13,7 @@ Changes: Added v1.5 separate workstream, data, UI, and version bump commit guida
 - No release without validation evidence.
 - No undocumented behavior change.
 - No unresolved release-blocking defect without waiver.
-- Validation commands must be copied exactly from `APP_PROFILE.md` or the validation matrix.
+- Validation commands must be copied exactly from `System/Documentation/APP_PROFILE.md` or the validation matrix.
 - If a command cannot be run, record why and who owns follow-up.
 - Build success does not equal app validation.
 - Runtime startup validation is required when a change can affect app launch, assets, routing, configuration, storage, platform setup, engine initialization, dependency loading, or the first user-visible screen.
@@ -157,4 +157,5 @@ When applicable, separate these into distinct commits:
 - version bump commits
 
 Do not mix UI modernization with business-logic fixes unless the owner explicitly approves. If live data is changed during validation, follow the project backup and data-commit rules before committing code.
+
 

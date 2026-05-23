@@ -1,4 +1,4 @@
-# UI DTO Alignment Template
+﻿# UI DTO Alignment Template
 
 Document Path: `<PRIMARY_PATH>/Templates/UI_Module/DTO_ALIGNMENT.md`
 Version: `<VERSION>`
@@ -41,3 +41,4 @@ For each DTO include:
 - [ ] Mapping rules are complete.
 - [ ] Compatibility notes are present for changed DTOs.
 - [ ] Migration notes exist for renamed/removed fields.
+

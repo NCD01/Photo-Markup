@@ -1,4 +1,4 @@
-# Coder Coordination Template
+﻿# Coder Coordination Template
 
 Document Path: `<PRIMARY_PATH>/Operations/CODER_COORDINATION_TEMPLATE.md`
 Version: `<VERSION>`
@@ -77,3 +77,4 @@ Next action:
 - [ ] Files are not mixed across coders.
 - [ ] Commit plan separates UI, business logic, data, docs, and version bump.
 - [ ] Other active coder is told to sync after pushes.
+

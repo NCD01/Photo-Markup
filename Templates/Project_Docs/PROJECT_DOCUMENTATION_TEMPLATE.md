@@ -1,6 +1,6 @@
-# Project Documentation Template
+﻿# Project Documentation Template
 
-Document Path: `<PRIMARY_PATH>/PROJECT_DOCUMENTATION_TEMPLATE.md`
+Document Path: `<PRIMARY_PATH>/Templates/Project_Docs/PROJECT_DOCUMENTATION_TEMPLATE.md`
 Version: `<VERSION>`
 Pack File Version: `v1.3`
 Owner: `<OWNER>`
@@ -88,3 +88,4 @@ Document user-visible behavior that must be preserved:
 - desktop window requirements when applicable
 - map/canvas/game coordinate system when applicable
 - visual QA evidence requirements
+

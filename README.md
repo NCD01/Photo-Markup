@@ -2,26 +2,35 @@
 
 Document Path: `C:\apps\NCD_Photo_Markup\README.md`
 Version: `v0.3`
-Pack File Version: `v1.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
-Purpose: Project entry point and setup for the Windows-first Flutter app.
-Changes: Added Phase 1B image import setup and validation notes.
+Purpose: Lean root repo map and quick start for the standalone Flutter app.
+Changes: Added governance tunable-constants references and scripts/version governance map.
 
-## Overview
-NCD Photo Markup is a standalone Flutter field markup app. Current runtime supports opening a local photo into the canvas (Windows-first) with placeholder-only markup controls.
+## Repo Map
+- `app/`: Flutter runtime app (Windows-first currently).
+- `System/Documentation/`: project-level working docs.
+- `Governance/`: governance and policy documents.
+- `Operations/`: operational logs, validation, and checklist docs.
+- `Templates/`: reusable documentation templates.
+- `scripts/`: governance hook/version scripts.
+- `.agent_temp/`: ignored temporary artifacts.
+- `VERSION`: repo version file for push-hook/version governance.
 
-## Current Status
-- Governance/documentation baseline exists (Phase 0).
-- Flutter shell exists (Phase 1A).
-- Open Photo imports and displays local image in canvas (Phase 1B).
-- Markup/drawing tool behavior is still not implemented.
-
-## Repository Layout
-- Governance/docs root: `C:\apps\NCD_Photo_Markup`
-- Flutter app root: `C:\apps\NCD_Photo_Markup\app`
-- Temp artifacts: `C:\apps\NCD_Photo_Markup\.agent_temp`
+## Key Documents
+- `System/Documentation/APP_PROFILE.md`
+- `System/Documentation/PROJECT_DOCUMENTATION.md`
+- `System/Documentation/CHANGELOG.md`
+- `System/Documentation/UI_STANDARDS.md`
+- `System/Documentation/UI_STANDARDS_SELECTION_FORM.md`
+- `Governance/MASTER_GUIDELINE.md`
+- `Governance/AGENT_BASELINE.md`
+- `Governance/CODE_FILE_STRUCTURE_POLICY.md`
+- `Governance/Language_Addendums/DART_FLUTTER_ADDENDUM.md`
+- `Governance/Examples/CONSTANT_BLOCKS_EXAMPLE.md`
+- `Operations/VALIDATION_MATRIX.md`
+- `Operations/TODO_REGISTER.md`
 
 ## Run and Validate
 From `C:\apps\NCD_Photo_Markup\app`:
@@ -31,16 +40,11 @@ From `C:\apps\NCD_Photo_Markup\app`:
 - `flutter build windows --debug`
 - `flutter run -d windows --debug --no-resident`
 
-Optional validation-only startup image preload:
-- `flutter run -d windows --debug --no-resident --dart-define=NCD_STARTUP_IMAGE_PATH=[ABSOLUTE_IMAGE_PATH]`
-
-## Dependencies Added in Phase 1B
-- `file_selector` for Windows-compatible image picking.
+## Governance Commands
+- `powershell -ExecutionPolicy Bypass -File scripts/setup-git-hooks.ps1`
+- `powershell -ExecutionPolicy Bypass -File scripts/bump-version.ps1 -Bump minor -Reason "<reason>"`
 
 ## Version Rules
 - Current version: `v0.3`
 - Use two-part versions only (`v0.1`, `v0.2`, `v0.3`, `v0.4`, ...)
 - Do not bump version before owner validation/approval.
-
-
-

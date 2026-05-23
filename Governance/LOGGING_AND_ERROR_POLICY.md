@@ -1,4 +1,4 @@
-# Logging and Error Policy
+﻿# Logging and Error Policy
 
 Document Path: `<PRIMARY_PATH>/Governance/LOGGING_AND_ERROR_POLICY.md`
 Version: `<VERSION>`
@@ -134,3 +134,4 @@ Anti-patterns:
 - [ ] Runtime log review was performed when runtime validation was required.
 - [ ] Blocking startup/runtime patterns were checked.
 - [ ] Retention and cleanup behavior documented.
+

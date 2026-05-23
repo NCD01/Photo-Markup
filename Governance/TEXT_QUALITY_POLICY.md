@@ -1,4 +1,4 @@
-# Text Quality Policy
+﻿# Text Quality Policy
 
 Document Path: `<PRIMARY_PATH>/Governance/TEXT_QUALITY_POLICY.md`
 Version: `<VERSION>`
@@ -42,3 +42,4 @@ Required process for wording updates:
 - [ ] Protected identifiers unchanged or formally migrated.
 - [ ] As-is exceptions documented when used.
 - [ ] Change summary records text-quality decisions.
+

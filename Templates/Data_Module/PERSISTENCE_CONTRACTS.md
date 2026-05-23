@@ -1,4 +1,4 @@
-# Data Persistence Contracts Template
+﻿# Data Persistence Contracts Template
 
 Document Path: `<PRIMARY_PATH>/Templates/Data_Module/PERSISTENCE_CONTRACTS.md`
 Version: `<VERSION>`
@@ -30,3 +30,4 @@ Changes: Initial data persistence template added.
 - [ ] Migration path is documented for changed data.
 - [ ] Backup and recovery steps are testable.
 - [ ] Retention and cleanup rules are defined.
+

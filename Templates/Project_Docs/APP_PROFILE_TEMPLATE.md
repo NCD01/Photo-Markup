@@ -1,6 +1,6 @@
-# App Profile Template
+﻿# App Profile Template
 
-Document Path: `<PRIMARY_PATH>/APP_PROFILE_TEMPLATE.md`
+Document Path: `<PRIMARY_PATH>/Templates/Project_Docs/APP_PROFILE_TEMPLATE.md`
 Version: `<VERSION>`
 Pack File Version: `v1.5`
 Owner: `<OWNER>`
@@ -143,8 +143,8 @@ Source control rule:
 ## Documentation Map
 | Document | Canonical Path | Notes |
 |---|---|---|
-| Master Guideline | `<PRIMARY_PATH>/MASTER_GUIDELINE.md` | `<NOTES>` |
-| Changelog | `<PRIMARY_PATH>/CHANGELOG.md` | `<NOTES>` |
+| Master Guideline | `<PRIMARY_PATH>/Governance/MASTER_GUIDELINE.md` | `<NOTES>` |
+| Changelog | `<PRIMARY_PATH>/System/Documentation/CHANGELOG.md` | `<NOTES>` |
 | Decision Log | `<PRIMARY_PATH>/Operations/DECISION_LOG.md` | `<NOTES>` |
 | Validation Matrix | `<PRIMARY_PATH>/Operations/VALIDATION_MATRIX.md` | `<NOTES>` |
 | Runtime Startup Smoke Test | `<PRIMARY_PATH>/Operations/RUNTIME_STARTUP_SMOKE_TEST.md` | `<NOTES>` |
@@ -189,4 +189,6 @@ Project-specific communication notes:
 | Required Data Backup Scope | `<DATA_CONFIG_SYSTEM_DATA_OR_OTHER>` |
 
 Data handling must be project-specific. Agents must not assume that `Data/` changes are disposable; the owner must define whether data changes are kept, reverted, or backed up and committed separately.
+
+
 

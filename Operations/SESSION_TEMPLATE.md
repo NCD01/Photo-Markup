@@ -1,4 +1,4 @@
-# Session Template
+﻿# Session Template
 
 Document Path: `<PRIMARY_PATH>/Operations/SESSION_TEMPLATE.md`
 Version: `<VERSION>`
@@ -80,4 +80,5 @@ When multiple coders/agents are active, each session must record:
 - git status at start
 - whether another coder pushed during the session
 - final sync requirement for other coders
+
 

@@ -1,6 +1,6 @@
-# Release Readiness Checklist Template
+﻿# Release Readiness Checklist Template
 
-Document Path: `<PRIMARY_PATH>/Operations/CHECKLIST_RELEASE_READINESS.md`
+Document Path: `C:\apps\NCD_Photo_Markup\Operations\CHECKLIST_RELEASE_READINESS.md`
 Version: `<VERSION>`
 Pack File Version: `v1.3`
 Owner: `<OWNER>`
@@ -75,3 +75,4 @@ Post-release readiness:
 - [ ] Temporary screenshots/diagnostics/scratch files were stored in the approved temp folder.
 - [ ] Temporary folder is ignored by source control unless approved otherwise.
 - [ ] Temporary files were cleaned up or summarized in the handoff.
+

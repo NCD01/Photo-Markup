@@ -1,12 +1,45 @@
 ﻿# Changelog
 
-Document Path: `C:\apps\NCD_Photo_Markup\CHANGELOG.md`
+Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Canonical changelog for project changes.
-Changes: Released Phase 1B image import at v0.3 and recorded version bump.
+Changes: Added uncommitted Phase 1A.1 lean-root/governance-sync structural update notes (no version bump).
+
+## Unreleased - 2026-05-22
+- Owner: NCD / M
+- Author: Codex
+- Type: Structural/Documentation
+- Reason: Continue approved dirty-state lean-root cleanup and apply governance sync requirements.
+- Scope:
+  - Root structure cleanup and moved-document reference alignment
+  - Governance hook/script sync and setup
+  - Operations validation/session/todo records
+  - Tunable constants governance adoption for Flutter shell
+- Changes:
+  - Synced governance hook/script artifacts from `C:\Games\Governance` (`main` at `bdd94db`).
+  - Set hook path through `scripts/setup-git-hooks.ps1` to `Governance/.githooks`.
+  - Updated `scripts/bump-version.ps1` doc output paths to `System/Documentation/`.
+  - Removed duplicate root `.githooks` after confirming governed hook location.
+  - Adopted updated tunable-constants governance files:
+    - `Governance/CODE_FILE_STRUCTURE_POLICY.md`
+    - `Governance/Language_Addendums/DART_FLUTTER_ADDENDUM.md`
+    - `Governance/Examples/CONSTANT_BLOCKS_EXAMPLE.md`
+  - Centralized shell tunable values into `app/lib/core/constants/app_constants.dart`.
+  - Updated `app/lib/main.dart` to consume centralized constants without behavior changes.
+  - Revalidated Flutter analyze/test/build/startup smoke.
+- Validation Evidence:
+  - `git pull` governance source: `PASS` (`Already up to date`)
+  - Hook setup command: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+- Risks / Known Gaps:
+  - Android runtime behavior remains `NOT_VALIDATED`.
+  - No feature behavior changes are included.
 
 ## v0.3 - 2026-05-22
 - Owner: NCD / M
@@ -85,6 +118,7 @@ Changes: Released Phase 1B image import at v0.3 and recorded version bump.
   - Flutter runtime/build validation not run because app code is not created yet.
 - Rollback / Recovery Notes:
   - Remove `C:\apps\NCD_Photo_Markup` folder if bootstrap must be restarted from scratch.
+
 
 
 

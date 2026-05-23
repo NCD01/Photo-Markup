@@ -1,4 +1,4 @@
-# Decision Log Template
+﻿# Decision Log Template
 
 Document Path: `<PRIMARY_PATH>/Operations/DECISION_LOG_TEMPLATE.md`
 Version: `<VERSION>`
@@ -45,3 +45,4 @@ Use this entry block:
 - [ ] Alternatives are meaningful.
 - [ ] Rollback/reversal is actionable.
 - [ ] Related changes are linked.
+

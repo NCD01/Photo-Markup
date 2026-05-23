@@ -1,4 +1,4 @@
-# Game UI Runtime Addendum
+﻿# Game UI Runtime Addendum
 
 Document Path: `<PRIMARY_PATH>/Governance/Language_Addendums/GAME_UI_RUNTIME_ADDENDUM.md`
 Version: `<VERSION>`
@@ -50,3 +50,4 @@ When a task affects visuals or gameplay alignment, provide:
 - [ ] Runtime positions and visual positions match.
 - [ ] Responsive resize behavior is validated where applicable.
 - [ ] Screenshot evidence is recorded.
+

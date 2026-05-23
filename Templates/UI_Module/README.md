@@ -1,4 +1,4 @@
-# UI Module README Template
+﻿# UI Module README Template
 
 Document Path: `<PRIMARY_PATH>/Templates/UI_Module/README.md`
 Version: `<VERSION>`
@@ -28,7 +28,7 @@ Required companion docs:
 - `FUNCTIONS.md`
 - `TESTING.md`
 - `DTO_ALIGNMENT.md`
-- `CHANGELOG.md`
+- `System/Documentation/CHANGELOG.md`
 
 ## Detailed Guidance
 - Scope should state what this module does and does not do.
@@ -50,4 +50,5 @@ Recommended companion docs for UI modules:
 - `FORM_DEFINITIONS_TEMPLATE.md`
 
 Use UI standards and token docs before broad visual changes. Use form definitions to document forms/screens, child components, routes, services, and data sources.
+
 

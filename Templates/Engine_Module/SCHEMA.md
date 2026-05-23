@@ -1,4 +1,4 @@
-# Engine Schema Template
+﻿# Engine Schema Template
 
 Document Path: `<PRIMARY_PATH>/Templates/Engine_Module/SCHEMA.md`
 Version: `<VERSION>`
@@ -39,3 +39,4 @@ For each schema item include:
 - [ ] Validation rules are testable.
 - [ ] Migration notes exist for changed contracts.
 - [ ] Serialization/persistence keys are documented.
+

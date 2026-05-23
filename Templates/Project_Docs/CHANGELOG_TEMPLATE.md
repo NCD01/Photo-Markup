@@ -1,6 +1,6 @@
-# Changelog Template
+﻿# Changelog Template
 
-Document Path: `<PRIMARY_PATH>/CHANGELOG_TEMPLATE.md`
+Document Path: `<PRIMARY_PATH>/Templates/Project_Docs/CHANGELOG_TEMPLATE.md`
 Version: `<VERSION>`
 Owner: `<OWNER>`
 Last Updated By: `<LAST_UPDATED_BY>`
@@ -52,3 +52,4 @@ Use this entry block for every change:
 - [ ] Validation evidence is concrete.
 - [ ] Risks/gaps are explicit.
 - [ ] Rollback or recovery notes are executable.
+

@@ -1,4 +1,4 @@
-# TODO Register Template
+﻿# TODO Register Template
 
 Document Path: `<PRIMARY_PATH>/Operations/TODO_REGISTER_TEMPLATE.md`
 Version: `<VERSION>`
@@ -40,4 +40,5 @@ Rules:
 - Do not jump ahead unless the owner changes priority.
 - Keep unrelated parked actions visible so they are not lost.
 - Record whether an item is audit-only, implementation, validation, or commit/closeout.
+
 

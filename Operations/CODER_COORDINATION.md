@@ -25,3 +25,4 @@ Changes: Initialized coordination baseline.
 - Do not start with unexplained dirty files.
 - Separate runtime/data/settings, code/docs/tests, and version bump commits.
 - Do not commit or push without explicit owner approval.
+

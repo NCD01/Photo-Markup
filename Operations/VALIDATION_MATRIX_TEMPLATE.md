@@ -1,4 +1,4 @@
-# Validation Matrix Template
+﻿# Validation Matrix Template
 
 Document Path: `<PRIMARY_PATH>/Operations/VALIDATION_MATRIX_TEMPLATE.md`
 Version: `<VERSION>`
@@ -112,7 +112,7 @@ Do not paste full logs into the matrix. Link or reference the evidence path and 
 
 ## Verification Gate
 - [ ] Every critical module has validation coverage.
-- [ ] Commands match `APP_PROFILE.md`.
+- [ ] Commands match `System/Documentation/APP_PROFILE.md`.
 - [ ] Runtime startup smoke test exists for apps with a runtime UI/service/game loop.
 - [ ] Visual QA row exists for UI/game/user-visible work.
 - [ ] Responsive layout row exists for screen resize or desktop window work.
@@ -120,3 +120,4 @@ Do not paste full logs into the matrix. Link or reference the evidence path and 
 - [ ] Last result is current for release-impacting checks.
 - [ ] Evidence paths are valid.
 - [ ] No full green light is reported when required runtime validation is missing.
+

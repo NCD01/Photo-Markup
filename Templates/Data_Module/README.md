@@ -1,4 +1,4 @@
-# Data Module README Template
+﻿# Data Module README Template
 
 Document Path: `<PRIMARY_PATH>/Templates/Data_Module/README.md`
 Version: `<VERSION>`
@@ -28,7 +28,7 @@ Required companion docs:
 - `FUNCTIONS.md`
 - `TESTING.md`
 - `DTO_ALIGNMENT.md`
-- `CHANGELOG.md`
+- `System/Documentation/CHANGELOG.md`
 
 ## Detailed Guidance
 - Scope should state what this module does and does not do.
@@ -41,3 +41,4 @@ Required companion docs:
 - [ ] Companion docs exist and are populated.
 - [ ] Interfaces match implementation contracts.
 - [ ] Data/logging/error responsibilities are clear.
+

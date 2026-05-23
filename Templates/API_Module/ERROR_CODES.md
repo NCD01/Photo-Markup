@@ -1,4 +1,4 @@
-# API Error Codes Template
+﻿# API Error Codes Template
 
 Document Path: `<PRIMARY_PATH>/Templates/API_Module/ERROR_CODES.md`
 Version: `<VERSION>`
@@ -29,3 +29,4 @@ Changes: Initial API error code template added.
 - [ ] User-safe messages are clear.
 - [ ] Technical meanings are actionable.
 - [ ] Tests cover error paths.
+

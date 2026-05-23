@@ -1,6 +1,6 @@
 ﻿# Master Guideline 
 
-Document Path: `C:\apps\NCD_Photo_Markup/MASTER_GUIDELINE.md`
+Document Path: `C:\apps\NCD_Photo_Markup\Governance\MASTER_GUIDELINE.md`
 Version: `v0.1`
 Pack File Version: `v1.5`
 Owner: `NCD / M`
@@ -10,7 +10,7 @@ Purpose: Main policy entry point for `NCD Photo Markup` documentation, governanc
 Changes: Added v1.5 UI standards, form definitions, and multi-coder coordination requirements.
 
 ## Quick Rules
-- `APP_PROFILE.md` stores project facts; governance stores rules.
+- `System/Documentation/APP_PROFILE.md` stores project facts; governance stores rules.
 - Agent output must be concise, evidence-based, and free of unsupported assumptions.
 - No behavior change is complete without documentation, changelog, and validation evidence.
 - No release-impacting work is complete without rollback or recovery notes.
@@ -51,7 +51,7 @@ Minimum completion evidence for any code or documentation change:
 - Module docs must stay aligned with implementation contracts.
 - Protected public identifiers must not be renamed without migration notes and decision log entry.
 - If a requirement conflicts with a policy, record the decision and get owner approval before weakening protection.
-- Runtime startup requirements belong in `APP_PROFILE.md`, `Operations/VALIDATION_MATRIX.md`, and `Operations/RUNTIME_STARTUP_SMOKE_TEST.md` after adoption.
+- Runtime startup requirements belong in `System/Documentation/APP_PROFILE.md`, `Operations/VALIDATION_MATRIX.md`, and `Operations/RUNTIME_STARTUP_SMOKE_TEST.md` after adoption.
 
 ## Closeout Standard
 Before marking work complete, confirm:
@@ -69,7 +69,7 @@ If runtime startup validation was required but not performed, do not mark the wo
 
 ## Verification Gate
 - [ ] Governance links resolve.
-- [ ] Project facts are stored in `APP_PROFILE.md`.
+- [ ] Project facts are stored in `System/Documentation/APP_PROFILE.md`.
 - [ ] Completion evidence standard is followed.
 - [ ] Runtime startup validation is included in closeout when required.
 - [ ] Output discipline policy is included in active governance.
@@ -87,5 +87,7 @@ Projects using multiple agents must maintain a coordination record that identifi
 - sync/pull requirements before work continues
 
 Form/screen architecture should be tracked in a form definitions document. This document should map main forms/screens, child components, routes, related services, and data sources, without becoming a noisy inventory of every source file.
+
+
 
 

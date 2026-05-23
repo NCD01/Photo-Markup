@@ -1,4 +1,4 @@
-# Privacy and Data Handling Policy
+﻿# Privacy and Data Handling Policy
 
 Document Path: `<PRIMARY_PATH>/Governance/PRIVACY_AND_DATA_HANDLING_POLICY.md`
 Version: `<VERSION>`
@@ -47,8 +47,9 @@ Forbidden by default:
 - If a privacy requirement conflicts with a convenience workflow, privacy wins unless the owner explicitly approves a safer exception.
 
 ## Verification Gate
-- [ ] Data classification is documented in `APP_PROFILE.md`.
+- [ ] Data classification is documented in `System/Documentation/APP_PROFILE.md`.
 - [ ] Sensitive fields are identified and redacted where appropriate.
 - [ ] Test fixtures avoid real production data.
 - [ ] Retention and cleanup path is documented.
 - [ ] No secrets are present in docs, logs, or committed files.
+

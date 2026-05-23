@@ -1,6 +1,6 @@
-# New App Bootstrap Checklist Template
+﻿# New App Bootstrap Checklist Template
 
-Document Path: `<PRIMARY_PATH>/Operations/CHECKLIST_NEW_APP_BOOTSTRAP.md`
+Document Path: `C:\apps\NCD_Photo_Markup\Operations\CHECKLIST_NEW_APP_BOOTSTRAP.md`
 Version: `<VERSION>`
 Owner: `<OWNER>`
 Last Updated By: `<LAST_UPDATED_BY>`
@@ -16,7 +16,7 @@ Changes: Added data classification and validation setup.
 
 ## Required Contract
 - [ ] `<APP_NAME>` scope and owner confirmed.
-- [ ] `APP_PROFILE.md` created from template.
+- [ ] `System/Documentation/APP_PROFILE.md` created from template.
 - [ ] Governance files reviewed and accepted.
 - [ ] Module boundaries set (`UI`, `API`, `Engine`, `Data`, or project-specific replacements).
 - [ ] Placeholder token replacement pass completed.
@@ -39,3 +39,4 @@ Changes: Added data classification and validation setup.
 - [ ] Checklist fully complete.
 - [ ] Unchecked items have explicit deferral owner/date.
 - [ ] Bootstrap artifact set is committed and linked.
+

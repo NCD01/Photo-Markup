@@ -1,20 +1,20 @@
 # Dart and Flutter Addendum
 
-Document Path: `<PRIMARY_PATH>/Governance/Language_Addendums/DART_FLUTTER_ADDENDUM.md`
-Version: `<VERSION>`
-Pack File Version: `v1.3`
-Owner: `<OWNER>`
-Last Updated By: `Sarah`
-Last Updated: `2026-05-09`
+Document Path: `C:\apps\NCD_Photo_Markup\Governance\Language_Addendums\DART_FLUTTER_ADDENDUM.md`
+Version: `v0.3`
+Pack File Version: `v1.7`
+Owner: `NCD / M`
+Last Updated By: `Codex`
+Last Updated: `2026-05-22`
 Purpose: Optional Dart/Flutter-specific rules for apps using Flutter or Dart.
-Changes: Strengthened Flutter/Flame asset registry and path validation requirements.
+Changes: Adopted Dart/Flutter tunable-constants governance standard and aligned repo document references.
 
 ## Quick Rules
 - Use this addendum only for Dart/Flutter projects.
 - Keep widget layout constants centralized.
 - Avoid inline literals for repeatable UI values.
 - Keep UI, API, engine, and data concerns separated.
-- Run Flutter/Dart validation commands listed in `APP_PROFILE.md`.
+- Run Flutter/Dart validation commands listed in `System/Documentation/APP_PROFILE.md`.
 - Do not treat `flutter build` as proof that the app can launch.
 - Run a runtime startup smoke test when startup, assets, routes, platform setup, dependencies, or first screen/scene may be affected.
 
@@ -36,7 +36,7 @@ flutter build windows --debug
 flutter run -d windows --debug
 ```
 
-The final command may use a different target device/platform when documented in `APP_PROFILE.md`.
+The final command may use a different target device/platform when documented in `System/Documentation/APP_PROFILE.md`.
 
 ## Flutter Asset Validation
 Flutter and Flame asset paths must be documented and tested according to the app's asset-loading method.
@@ -98,6 +98,14 @@ For game apps, runtime validation must also confirm:
 ## Detailed Guidance
 - Shared values belong in global token classes when reused.
 - Feature-specific values may live in feature constants blocks.
+- Define a top-level file constants block (or feature config file) for tunable UI/behavior values that are expected to change.
+- Keep tunable constants grouped by domain, for example:
+  - timing/debounce/retry
+  - layout/spacing/sizing
+  - copy/labels/tooltips
+  - default sort/filter/paging values
+- Avoid repeating the same literal values across widgets/services. Promote repeated literals into constants.
+- Name constants for intent (for example `kAutosaveDebounceMs`) instead of raw value meaning.
 - Use stable DTOs between UI/API/Engine/Data layers.
 - Keep generated files and manual files clearly separated.
 - Document platform-specific behavior, especially Windows desktop vs mobile differences.
@@ -107,9 +115,10 @@ For game apps, runtime validation must also confirm:
 
 ## Verification Gate
 - [ ] Addendum is only active for Dart/Flutter projects.
-- [ ] Dart/Flutter commands are listed in `APP_PROFILE.md`.
-- [ ] Runtime startup command/method is listed in `APP_PROFILE.md`.
+- [ ] Dart/Flutter commands are listed in `System/Documentation/APP_PROFILE.md`.
+- [ ] Runtime startup command/method is listed in `System/Documentation/APP_PROFILE.md`.
 - [ ] UI layout constants are centralized.
+- [ ] Tunable Flutter/Dart values are centralized in constants/config blocks.
 - [ ] Asset path style is documented for the app.
 - [ ] Asset registry separates pubspec path, runtime key, and display name.
 - [ ] Module docs match implementation boundaries.

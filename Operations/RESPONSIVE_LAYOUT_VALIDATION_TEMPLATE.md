@@ -1,4 +1,4 @@
-# Responsive Layout Validation Template
+﻿# Responsive Layout Validation Template
 
 Document Path: `<PRIMARY_PATH>/Operations/RESPONSIVE_LAYOUT_VALIDATION_TEMPLATE.md`
 Version: `<VERSION>`
@@ -35,3 +35,4 @@ Changes: Initial v1.3 template.
 - [ ] Required content is not unintentionally cropped.
 - [ ] Primary controls remain visible and usable.
 - [ ] Gameplay/map/canvas alignment remains correct where applicable.
+

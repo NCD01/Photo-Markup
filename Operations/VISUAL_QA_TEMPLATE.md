@@ -1,4 +1,4 @@
-# Visual QA Template
+﻿# Visual QA Template
 
 Document Path: `<PRIMARY_PATH>/Operations/VISUAL_QA_TEMPLATE.md`
 Version: `<VERSION>`
@@ -40,3 +40,4 @@ Changes: Initial v1.3 template.
 - [ ] Acceptance criteria are compared one by one.
 - [ ] Owner approval status is recorded when required.
 - [ ] Visual blockers are listed or explicitly marked `None`.
+

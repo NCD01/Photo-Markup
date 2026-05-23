@@ -1,4 +1,4 @@
-# UI Design Tokens Template
+﻿# UI Design Tokens Template
 
 Document Path: `<PRIMARY_PATH>/Templates/UI_Module/DESIGN_TOKENS.md`
 Version: `<VERSION>`
@@ -59,4 +59,5 @@ The token layer should control:
 - hover/focus states
 
 Shared UI primitives must read from the global token layer. If a needed token does not exist, add it to the shared token file and document it in the UI standards document. Do not hard-code final design selections into individual screens or widgets.
+
 

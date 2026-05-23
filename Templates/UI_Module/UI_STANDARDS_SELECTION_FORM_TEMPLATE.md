@@ -1,4 +1,4 @@
-# UI Standards Selection Form Template
+﻿# UI Standards Selection Form Template
 
 Document Path: `<PRIMARY_PATH>/Templates/UI_Module/UI_STANDARDS_SELECTION_FORM_TEMPLATE.md`
 Version: `<VERSION>`
@@ -171,3 +171,4 @@ Notes: `<NOTES>`
 - [ ] Open questions are recorded.
 - [ ] Approved selections are reflected in UI standards.
 - [ ] Enforcement status is clear.
+

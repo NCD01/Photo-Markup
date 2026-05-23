@@ -1,4 +1,4 @@
-# Handoff Template
+﻿# Handoff Template
 
 Document Path: `<PRIMARY_PATH>/Operations/HANDOFF_TEMPLATE.md`
 Version: `<VERSION>`
@@ -136,4 +136,5 @@ Add these fields when more than one coder/agent is active:
 - Other coder current status: `<KNOWN_STATUS_OR_UNKNOWN>`
 - Pull/sync required before continuing: `<YES|NO>`
 - Dirty files classification: `<NONE_OR_LIST>`
+
 

@@ -1,4 +1,4 @@
-# Engine State Flow Template
+﻿# Engine State Flow Template
 
 Document Path: `<PRIMARY_PATH>/Templates/Engine_Module/STATE_FLOW.md`
 Version: `<VERSION>`
@@ -29,3 +29,4 @@ Changes: Initial engine state-flow template added.
 - [ ] Invalid transitions are documented or rejected.
 - [ ] Side effects are visible.
 - [ ] Logging/error behavior is testable.
+

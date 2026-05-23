@@ -1,12 +1,12 @@
 ﻿# UI Standards
 
-Document Path: `C:\apps\NCD_Photo_Markup\UI_STANDARDS.md`
+Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS.md`
 Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1A shell token usage and touch-target baseline.
+Changes: Reconfirmed standards during Phase 1A.1 lean-root/governance sync; no new UI pattern introduced.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -28,5 +28,10 @@ Changes: Added Phase 1A shell token usage and touch-target baseline.
 ## Governance Notes
 - Do not hard-code business label presets; use configurable presets/favorites later.
 - Keep future Control Center integration behind a separate adapter/service.
+
+## Phase 1A.1 Review Note
+- UI standards remain active and unchanged.
+- This phase did not alter app visuals or interaction behavior.
+
 
 

@@ -1,4 +1,4 @@
-# UI Module Changelog Template
+﻿# UI Module Changelog Template
 
 Document Path: `<PRIMARY_PATH>/Templates/UI_Module/CHANGELOG.md`
 Version: `<VERSION>`
@@ -15,7 +15,7 @@ Changes: Initial module template baseline.
 - Link to decision records when behavior contracts changed.
 
 ## Required Contract
-Use the standard changelog entry block from root `CHANGELOG_TEMPLATE.md`.
+Use the standard changelog entry block from `Templates/Project_Docs/CHANGELOG_TEMPLATE.md`.
 
 ## Detailed Guidance
 - Include module-specific impact and dependencies.
@@ -26,3 +26,4 @@ Use the standard changelog entry block from root `CHANGELOG_TEMPLATE.md`.
 - [ ] Entry schema is complete.
 - [ ] Version linkage to release docs is explicit.
 - [ ] Validation and rollback notes are included.
+

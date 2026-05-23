@@ -1,4 +1,4 @@
-# UI Testing Template
+﻿# UI Testing Template
 
 Document Path: `<PRIMARY_PATH>/Templates/UI_Module/TESTING.md`
 Version: `<VERSION>`
@@ -40,3 +40,4 @@ Include test matrix with:
 - [ ] Commands/methods are reproducible.
 - [ ] Known gaps are documented with owner/date.
 - [ ] Evidence paths are valid or intentionally marked N/A.
+

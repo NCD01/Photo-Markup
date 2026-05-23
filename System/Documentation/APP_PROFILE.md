@@ -1,13 +1,13 @@
 ﻿# App Profile
 
-Document Path: `C:\apps\NCD_Photo_Markup\APP_PROFILE.md`
+Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\APP_PROFILE.md`
 Version: `v0.3`
-Pack File Version: `v1.5`
+Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Store project-specific facts for NCD Photo Markup governance and validation.
-Changes: Updated for Phase 1A Flutter shell in app/ and validated command paths.
+Changes: Added tunable-constants governance references and centralized-constants validation command for Flutter code.
 
 ## Quick Rules
 - Keep this file current as source of truth for commands, paths, and validation.
@@ -49,7 +49,8 @@ Changes: Updated for Phase 1A Flutter shell in app/ and validated command paths.
 | Runtime log review | `Review flutter run/build terminal output` | `No blocking runtime errors found` |
 | Visual QA capture | `Capture screenshots to .agent_temp/screenshots` | `Evidence captured for UI changes` |
 | Responsive layout validation | `Manual resize/maximized checks` | `Controls visible and usable` |
-| Link/placeholders check | `rg "<[A-Z0-9_\\-/| ]+>" APP_PROFILE.md PROJECT_DOCUMENTATION.md README.md CHANGELOG.md MASTER_GUIDELINE.md AGENT_BASELINE.md Operations\*.md UI_STANDARDS.md FORM_DEFINITIONS.md` | `No unresolved placeholders` |
+| Link/placeholders check | `rg "<[A-Z0-9_\\-/| ]+>" README.md System\\Documentation\\*.md Governance\\*.md Operations\\*.md` | `No unresolved placeholders` |
+| Tunable constants check | `rg "NCD Photo Markup|v0.3|Open Photo|jpg|jpeg|png|webp|Could not open this image|009ADA" app/lib/main.dart` | `No repeated tunables left in app logic; values live in constants file` |
 
 ## Runtime Startup Smoke Test
 ### Required Startup Proof
@@ -107,8 +108,10 @@ Source control rule:
 ## Documentation Map
 | Document | Canonical Path | Notes |
 |---|---|---|
-| Master Guideline | `C:\apps\NCD_Photo_Markup\MASTER_GUIDELINE.md` | `Primary governance entry` |
-| Changelog | `C:\apps\NCD_Photo_Markup\CHANGELOG.md` | `Project version history` |
+| Master Guideline | `C:\apps\NCD_Photo_Markup\Governance\MASTER_GUIDELINE.md` | `Primary governance entry` |
+| Code File Structure Policy | `C:\apps\NCD_Photo_Markup\Governance\CODE_FILE_STRUCTURE_POLICY.md` | `Includes tunable constants standard` |
+| Dart/Flutter Addendum | `C:\apps\NCD_Photo_Markup\Governance\Language_Addendums\DART_FLUTTER_ADDENDUM.md` | `Flutter-specific constants/validation governance` |
+| Changelog | `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md` | `Project version history` |
 | Decision Log | `C:\apps\NCD_Photo_Markup\Operations\DECISION_LOG.md` | `Architecture/policy decisions` |
 | Validation Matrix | `C:\apps\NCD_Photo_Markup\Operations\VALIDATION_MATRIX.md` | `Validation tracking` |
 | Runtime Startup Smoke Test | `C:\apps\NCD_Photo_Markup\Operations\RUNTIME_STARTUP_SMOKE_TEST.md` | `Startup evidence` |
@@ -139,18 +142,20 @@ Project-specific communication notes:
 - [x] Environment map is complete.
 - [x] Documentation map points to real files.
 
-## v1.5 Coordination and Documentation Sources
+## v1.7 Coordination and Documentation Sources
 | Field | Value |
 |---|---|
 | Master Coordination Source | `C:\apps\NCD_Photo_Markup\Operations\CODER_COORDINATION.md` |
 | Active Workstreams | `Single-coder bootstrap (expand when multiple coders are active)` |
-| UI Standards Document | `C:\apps\NCD_Photo_Markup\UI_STANDARDS.md` |
-| UI Standards Selection Form | `C:\apps\NCD_Photo_Markup\Templates\UI_Module\UI_STANDARDS_SELECTION_FORM_TEMPLATE.md` |
-| Form Definitions Document | `C:\apps\NCD_Photo_Markup\FORM_DEFINITIONS.md` |
+| UI Standards Document | `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS.md` |
+| UI Standards Selection Form | `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS_SELECTION_FORM.md` |
+| Form Definitions Document | `C:\apps\NCD_Photo_Markup\System\Documentation\FORM_DEFINITIONS.md` |
 | TODO Register | `C:\apps\NCD_Photo_Markup\Operations\TODO_REGISTER.md` |
 | Live Data Commit Rule | `No live data yet; define before data files are introduced` |
 | Runtime/UI State Files | `To be defined once runtime/state files exist` |
 | Required Data Backup Scope | `To be defined before data/config commits` |
+
+
 
 
 

@@ -1,4 +1,4 @@
-# Form Definitions Template
+﻿# Form Definitions Template
 
 Document Path: `<PRIMARY_PATH>/Templates/UI_Module/FORM_DEFINITIONS_TEMPLATE.md`
 Version: `<VERSION>`
@@ -79,3 +79,4 @@ Use this section only for major shared widgets/services that are part of form be
 - [ ] Related services and data sources are listed.
 - [ ] Routes/navigation entries are listed.
 - [ ] This document has not become an all-file inventory.
+

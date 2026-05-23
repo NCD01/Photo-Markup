@@ -1,4 +1,4 @@
-# UI Standards Template
+﻿# UI Standards Template
 
 Document Path: `<PRIMARY_PATH>/Templates/UI_Module/UI_STANDARDS_TEMPLATE.md`
 Version: `<VERSION>`
@@ -146,3 +146,4 @@ Track decisions such as:
 - [ ] Source-of-truth implementation files are listed.
 - [ ] Open questions are recorded.
 - [ ] Agents are instructed not to hard-code one-off styles.
+

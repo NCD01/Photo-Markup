@@ -1,4 +1,4 @@
-# Agent Output Discipline Policy
+﻿# Agent Output Discipline Policy
 
 Document Path: `<PRIMARY_PATH>/Governance/AGENT_OUTPUT_DISCIPLINE_POLICY.md`
 Version: `<VERSION>`
@@ -62,3 +62,4 @@ The agent must not skip required validation, changelog updates, version bumps, p
 - [ ] Known facts, unknowns, and assumptions are separated.
 - [ ] Active governance was followed or any conflict was reported.
 - [ ] No full green light is claimed without required evidence.
+

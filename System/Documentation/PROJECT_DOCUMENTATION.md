@@ -1,17 +1,18 @@
 ﻿# Project Documentation
 
-Document Path: `C:\apps\NCD_Photo_Markup\PROJECT_DOCUMENTATION.md`
+Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\PROJECT_DOCUMENTATION.md`
 Version: `v0.3`
-Pack File Version: `v1.3`
+Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1B image import behavior and validation notes.
+Changes: Added governance v1.7 tunable-constants standard adoption and centralized Flutter tunables without behavior change.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
 - Keep non-Open toolbar actions as placeholders until approved.
+- Structure/governance cleanup must not change runtime behavior.
 
 ## Required Contract
 Required sections are present and updated through Phase 1B.
@@ -26,6 +27,7 @@ Required sections are present and updated through Phase 1B.
 | Subsystem | Responsibility | Source Path | Owner |
 |---|---|---|---|
 | UI | `Shell screen, image import/open flow, canvas display, toolbar placeholders` | `app/lib/main.dart` | `NCD / M` |
+| UI Config | `Centralized tunable constants for app copy/layout/theme/import labels/extensions` | `app/lib/core/constants/app_constants.dart` | `NCD / M` |
 | API | `Not implemented` | `app/lib (planned)` | `NCD / M` |
 | Engine | `Not implemented` | `app/lib (planned)` | `NCD / M` |
 | Data | `No persistence yet; runtime-only selected file path` | `app/lib/main.dart` | `NCD / M` |
@@ -55,12 +57,14 @@ Required sections are present and updated through Phase 1B.
 - Production data local-use policy: `Restricted`
 
 ## Governance and Release Artifacts
-- `APP_PROFILE.md`
-- `MASTER_GUIDELINE.md`
-- `AGENT_BASELINE.md`
+- `System/Documentation/APP_PROFILE.md`
+- `Governance/MASTER_GUIDELINE.md`
+- `Governance/AGENT_BASELINE.md`
+- `Governance/CODE_FILE_STRUCTURE_POLICY.md`
+- `Governance/Language_Addendums/DART_FLUTTER_ADDENDUM.md`
 - `Operations/VALIDATION_MATRIX.md`
 - `Operations/DECISION_LOG.md`
-- `CHANGELOG.md`
+- `System/Documentation/CHANGELOG.md`
 
 ## Verification Commands
 | Command | Purpose | Expected Result |
@@ -86,4 +90,26 @@ Required sections are present and updated through Phase 1B.
 - Loaded-photo indicator shows selected file name.
 - Unsupported/unreadable image shows field-safe error message.
 
+## Tunable Constants Standard (Governance v1.7)
+- Tunable Flutter/Dart values are centralized in `app/lib/core/constants/app_constants.dart`.
+- Grouped domains:
+  - app metadata/version
+  - theme/colors
+  - image import (picker labels, supported extensions, open error text)
+  - UI copy strings
+  - tool labels
+  - layout/spacing/sizing
+- Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages.
+
+
+
+
+
+## Roadmap (Near-Future)
+- Future Phase: Apple Compatibility and HEIC/HEIF Support (see Operations/TODO_REGISTER.md).
+- Future Phase: NCD Control Center Integration via isolated adapter/service boundaries (see Operations/TODO_REGISTER.md).
+
+## Phase 1A.1 Structure Note
+- This phase updates repository structure, governance scripts, and documentation references only.
+- No app runtime or image import behavior changes are included in this phase.
 

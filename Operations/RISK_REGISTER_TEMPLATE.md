@@ -1,4 +1,4 @@
-# Risk Register Template
+﻿# Risk Register Template
 
 Document Path: `<PRIMARY_PATH>/Operations/RISK_REGISTER_TEMPLATE.md`
 Version: `<VERSION>`
@@ -33,3 +33,4 @@ Common risk areas:
 - [ ] Open high risks have mitigations.
 - [ ] Release-blocking risks are resolved or waived.
 - [ ] Review dates are current.
+

@@ -1,13 +1,15 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 
 typedef OpenFileCallback = Future<XFile?> Function();
 
 void main() {
-  const String startupImagePath =
-      String.fromEnvironment('NCD_STARTUP_IMAGE_PATH');
+  const String startupImagePath = String.fromEnvironment(
+    AppConstants.startupImageEnvKey,
+  );
   runApp(NcdPhotoMarkupApp(initialImagePath: startupImagePath));
 }
 
@@ -24,11 +26,11 @@ class NcdPhotoMarkupApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'NCD Photo Markup',
+      title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF009ADA),
+        colorSchemeSeed: AppThemeConstants.ncdBlue,
       ),
       home: PhotoMarkupShellScreen(
         initialImagePath: initialImagePath,
@@ -45,7 +47,6 @@ class PhotoMarkupShellScreen extends StatefulWidget {
     this.openFileOverride,
   });
 
-  static const Color ncdBlue = Color(0xFF009ADA);
   final String? initialImagePath;
   final OpenFileCallback? openFileOverride;
 
@@ -54,18 +55,6 @@ class PhotoMarkupShellScreen extends StatefulWidget {
 }
 
 class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
-  static const Set<String> _allowedExtensions = {
-    'jpg',
-    'jpeg',
-    'png',
-    'webp',
-  };
-
-  static const XTypeGroup _imageTypeGroup = XTypeGroup(
-    label: 'Images',
-    extensions: <String>['jpg', 'jpeg', 'png', 'webp'],
-  );
-
   String? _imagePath;
   String? _loadedFileName;
   String? _errorMessage;
@@ -94,8 +83,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       final XFile? selectedFile = widget.openFileOverride != null
           ? await widget.openFileOverride!.call()
           : await openFile(
-              acceptedTypeGroups: <XTypeGroup>[_imageTypeGroup],
-              confirmButtonText: 'Open Photo',
+              acceptedTypeGroups: const <XTypeGroup>[
+                ImageImportConstants.imageTypeGroup,
+              ],
+              confirmButtonText: ImageImportConstants.pickerConfirmButtonText,
             );
 
       if (!mounted) {
@@ -125,8 +116,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
 
   void _setLoadError() {
     setState(() {
-      _errorMessage =
-          'Could not open this image. Please choose a JPG or PNG file.';
+      _errorMessage = ImageImportConstants.openErrorMessage;
       _isPickingFile = false;
     });
   }
@@ -150,7 +140,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     bool showErrorForFailure = true,
   }) async {
     final String extension = _fileExtension(path);
-    if (!_allowedExtensions.contains(extension)) {
+    if (!ImageImportConstants.supportedExtensionsSet.contains(extension)) {
       if (showErrorForFailure) {
         _setLoadError();
       }
@@ -179,21 +169,25 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: PhotoMarkupShellScreen.ncdBlue,
+        backgroundColor: AppThemeConstants.ncdBlue,
         foregroundColor: Colors.white,
-        title: const Text('NCD Photo Markup'),
+        title: const Text(AppConstants.appName),
         actions: [
           if (_loadedFileName != null)
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 260),
+              constraints: const BoxConstraints(
+                maxWidth: UiLayoutConstants.loadedNameMaxWidth,
+              ),
               child: Padding(
-                padding: const EdgeInsets.only(right: 10),
+                padding: EdgeInsets.only(
+                  right: UiLayoutConstants.appBarLoadedNameRightPadding,
+                ),
                 child: Center(
                   child: Text(
                     _loadedFileName!,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: UiLayoutConstants.loadedNameFontSize,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -201,10 +195,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
               ),
             ),
           const Padding(
-            padding: EdgeInsets.only(right: 16),
+            padding: EdgeInsets.only(
+              right: UiLayoutConstants.appBarVersionRightPadding,
+            ),
             child: Center(
               child: Text(
-                'v0.3',
+                AppConstants.appVersion,
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -215,44 +211,45 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         children: [
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(
+                UiLayoutConstants.canvasOuterPadding,
+              ),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border:
-                      Border.all(color: PhotoMarkupShellScreen.ncdBlue, width: 2),
+                  borderRadius: BorderRadius.circular(
+                    UiLayoutConstants.canvasBorderRadius,
+                  ),
+                  border: Border.all(
+                    color: AppThemeConstants.ncdBlue,
+                    width: UiLayoutConstants.canvasBorderWidth,
+                  ),
                 ),
                 child: _buildCanvasContent(),
               ),
             ),
           ),
           Container(
-            color: const Color(0xFFF2FAFE),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            color: AppThemeConstants.toolbarBackground,
+            padding: const EdgeInsets.symmetric(
+              horizontal: UiLayoutConstants.toolbarHorizontalPadding,
+              vertical: UiLayoutConstants.toolbarVerticalPadding,
+            ),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  for (final String label in const [
-                    'Open Photo',
-                    'Dimension',
-                    'Arrow',
-                    'Circle',
-                    'Rectangle',
-                    'Freehand',
-                    'Text',
-                    'Erase',
-                    'Undo',
-                    'Save',
-                    'Export',
-                  ])
+                  for (final String label in ToolbarConstants.labels)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: UiLayoutConstants.toolbarButtonGap,
+                      ),
                       child: _ToolbarPlaceholderButton(
                         label: label,
-                        onPressed: label == 'Open Photo' ? _openPhoto : () {},
+                        onPressed: label == ToolbarConstants.openPhoto
+                            ? _openPhoto
+                            : () {},
                       ),
                     ),
                 ],
@@ -268,42 +265,51 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (_imagePath == null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(
+            horizontal: UiLayoutConstants.emptyStateHorizontalPadding,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.photo_size_select_actual_outlined,
-                  size: 64, color: PhotoMarkupShellScreen.ncdBlue),
-              const SizedBox(height: 16),
+              const Icon(
+                Icons.photo_size_select_actual_outlined,
+                size: UiLayoutConstants.emptyStateIconSize,
+                color: AppThemeConstants.ncdBlue,
+              ),
+              const SizedBox(height: UiLayoutConstants.emptyStateIconBottomGap),
               const Text(
-                'Photo Canvas Placeholder',
+                UiCopyConstants.emptyStateTitle,
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: UiLayoutConstants.emptyStateTitleFontSize,
                   fontWeight: FontWeight.w700,
-                  color: PhotoMarkupShellScreen.ncdBlue,
+                  color: AppThemeConstants.ncdBlue,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(
+                height: UiLayoutConstants.emptyStateTitleBottomGap,
+              ),
               const Text(
-                'Open or import a photo to start marking it up.',
-                style: TextStyle(fontSize: 18),
+                UiCopyConstants.emptyStateMessage,
+                style: TextStyle(
+                  fontSize: UiLayoutConstants.emptyStateBodyFontSize,
+                ),
                 textAlign: TextAlign.center,
               ),
               if (_errorMessage != null) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: UiLayoutConstants.messageTopGap),
                 Text(
                   _errorMessage!,
                   style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.redAccent,
+                    fontSize: UiLayoutConstants.messageFontSize,
+                    color: AppThemeConstants.errorAccent,
                     fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ],
               if (_isPickingFile) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: UiLayoutConstants.messageTopGap),
                 const CircularProgressIndicator(),
               ],
             ],
@@ -316,18 +322,18 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       children: [
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(UiLayoutConstants.imageAreaPadding),
             child: Center(
               child: Image.file(
                 File(_imagePath!),
                 fit: BoxFit.contain,
                 errorBuilder: (_, Object error, StackTrace? stackTrace) {
                   return const Text(
-                    'Could not open this image. Please choose a JPG or PNG file.',
+                    ImageImportConstants.openErrorMessage,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.redAccent,
-                      fontSize: 15,
+                      color: AppThemeConstants.errorAccent,
+                      fontSize: UiLayoutConstants.messageFontSize,
                       fontWeight: FontWeight.w600,
                     ),
                   );
@@ -338,14 +344,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         ),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: UiLayoutConstants.footerHorizontalPadding,
+            vertical: UiLayoutConstants.footerVerticalPadding,
+          ),
           decoration: const BoxDecoration(
             border: Border(
-              top: BorderSide(color: Color(0xFFD8E5EB)),
+              top: BorderSide(color: AppThemeConstants.canvasFooterBorder),
             ),
           ),
           child: Text(
-            'Loaded photo: ${_loadedFileName ?? 'Unknown'}',
+            '${ImageImportConstants.loadedPhotoPrefix}${_loadedFileName ?? ImageImportConstants.unknownLoadedPhotoName}',
             style: const TextStyle(fontWeight: FontWeight.w600),
             overflow: TextOverflow.ellipsis,
           ),
@@ -356,7 +365,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
 }
 
 class _ToolbarPlaceholderButton extends StatelessWidget {
-  const _ToolbarPlaceholderButton({required this.label, required this.onPressed});
+  const _ToolbarPlaceholderButton({
+    required this.label,
+    required this.onPressed,
+  });
 
   final String label;
   final VoidCallback onPressed;
@@ -364,18 +376,23 @@ class _ToolbarPlaceholderButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 56,
+      height: UiLayoutConstants.toolbarButtonHeight,
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(116, 56),
-          side: const BorderSide(color: PhotoMarkupShellScreen.ncdBlue),
+          minimumSize: const Size(
+            UiLayoutConstants.toolbarButtonMinWidth,
+            UiLayoutConstants.toolbarButtonHeight,
+          ),
+          side: const BorderSide(color: AppThemeConstants.ncdBlue),
           foregroundColor: Colors.black87,
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontSize: UiLayoutConstants.toolbarButtonFontSize,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         child: Text(label),
       ),
     );
   }
 }
-

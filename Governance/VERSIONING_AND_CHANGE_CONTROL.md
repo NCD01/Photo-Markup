@@ -1,4 +1,4 @@
-# Versioning and Change Control Policy
+﻿# Versioning and Change Control Policy
 
 Document Path: `<PRIMARY_PATH>/Governance/VERSIONING_AND_CHANGE_CONTROL.md`
 Version: `<VERSION>`
@@ -10,7 +10,7 @@ Changes: Clarified no patch versions by default and version alignment expectatio
 
 ## Quick Rules
 - Use version format `vX.Y` unless the project owner approves a different scheme.
-- Do not use patch versions like `v1.2.1` unless explicitly adopted in `APP_PROFILE.md`.
+- Do not use patch versions like `v1.2.1` unless explicitly adopted in `System/Documentation/APP_PROFILE.md`.
 - No approved change without changelog decision.
 - No release notes without matching versioned changes.
 - Include rollback or recovery notes for every release-impacting change.
@@ -63,3 +63,4 @@ If rollback is impossible, document compensating controls and recovery procedure
 - [ ] Release note linkage is explicit.
 - [ ] Breaking changes include migration and rollback details.
 - [ ] Related artifacts have aligned versions or documented reason for mismatch.
+

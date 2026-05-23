@@ -1,4 +1,4 @@
-# Agent Execution Policy
+﻿# Agent Execution Policy
 
 Document Path: `<PRIMARY_PATH>/Governance/AGENT_EXECUTION_POLICY.md`
 Version: `<VERSION>`
@@ -36,8 +36,8 @@ Required completion evidence:
 
 ## Detailed Guidance
 Authority order implementation:
-1. `APP_PROFILE.md`
-2. `MASTER_GUIDELINE.md`
+1. `System/Documentation/APP_PROFILE.md`
+2. `Governance/MASTER_GUIDELINE.md`
 3. active governance policies
 4. module documentation
 5. task-specific request
@@ -76,3 +76,4 @@ When evidence is missing, use `Unknown`, `Not validated`, or `Not run` instead o
 If the agent cannot resolve a specific issue after about 5 minutes of focused debugging, the agent must stop and report instead of continuing repeated guesses.
 
 The report must include files changed, commands run, evidence found, screenshots/logs when relevant, current hypothesis, recommended next step, and whether any changes should be reverted.
+

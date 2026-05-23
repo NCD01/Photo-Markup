@@ -1,4 +1,4 @@
-# Runtime Startup Smoke Test Template
+﻿# Runtime Startup Smoke Test Template
 
 Document Path: `<PRIMARY_PATH>/Operations/RUNTIME_STARTUP_SMOKE_TEST_TEMPLATE.md`
 Version: `<VERSION>`
@@ -98,3 +98,4 @@ Build validation passed, but runtime startup validation was not performed. This 
 If startup reaches the first screen/scene but the change affected visuals, layout, maps, sprites, or user-visible behavior, runtime startup alone is not enough.
 
 Complete `Operations/VISUAL_QA_TEMPLATE.md` and `Operations/RESPONSIVE_LAYOUT_VALIDATION_TEMPLATE.md` when applicable.
+

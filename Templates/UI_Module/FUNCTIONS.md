@@ -1,4 +1,4 @@
-# UI Functions Template
+﻿# UI Functions Template
 
 Document Path: `<PRIMARY_PATH>/Templates/UI_Module/FUNCTIONS.md`
 Version: `<VERSION>`
@@ -42,3 +42,4 @@ Per function include:
 - [ ] Failure behavior is explicit.
 - [ ] Side effects are listed.
 - [ ] Examples compile conceptually with current contracts.
+

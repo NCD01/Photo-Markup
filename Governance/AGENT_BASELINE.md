@@ -1,6 +1,6 @@
 ﻿# Agent Baseline 
 
-Document Path: `C:\apps\NCD_Photo_Markup/AGENT_BASELINE.md`
+Document Path: `C:\apps\NCD_Photo_Markup\Governance\AGENT_BASELINE.md`
 Version: `v0.1`
 Pack File Version: `v1.5`
 Owner: `NCD / M`
@@ -10,7 +10,7 @@ Purpose: Short reusable instruction block for code/documentation agents working 
 Changes: Added v1.5 workstream separation, UI standards, form definitions, and data/runtime separation requirements.
 
 ## Quick Rules
-- Read `APP_PROFILE.md`, `MASTER_GUIDELINE.md`, and active governance before changing files.
+- Read `System/Documentation/APP_PROFILE.md`, `Governance/MASTER_GUIDELINE.md`, and active governance before changing files.
 - Make the smallest safe change that satisfies the task.
 - Be concise; do not waste tokens with repeated standards, raw dumps, or unnecessary explanation.
 - Obey governance first. If a task conflicts with governance, report the conflict instead of bypassing it.
@@ -102,7 +102,7 @@ The agent must wait for owner direction before continuing.
 ## Temporary Artifact Policy
 Agents must not place screenshots, diagnostics, generated images, scratch files, or temporary outputs inside production asset, image, data, or documentation folders unless the file is intended to become a governed project artifact.
 
-Each app must define a temporary work folder in `APP_PROFILE.md`. The temporary folder should be ignored by source control unless the project owner approves a different rule.
+Each app must define a temporary work folder in `System/Documentation/APP_PROFILE.md`. The temporary folder should be ignored by source control unless the project owner approves a different rule.
 
 Agents must clean up or summarize temporary files at handoff.
 
@@ -111,7 +111,7 @@ Use this compact instruction block when starting a new agent task:
 
 ```text
 Apply the New App Agent Baseline.
-First read APP_PROFILE.md, MASTER_GUIDELINE.md, Governance/README.md, Operations/VALIDATION_MATRIX.md, Operations/RUNTIME_STARTUP_SMOKE_TEST.md, Operations/VISUAL_QA.md, and any module README affected by this task.
+First read System/Documentation/APP_PROFILE.md, Governance/MASTER_GUIDELINE.md, Governance/README.md, Operations/VALIDATION_MATRIX.md, Operations/RUNTIME_STARTUP_SMOKE_TEST.md, Operations/VISUAL_QA.md, and any module README affected by this task.
 Follow versioning, changelog, privacy, logging, validation, runtime startup, visual QA, temporary artifact, and text-quality policies.
 Make the smallest safe change, update matching docs, run required validation, review logs, and summarize changed files, validation results, runtime startup result, risks, and next action.
 Do not rename public identifiers or change data contracts without migration notes and a decision log entry.
@@ -141,8 +141,10 @@ Agent behavior priorities:
 - Start from a clean `git status --short` unless the owner explicitly approves a dirty-tree task.
 - Separate UI/design-system changes from business-logic, data, documentation, and version-bump commits.
 - Treat runtime/UI state, live data, generated artifacts, and code as separate classes.
-- Do not revert, stash, or commit live data without the project-specific rule and backup requirements from `APP_PROFILE.md`.
+- Do not revert, stash, or commit live data without the project-specific rule and backup requirements from `System/Documentation/APP_PROFILE.md`.
 - UI work must follow the active UI standards document and shared token/component layer before changing individual screens.
 - New or significantly changed forms/screens must update the active form definitions document.
+
+
 
 
