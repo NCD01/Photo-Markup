@@ -1,7 +1,7 @@
-﻿# UI Standards Selection Form
+# UI Standards Selection Form
 
 Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS_SELECTION_FORM.md`
-Version: `v0.4`
+Version: `v0.5`
 Pack File Version: `v1.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
@@ -151,7 +151,7 @@ Status colors:
 ## 17. Final Approval
 Approved by: `NCD / M`
 Date: `2026-05-22`
-Approved version: `v0.4`
+Approved Version: `v0.5`
 Notes: `Baseline selections applied for Windows-first workflow; can be revised before broad UI modernization.`
 
 ## 18. Open Questions

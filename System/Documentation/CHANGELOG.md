@@ -1,7 +1,7 @@
-﻿# Changelog
+# Changelog
 
 Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
-Version: `v0.4`
+Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
@@ -182,6 +182,18 @@ Changes: Added uncommitted Phase 1C startup-window maximize behavior and final s
 - Author: defre
 - Type: Documentation
 - Reason: Approve governance sync and lean root cleanup
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
+
+## v0.5 - 2026-05-23
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve Phase 1C Dimension Line MVP and branding polish
 - Changes:
   - Updated release version.
 - Validation Evidence:

@@ -1,7 +1,7 @@
-﻿# Project Documentation
+# Project Documentation
 
 Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\PROJECT_DOCUMENTATION.md`
-Version: `v0.4`
+Version: `v0.5`
 Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
@@ -91,7 +91,7 @@ Required sections are present and updated through Phase 1C.
 | `RISK-004` | `Interactive Windows manual drawing/open-photo validation still needed` | `NCD / M` | `Next owner interactive run` | `Automated tests cover logic but not full operator flow` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.4`.
+- App bar shows `NCD Photo Markup` and `v0.5`.
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
 - If no image loaded, canvas shows: `Open or import a photo to start marking it up.`
