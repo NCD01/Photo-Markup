@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/export/services/marked_up_image_export_service.dart';
+import 'package:ncd_photo_markup/features/import/services/image_import_service.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
@@ -182,7 +184,9 @@ class PhotoMarkupShellScreen extends StatefulWidget {
 }
 
 class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
+  final ImageImportService _imageImportService = ImageImportService();
   String? _imagePath;
+  String? _temporaryConvertedImagePath;
   String? _loadedFileName;
   String? _errorMessage;
   bool _isPickingFile = false;
@@ -210,6 +214,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (initialPath != null && initialPath.isNotEmpty) {
       _loadImageFromPath(initialPath, showErrorForFailure: false);
     }
+  }
+
+  @override
+  void dispose() {
+    unawaited(
+      _imageImportService.deleteTemporaryDisplayPath(
+        _temporaryConvertedImagePath,
+      ),
+    );
+    super.dispose();
   }
 
   Future<void> _openPhoto() async {
@@ -262,6 +276,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     bool showErrorForFailure = true,
   }) async {
     final String extension = _fileExtension(path);
+    final bool isHeicSource = ImageImportConstants.heicExtensionsSet.contains(
+      extension,
+    );
     if (!ImageImportConstants.supportedExtensionsSet.contains(extension)) {
       if (showErrorForFailure) {
         _setLoadError();
@@ -277,19 +294,61 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       return;
     }
 
-    final Size? imageSize = await _readImagePixelSize(path);
-    if (imageSize == null) {
+    late final ImageImportResult importResult;
+    try {
+      importResult = await _imageImportService.prepareDisplayableImage(
+        sourcePath: path,
+      );
+    } catch (_) {
       if (showErrorForFailure) {
-        _setLoadError();
+        _setLoadError(
+          message: isHeicSource
+              ? ImageImportConstants.heicConversionFailedMessage
+              : ImageImportConstants.openErrorMessage,
+        );
       }
       return;
     }
 
-    if (!mounted) {
+    final Size? imageSize = await _readImagePixelSize(importResult.displayPath);
+    if (imageSize == null) {
+      if (importResult.usedTemporaryConvertedCopy) {
+        await _imageImportService.deleteTemporaryDisplayPath(
+          importResult.displayPath,
+        );
+      }
+      if (showErrorForFailure) {
+        _setLoadError(
+          message: isHeicSource
+              ? ImageImportConstants.heicConversionFailedMessage
+              : ImageImportConstants.openErrorMessage,
+        );
+      }
       return;
     }
+
+    final String? previousTemporaryPath = _temporaryConvertedImagePath;
+    if (!mounted) {
+      if (importResult.usedTemporaryConvertedCopy) {
+        await _imageImportService.deleteTemporaryDisplayPath(
+          importResult.displayPath,
+        );
+      }
+      return;
+    }
+
+    if (previousTemporaryPath != null &&
+        previousTemporaryPath != importResult.displayPath) {
+      await _imageImportService.deleteTemporaryDisplayPath(
+        previousTemporaryPath,
+      );
+    }
+
     setState(() {
-      _imagePath = path;
+      _imagePath = importResult.displayPath;
+      _temporaryConvertedImagePath = importResult.usedTemporaryConvertedCopy
+          ? importResult.displayPath
+          : null;
       _loadedFileName = _fileNameFromPath(path);
       _loadedImagePixelSize = imageSize;
       _errorMessage = null;
@@ -321,9 +380,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     }
   }
 
-  void _setLoadError() {
+  void _setLoadError({String? message}) {
     setState(() {
-      _errorMessage = ImageImportConstants.openErrorMessage;
+      _errorMessage = message ?? ImageImportConstants.openErrorMessage;
       _isPickingFile = false;
     });
   }

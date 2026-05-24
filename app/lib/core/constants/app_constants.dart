@@ -36,15 +36,28 @@ class ImageImportConstants {
     'jpeg',
     'png',
     'webp',
+    'heic',
+    'heif',
   ];
   static const Set<String> supportedExtensionsSet = <String>{
     'jpg',
     'jpeg',
     'png',
     'webp',
+    'heic',
+    'heif',
   };
+  static const Set<String> heicExtensionsSet = <String>{'heic', 'heif'};
+  static const String heicConversionFailedMessage =
+      'Could not open this HEIC image. Please convert it to JPG/PNG or try another photo.';
+  static const String heicTempSuffix = '_heic_converted';
+  static const String heicConvertedOutputExtension = 'png';
+  static const String heicFallbackConverterCommand = 'magick';
+  static const List<String> heicFallbackConverterOptions = <String>[
+    '-auto-orient',
+  ];
   static const String openErrorMessage =
-      'Could not open this image. Please choose a JPG or PNG file.';
+      'Could not open this image. Please choose a JPG, PNG, WEBP, or HEIC/HEIF file.';
   static const String loadedPhotoPrefix = 'Loaded photo: ';
   static const String unknownLoadedPhotoName = 'Unknown';
 

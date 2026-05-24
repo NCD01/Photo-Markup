@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-22`
 Purpose: Track concise session history and handoff state.
-Changes: Added Phase 1A Flutter app shell session.
+Changes: Added Phase 1J HEIC/HEIF import support session and validation notes.
 
 # SESSION_2026-05-22_0001_bootstrap_phase0
 
@@ -1441,3 +1441,112 @@ Changes: Added Phase 1A Flutter app shell session.
 
 ## Constraints Confirmed
 - No new features added beyond approved Phase 1I scope.
+
+# SESSION_2026-05-24_0012_phase1j_heic_heif_import_support
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add HEIC/HEIF import support for Windows-first workflow while preserving existing JPG/PNG/WEBP behavior.
+
+## Package Audit
+- Evaluated `heic_to_png_jpg` first as directed.
+- Audit result:
+  - Package advertises Windows support and exposes `HeicConverter.convertToPNG` and `convertFile`.
+  - Desktop path uses Dart `image` fallback and documents limited HEIC support.
+  - Implemented guarded integration with friendly failure handling rather than assuming universal codec success.
+
+## Actions
+- Added dependency:
+  - `heic_to_png_jpg: ^0.1.1`
+- Added import conversion service:
+  - `app/lib/features/import/services/image_import_service.dart`
+  - Converts `.heic` / `.heif` to temporary PNG working copy.
+  - Preserves original source file path and never modifies source file bytes.
+  - Supports best-effort temporary file cleanup.
+- Updated constants:
+  - Added `heic`/`heif` to supported extensions.
+  - Added centralized HEIC conversion failure copy.
+  - Added centralized temp suffix/output extension constants.
+  - Updated generic import failure copy to list current supported formats.
+- Updated app import flow in `app/lib/main.dart`:
+  - Routes HEIC/HEIF through conversion service before display.
+  - Maintains existing non-HEIC import behavior.
+  - Cleans up previous temporary converted file on image replacement and dispose.
+  - Shows HEIC-specific friendly error when conversion fails.
+- Added tests:
+  - `app/test/image_import_service_test.dart`
+  - Validates passthrough for non-HEIC, temp conversion path for HEIC, source preservation, and temp cleanup.
+
+## Validation
+- `git status --short` preflight: `PASS` (clean before edits)
+- `powershell -ExecutionPolicy Bypass -File scripts/verify-version-sync.ps1`: `PASS`
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate scan: `PASS`
+- Repo HEIC sample scan (`*.heic`, `*.heif`): `PASS` (`System/Documentation/Images/IMG_2434.HEIC`)
+- Real HEIC probe (`flutter test test/temp_heic_probe_test.dart`): `FAIL`
+  - `HeicConversionException: Failed to decode HEIC image`
+  - Failure path: `heic_to_png_jpg` desktop fallback decode
+
+## Manual Validation Status
+- JPG/PNG/WEBP interactive validation: `NOT_VALIDATED` in this environment.
+- Real HEIC/HEIF interactive validation: `FAIL` on provided sample (`IMG_2434.HEIC`) due conversion decode failure.
+- Export-after-HEIC interactive validation: `NOT_VALIDATED` (blocked because HEIC sample does not load).
+
+## Logging/Debug Notes
+- No blocking build/runtime errors after HEIC integration.
+- Package audit confirms desktop fallback may fail on some HEIC variants; friendly failure path remains in place.
+- Additional Windows codec probe (`System.Drawing.Image.FromFile`) on `IMG_2434.HEIC`: `FAIL` (`Out of memory`), indicating missing/unsupported HEIC decode path on this machine/runtime.
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No unrelated tools/shapes added.
+- No PDF export/full-resolution export added.
+
+# SESSION_2026-05-24_0013_phase1j_heic_windows_fallback_fix
+
+## Context
+- Follow-up on Phase 1J user report: "same error cannot open heic file".
+- Continued from existing approved dirty Phase 1J workspace.
+
+## Root Cause
+- `heic_to_png_jpg` desktop decode path failed for `System/Documentation/Images/IMG_2434.HEIC` on this Windows runtime.
+- Conversion exception reproduced (`Failed to decode HEIC image`).
+
+## Fix Applied
+- Updated `ImageImportService` to use a two-step HEIC conversion strategy:
+  - Try package converter first.
+  - If package conversion fails, fallback to external Windows conversion via `magick` command.
+- Added centralized constants for fallback converter command/options.
+- Added regression test coverage for fallback path.
+- Ran a one-off real-file probe test against `IMG_2434.HEIC` and confirmed conversion now succeeds.
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident --dart-define=NCD_STARTUP_IMAGE_PATH=C:\apps\NCD_Photo_Markup\System\Documentation\Images\IMG_2434.HEIC`: `PASS`
+- `cd app && flutter test test/heic_runtime_probe_test.dart` (temporary probe): `PASS`
+- `.agent_temp` ignore check: `PASS`
+
+## Logging/Debug Notes
+- Real HEIC conversion now succeeds via fallback conversion path on this machine.
+- Temporary probe file `app/test/heic_runtime_probe_test.dart` was created for verification and removed after test.
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No unrelated feature/tool work added.

@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-23`
 Purpose: Track required validation activities and outcomes.
-Changes: Added Phase 1E export-failure debug/fix validation entries and manual export coverage status.
+Changes: Added Phase 1J HEIC/HEIF import validation gates and evidence status.
 
 ## Validation Matrix
 | ID | Validation | Command/Method | Trigger | Pass Criteria | Owner | Status | Evidence Path |
@@ -118,5 +118,15 @@ Changes: Added Phase 1E export-failure debug/fix validation entries and manual e
 | `VAL-105` | Phase 1I Tunable Constants Gate | `rg/manual review` | Circle/Oval tunables added | Oval tool tunable values are centralized and editable in constants | `NCD / M` | `PASS` | `app/lib/core/constants/app_constants.dart + main.dart/overlay references` |
 | `VAL-106` | Phase 1I .agent_temp Ignore Gate | `git check-ignore -v .agent_temp ...` | Validation artifacts and temp usage | `.agent_temp` remains ignored | `NCD / M` | `PASS` | `.gitignore:1 .agent_temp/` |
 | `VAL-107` | Phase 1I Commit-Approval Revalidation | `verify-version-sync + flutter pub get/analyze/test/build/run + ignore/tunable checks` | Owner-approved Phase 1I commit flow | Required validation suite passes immediately before commit | `NCD / M` | `PASS` | `Terminal output 2026-05-24 (commit approval rerun)` |
+| `VAL-108` | Phase 1J Package Audit Gate | `pub.dev + package source review` | HEIC/HEIF import support request | Candidate package supports Windows integration path and known limitations are documented | `NCD / M` | `PASS` | `heic_to_png_jpg docs + source review (desktop fallback noted)` |
+| `VAL-109` | Phase 1J Dependency Restore | `cd app && flutter pub get` | Added HEIC conversion dependency | Dependencies resolve with HEIC package | `NCD / M` | `PASS` | `Terminal output 2026-05-24 (Phase 1J)` |
+| `VAL-110` | Phase 1J Static/Unit Gate | `cd app && flutter analyze && flutter test` | Import service + flow updates | Analyzer/tests pass with HEIC integration and no regressions | `NCD / M` | `PASS` | `Terminal output 2026-05-24 (Phase 1J)` |
+| `VAL-111` | Phase 1J Build/Run Gate | `cd app && flutter build windows --debug && flutter run -d windows --debug --no-resident` | Runtime import flow updates | Windows build and startup smoke pass after HEIC integration | `NCD / M` | `PASS` | `Terminal output 2026-05-24 (Phase 1J)` |
+| `VAL-112` | Phase 1J HEIC Sample Presence Gate | `rg --files -g *.heic -g *.heif` | Manual HEIC validation requirement | Real local HEIC/HEIF sample exists for manual validation | `NCD / M` | `PASS` | `System/Documentation/Images/IMG_2434.HEIC found` |
+| `VAL-113` | Phase 1J Manual HEIC End-to-End | Manual workflow with real HEIC/HEIF file | HEIC behavior changes | HEIC displays, markups work, export succeeds, source file unchanged | `NCD / M` | `NOT_VALIDATED` | `Prior fail superseded by fallback fix; rerun owner interactive flow after VAL-116/VAL-117` |
+| `VAL-114` | Phase 1J .agent_temp Ignore Gate | `git check-ignore -v .agent_temp ...` | Validation artifacts and temp usage | `.agent_temp` remains ignored | `NCD / M` | `PASS` | `.gitignore:1 .agent_temp/` |
+| `VAL-115` | Phase 1J Tunable Constants Gate | `rg/manual review` | HEIC constants added | HEIC extensions/error/temp naming constants are centralized | `NCD / M` | `PASS` | `app/lib/core/constants/app_constants.dart + import service/main references` |
 
 
+| `VAL-116` | Phase 1J Real HEIC Conversion Probe | `cd app && flutter test test/heic_runtime_probe_test.dart` (temporary local probe, removed after run) | User-reported HEIC open failure follow-up | Provided real HEIC sample converts to temporary displayable PNG without errors | `NCD / M` | `PASS` | `System/Documentation/Images/IMG_2434.HEIC probe PASS (2026-05-24)` |
+| `VAL-117` | Phase 1J HEIC Startup Load Smoke | `cd app && flutter run -d windows --debug --no-resident --dart-define=NCD_STARTUP_IMAGE_PATH=...IMG_2434.HEIC` | Runtime confirmation after fallback fix | App builds/starts with real HEIC startup image path and no blocking runtime errors | `NCD / M` | `PASS` | `Terminal output 2026-05-24 (HEIC startup path run)` |

@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1I circle/oval visual/selection standards.
+Changes: Added Phase 1J image import copy/file-type standards for HEIC/HEIF handling.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -34,6 +34,8 @@ Changes: Added Phase 1I circle/oval visual/selection standards.
 - Erase interaction must be safe: no-selection click should be gentle guidance, never crash.
 - Startup splash and app-bar icon should use app-local branding assets, not doc-folder runtime paths.
 - Startup splash should visually occupy most of the launch window while keeping full image visible (`BoxFit.contain`).
+- Import picker/file-type scope should list all currently supported image formats (`jpg/jpeg/png/webp/heic/heif`).
+- HEIC/HEIF conversion failures should use field-safe, non-technical guidance copy.
 
 ## Accessibility/Usability
 - Large tap targets for tablet use.

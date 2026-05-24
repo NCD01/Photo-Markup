@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Track planned and in-progress work items.
-Changes: Added Phase 1I follow-up TODO for optional circle/oval labels/annotations.
+Changes: Added Phase 1J follow-up TODO for real HEIC/HEIF validation corpus on Windows.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -35,13 +35,16 @@ Changes: Added Phase 1I follow-up TODO for optional circle/oval labels/annotatio
 | `TODO-018` | `Markup` | `Evaluate optional arrow annotation/labels after Arrow MVP stabilizes` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-019` | `Markup` | `Evaluate optional rectangle labels/annotations after Rectangle MVP stabilizes` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-020` | `Markup` | `Evaluate optional circle/oval labels/annotations after Circle/Oval MVP stabilizes` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-021` | `Import` | `Add broader HEIC/HEIF sample corpus and run owner-side Windows validation matrix for conversion success/failure variants` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-022` | `Import` | `Evaluate Windows-native HEIC decode fallback (codec/alternative package/service) after current sample conversion failure` | `High` | `NCD / M` | `Done` | `N/A` | `2026-05-24` |
+| `TODO-023` | `Import` | `Package Windows HEIC fallback dependency strategy (verify ImageMagick availability or provide bundled converter guidance for deployments where magick is missing)` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
 |---|---|---|---|---|---|
 | `1` | `Runtime` | `Phase 1B image import` | `Done` | `Validation run complete` | `Changelog v0.3 entry + phase1b screenshot` |
 | `2` | `Manual QA` | `Interactive picker cancel/select validation` | `Open` | `Owner interactive pass` | `Pending` |
-| `3` | `MVP Tools` | `Dimension line + manual label flow implemented; arrow and remaining tools pending` | `In Progress` | `Owner validation and next-phase approval` | `Phase 1D code + tests complete` |
+| `3` | `MVP Tools` | `Dimension/Arrow/Rectangle/Circle-Oval delivered; remaining tools (freehand/text note/etc.) pending` | `In Progress` | `Owner validation and next-phase approval` | `Phase 1I code + tests complete` |
 | `4` | `Structure` | `Lean-root + governance sync completion` | `Done` | `M-approved dirty-state continuation` | `Session + validation evidence` |
 | `5` | `Governance` | `Tunable constants standard adoption` | `Done` | `Governance v1.7 effective update` | `Constants file + policy/addendum sync` |
 | `6` | `Manual QA` | `Dimension line interactive field validation` | `Done` | `Owner Windows interactive run` | `Owner reported manual items 1-6 PASS + bounds fix PASS` |
@@ -52,6 +55,7 @@ Changes: Added Phase 1I follow-up TODO for optional circle/oval labels/annotatio
 | `11` | `Markup` | `Arrow MVP delivered; optional arrow-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-018` |
 | `12` | `Markup` | `Rectangle MVP delivered; optional rectangle-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-019` |
 | `13` | `Markup` | `Circle/Oval MVP delivered; optional circle/oval-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-020` |
+| `14` | `Import` | `HEIC/HEIF conversion path implemented with package + ImageMagick fallback; continue deployment hardening` | `Open` | `Windows fallback dependency availability` | `Tracked in TODO-021/TODO-023` |
 
 
 
@@ -62,9 +66,9 @@ Changes: Added Phase 1I follow-up TODO for optional circle/oval labels/annotatio
 - Keep app architecture compatible with Apple platforms where practical.
 - Plan for future iPad/iPhone support.
 - Consider macOS compatibility if practical.
-- Support opening HEIC/HEIF images from Apple devices.
+- HEIC/HEIF import support is now implemented in MVP; continue hardening with real-device sample validation and fallback coverage.
 - Do not break the current Windows tablet workflow.
-- Do not implement during this cleanup phase.
+- Do not add unrelated Apple platform runtime integrations until approved.
 
 ### Future Phase: NCD Control Center Integration
 - Keep current app standalone during MVP.

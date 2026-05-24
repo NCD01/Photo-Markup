@@ -6,7 +6,67 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1H Rectangle Tool MVP entry.
+Changes: Added HEIC Windows fallback hotfix entry.
+
+## Unreleased - 2026-05-24 (Phase 1J HEIC Windows Fallback Hotfix)
+- Owner: NCD / M
+- Author: Codex
+- Type: Fix
+- Reason: Resolve user-reported HEIC open failure on provided sample file.
+- Scope:
+  - `app/lib/features/import/services/image_import_service.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/test/image_import_service_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added two-step HEIC conversion strategy: package conversion first, then external `magick` fallback on failure.
+  - Centralized fallback converter command/options in import constants.
+  - Added regression coverage for external fallback conversion path.
+  - Verified provided sample `System/Documentation/Images/IMG_2434.HEIC` converts successfully through service path.
+- Validation Evidence:
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident --dart-define=NCD_STARTUP_IMAGE_PATH=...IMG_2434.HEIC`: `PASS`
+  - Real HEIC probe test against provided sample: `PASS`
+- Risks / Known Gaps:
+  - Deployment environments still require fallback converter availability; packaging guidance remains tracked in TODOs.
+
+## Unreleased - 2026-05-24 (Phase 1J HEIC/HEIF Import Support)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Add HEIC/HEIF import support for iPhone/iPad photos while preserving existing markup/export flows.
+- Scope:
+  - `app/pubspec.yaml`
+  - `app/pubspec.lock`
+  - `app/windows/flutter/generated_plugins.cmake`
+  - `app/lib/features/import/services/image_import_service.dart`
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/test/image_import_service_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added HEIC/HEIF extensions to Open Photo picker support.
+  - Added isolated import conversion service for HEIC/HEIF-to-PNG temporary working copy flow.
+  - Preserved original source file path and bytes (no source mutation, move, or overwrite).
+  - Added temporary converted file cleanup on image replacement/dispose.
+  - Added HEIC-specific friendly failure message when conversion is unavailable/fails.
+  - Preserved existing JPG/PNG/WEBP import path, markup tools, and PNG export workflow.
+  - Added service tests for passthrough, temp conversion, and cleanup behavior.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+  - HEIC sample presence check: `PASS` (`System/Documentation/Images/IMG_2434.HEIC`)
+  - Real HEIC sample conversion probe: `FAIL` (`HeicConversionException: Failed to decode HEIC image`)
+- Risks / Known Gaps:
+  - Desktop conversion relies on package fallback path with documented limited HEIC support.
+  - Provided sample `IMG_2434.HEIC` currently fails decode on this Windows runtime; fallback/codec strategy decision is required.
 
 ## Unreleased - 2026-05-24 (Phase 1I Circle/Oval Tool MVP)
 - Owner: NCD / M

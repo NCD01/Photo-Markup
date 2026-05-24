@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1I Circle/Oval Tool MVP behavior and architecture notes.
+Changes: Added Phase 1J HEIC Windows fallback conversion path notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -15,7 +15,7 @@ Changes: Added Phase 1I Circle/Oval Tool MVP behavior and architecture notes.
 - Structure/governance cleanup must not change runtime behavior.
 
 ## Required Contract
-Required sections are present and updated through Phase 1H.
+Required sections are present and updated through Phase 1J.
 
 ## Overview
 - App Name: `NCD Photo Markup`
@@ -31,6 +31,7 @@ Required sections are present and updated through Phase 1H.
 | Markup Model | `Dimension line + arrow + rectangle + oval entities and tool enum` | `app/lib/features/markup/models/` | `NCD / M` |
 | Markup Widget | `Dimension lines overlay input capture, selection hit-testing, and custom rendering` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `NCD / M` |
 | Markup Utility | `Lightweight normalization for common measurement label formats` | `app/lib/features/markup/utils/dimension_label_formatter.dart` | `NCD / M` |
+| Import Service | `Converts HEIC/HEIF source files into temporary PNG working copies for canvas display` | `app/lib/features/import/services/image_import_service.dart` | `NCD / M` |
 | Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
 | API | `Not implemented` | `app/lib (planned)` | `NCD / M` |
 | Engine | `Not implemented` | `app/lib (planned)` | `NCD / M` |
@@ -39,7 +40,8 @@ Required sections are present and updated through Phase 1H.
 ## Core Features
 | Feature | Behavior | Primary Module | Test Evidence |
 |---|---|---|---|
-| `Open Photo` | `Opens Windows-compatible file picker and loads image into canvas` | `app/lib/main.dart` | `flutter analyze/test/build + runtime smoke` |
+| `Open Photo` | `Opens Windows-compatible file picker and loads JPG/JPEG/PNG/WEBP/HEIC/HEIF into canvas` | `app/lib/main.dart` + `app/lib/features/import/services/image_import_service.dart` | `flutter analyze/test/build + runtime smoke` |
+| `HEIC/HEIF Conversion` | `Converts HEIC/HEIF to temporary PNG working copy and preserves original file` | `app/lib/features/import/services/image_import_service.dart` | `Service tests + runtime smoke` |
 | `Canvas Image Display` | `Shows selected image centered with BoxFit.contain (no default cropping)` | `app/lib/main.dart` | `Loaded-image screenshot` |
 | `Dimension Tool Selection` | `Dimension button toggles active drawing mode with visible selected state` | `app/lib/main.dart` | `Widget tests + runtime smoke` |
 | `Arrow Tool Selection` | `Arrow button toggles active arrow drawing mode with visible selected state` | `app/lib/main.dart` | `Runtime smoke + code review` |
@@ -67,14 +69,17 @@ Required sections are present and updated through Phase 1H.
 
 ## Data and Persistence Boundaries
 - Canonical data source: `User-selected local image file path at runtime`
+- HEIC/HEIF working-copy policy: `Converted PNG is temporary/internal only and original source file remains unchanged`
 - Local cache policy: `None in Phase 1B`
 - Migration policy: `N/A`
 - Backup/recovery policy: `N/A`
 
 ## Logging and Error Controls
 - Log schema: `Governance/LOGGING_AND_ERROR_POLICY.md`
-- Error handling: `Shows field-safe load message for unsupported/unreadable images`
-- User-safe error behavior: `Could not open this image. Please choose a JPG or PNG file.`
+- Error handling: `Shows field-safe load message for unsupported/unreadable images and HEIC conversion failures`
+- User-safe error behavior:
+  - Generic: `Could not open this image. Please choose a JPG, PNG, WEBP, or HEIC/HEIF file.`
+  - HEIC/HEIF conversion failure: `Could not open this HEIC image. Please convert it to JPG/PNG or try another photo.`
 
 ## Privacy and Sensitive Data Controls
 - Data classification: `Internal`
@@ -112,9 +117,10 @@ Required sections are present and updated through Phase 1H.
 | `RISK-007` | `Arrow labels/annotations are intentionally deferred in Arrow MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-018` |
 | `RISK-008` | `Rectangle labels/annotations are intentionally deferred in Rectangle MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-019` |
 | `RISK-009` | `Circle/Oval labels/annotations are intentionally deferred in Circle/Oval MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-020` |
+| `RISK-010` | `Desktop HEIC conversion now uses package-first plus external converter fallback; deployment environments must still provide fallback converter availability` | `NCD / M` | `Near-term validation cycle` | `Provided sample IMG_2434.HEIC now converts successfully; deployment hardening tracked in TODO-021/TODO-023` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.11`.
+- App bar shows `NCD Photo Markup` and `v0.12`.
 - Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
@@ -128,7 +134,9 @@ Required sections are present and updated through Phase 1H.
   - taskbar readability/design optimization is deferred to a future icon standard/redesign phase.
   - splash asset/behavior remains unchanged.
 - If no image loaded, canvas shows: `Open or import a photo to start marking it up.`
-- Open Photo launches picker for `jpg`, `jpeg`, `png`, `webp`.
+- Open Photo launches picker for `jpg`, `jpeg`, `png`, `webp`, `heic`, and `heif`.
+- HEIC/HEIF files are converted to temporary PNG working copies for display/markup.
+- Original HEIC/HEIF source files are not modified, moved, overwritten, or deleted.
 - Loaded photo is displayed in-canvas with preserved aspect ratio and contain fit.
 - Dimension tool can be selected before photo load without crash.
 - When a photo is loaded and Dimension is selected, pointer drag creates a straight line overlay with endpoint markers.
@@ -167,13 +175,14 @@ Required sections are present and updated through Phase 1H.
 - Undo removes the most recently created dimension line.
 - Loaded-photo indicator shows selected file name.
 - Unsupported/unreadable image shows field-safe error message.
+- If HEIC/HEIF conversion fails, app shows HEIC-specific friendly field-safe message.
 
 ## Tunable Constants Standard (Governance v1.7)
 - Tunable Flutter/Dart values are centralized in `app/lib/core/constants/app_constants.dart`.
 - Grouped domains:
   - app metadata/version
   - theme/colors
-  - image import (picker labels, supported extensions, open error text)
+  - image import (picker labels, supported extensions, generic + HEIC error text, HEIC temp naming)
   - UI copy strings
   - tool labels
   - layout/spacing/sizing
@@ -199,7 +208,7 @@ Required sections are present and updated through Phase 1H.
 
 
 ## Roadmap (Near-Future)
-- Future Phase: Apple Compatibility and HEIC/HEIF Support (see Operations/TODO_REGISTER.md).
+- Future Phase: Extended Apple compatibility beyond MVP HEIC/HEIF import (see Operations/TODO_REGISTER.md).
 - Future Phase: NCD Control Center Integration via isolated adapter/service boundaries (see Operations/TODO_REGISTER.md).
 
 ## Phase 1A.1 Structure Note
