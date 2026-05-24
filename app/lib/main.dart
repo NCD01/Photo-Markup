@@ -9,6 +9,7 @@ import 'package:ncd_photo_markup/features/export/services/marked_up_image_export
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 
@@ -191,8 +192,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   MarkupTool _selectedTool = MarkupTool.none;
   final List<DimensionLine> _dimensionLines = <DimensionLine>[];
   final List<ArrowMarkup> _arrows = <ArrowMarkup>[];
+  final List<RectangleMarkup> _rectangles = <RectangleMarkup>[];
   int? _selectedDimensionId;
   int? _selectedArrowId;
+  int? _selectedRectangleId;
   int _nextMarkupId = 1;
   Offset? _activeDimensionStart;
   Offset? _activeDimensionCurrent;
@@ -292,6 +295,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       _activeDimensionCurrent = null;
       _dimensionLines.clear();
       _arrows.clear();
+      _rectangles.clear();
       _nextMarkupId = 1;
     });
   }
@@ -336,6 +340,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (label == ToolbarConstants.arrow) {
       setState(() {
         _selectedTool = MarkupTool.arrow;
+      });
+      return;
+    }
+
+    if (label == ToolbarConstants.rectangle) {
+      setState(() {
+        _selectedTool = MarkupTool.rectangle;
       });
       return;
     }
@@ -453,6 +464,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   void _clearMarkupSelection() {
     _selectedDimensionId = null;
     _selectedArrowId = null;
+    _selectedRectangleId = null;
   }
 
   void _selectDimensionById(int id) {
@@ -463,6 +475,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   void _selectArrowById(int id) {
     _selectedArrowId = id;
     _selectedDimensionId = null;
+    _selectedRectangleId = null;
+  }
+
+  void _selectRectangleById(int id) {
+    _selectedRectangleId = id;
+    _selectedDimensionId = null;
+    _selectedArrowId = null;
   }
 
   void _undoMostRecentMarkup() {
@@ -480,21 +499,38 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       }
     }
 
-    if (latestDimensionId == -1 && latestArrowId == -1) {
+    int latestRectangleId = -1;
+    for (final RectangleMarkup rectangle in _rectangles) {
+      if (rectangle.id > latestRectangleId) {
+        latestRectangleId = rectangle.id;
+      }
+    }
+
+    if (latestDimensionId == -1 &&
+        latestArrowId == -1 &&
+        latestRectangleId == -1) {
       return;
     }
 
     setState(() {
-      if (latestDimensionId >= latestArrowId) {
+      if (latestDimensionId >= latestArrowId &&
+          latestDimensionId >= latestRectangleId) {
         _dimensionLines.removeWhere(
           (DimensionLine line) => line.id == latestDimensionId,
         );
         if (_selectedDimensionId == latestDimensionId) {
           _clearMarkupSelection();
         }
-      } else {
+      } else if (latestArrowId >= latestRectangleId) {
         _arrows.removeWhere((ArrowMarkup arrow) => arrow.id == latestArrowId);
         if (_selectedArrowId == latestArrowId) {
+          _clearMarkupSelection();
+        }
+      } else {
+        _rectangles.removeWhere(
+          (RectangleMarkup rectangle) => rectangle.id == latestRectangleId,
+        );
+        if (_selectedRectangleId == latestRectangleId) {
           _clearMarkupSelection();
         }
       }
@@ -517,6 +553,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (selectedArrowId != null) {
       setState(() {
         _arrows.removeWhere((ArrowMarkup arrow) => arrow.id == selectedArrowId);
+        _clearMarkupSelection();
+      });
+      return;
+    }
+
+    final int? selectedRectangleId = _selectedRectangleId;
+    if (selectedRectangleId != null) {
+      setState(() {
+        _rectangles.removeWhere(
+          (RectangleMarkup rectangle) => rectangle.id == selectedRectangleId,
+        );
         _clearMarkupSelection();
       });
       return;
@@ -579,6 +626,31 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         setState(() {
           _arrows.add(arrow);
           _selectArrowById(arrow.id);
+        });
+      }
+      return;
+    }
+
+    if (_selectedTool == MarkupTool.rectangle) {
+      final RectangleMarkup rectangle = RectangleMarkup.fromCanvasPoints(
+        id: _allocateMarkupId(),
+        startPoint: start,
+        endPoint: end,
+        imageRect: imageRect,
+      );
+      if (rectangle.widthInRect(imageRect) <
+              RectangleMarkupConstants.minSideLength ||
+          rectangle.heightInRect(imageRect) <
+              RectangleMarkupConstants.minSideLength) {
+        if (mounted) {
+          setState(() {});
+        }
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _rectangles.add(rectangle);
+          _selectRectangleById(rectangle.id);
         });
       }
       return;
@@ -654,7 +726,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   }
 
   Future<void> _onDimensionTap(Offset point, Rect imageRect) async {
-    if (_imagePath == null || (_dimensionLines.isEmpty && _arrows.isEmpty)) {
+    if (_imagePath == null ||
+        (_dimensionLines.isEmpty && _arrows.isEmpty && _rectangles.isEmpty)) {
       return;
     }
 
@@ -663,7 +736,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       imageRect,
     );
     if (!nearestHit.found) {
-      if (_selectedDimensionId != null || _selectedArrowId != null) {
+      if (_selectedDimensionId != null ||
+          _selectedArrowId != null ||
+          _selectedRectangleId != null) {
         setState(() {
           _clearMarkupSelection();
         });
@@ -671,9 +746,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       return;
     }
 
-    if (nearestHit.isDimension) {
+    if (nearestHit.markupTool == MarkupTool.dimension) {
       if (_selectedDimensionId != nearestHit.markupId ||
-          _selectedArrowId != null) {
+          _selectedArrowId != null ||
+          _selectedRectangleId != null) {
         setState(() {
           _selectDimensionById(nearestHit.markupId);
         });
@@ -683,17 +759,29 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       return;
     }
 
-    if (_selectedArrowId != nearestHit.markupId ||
-        _selectedDimensionId != null) {
+    if (nearestHit.markupTool == MarkupTool.arrow &&
+        (_selectedArrowId != nearestHit.markupId ||
+            _selectedDimensionId != null ||
+            _selectedRectangleId != null)) {
       setState(() {
         _selectArrowById(nearestHit.markupId);
+      });
+      return;
+    }
+
+    if (nearestHit.markupTool == MarkupTool.rectangle &&
+        (_selectedRectangleId != nearestHit.markupId ||
+            _selectedDimensionId != null ||
+            _selectedArrowId != null)) {
+      setState(() {
+        _selectRectangleById(nearestHit.markupId);
       });
     }
   }
 
   _NearestMarkupHit _findNearestMarkupHit(Offset point, Rect imageRect) {
     int bestMarkupId = -1;
-    bool bestIsDimension = true;
+    MarkupTool bestTool = MarkupTool.none;
     double bestDistance = double.infinity;
 
     for (final DimensionLine line in _dimensionLines) {
@@ -701,7 +789,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       if (distance < bestDistance) {
         bestDistance = distance;
         bestMarkupId = line.id;
-        bestIsDimension = true;
+        bestTool = MarkupTool.dimension;
       }
     }
 
@@ -710,18 +798,24 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       if (distance < bestDistance) {
         bestDistance = distance;
         bestMarkupId = arrow.id;
-        bestIsDimension = false;
+        bestTool = MarkupTool.arrow;
       }
     }
 
-    if (bestDistance > DimensionLineConstants.selectionTapDistance) {
+    for (final RectangleMarkup rectangle in _rectangles) {
+      final double distance = rectangle.distanceToPointInRect(point, imageRect);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMarkupId = rectangle.id;
+        bestTool = MarkupTool.rectangle;
+      }
+    }
+
+    if (bestDistance > RectangleMarkupConstants.selectionHitDistance) {
       return const _NearestMarkupHit.notFound();
     }
 
-    return _NearestMarkupHit(
-      markupId: bestMarkupId,
-      isDimension: bestIsDimension,
-    );
+    return _NearestMarkupHit(markupId: bestMarkupId, markupTool: bestTool);
   }
 
   KeyEventResult _onShellKeyEvent(FocusNode node, KeyEvent event) {
@@ -738,14 +832,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
 
   bool _canDrawMarkup(Rect imageRect) {
     return (_selectedTool == MarkupTool.dimension ||
-            _selectedTool == MarkupTool.arrow) &&
+            _selectedTool == MarkupTool.arrow ||
+            _selectedTool == MarkupTool.rectangle) &&
         _imagePath != null &&
         imageRect.width > 0 &&
         imageRect.height > 0;
   }
 
   bool _isUndoEnabled() {
-    return _dimensionLines.isNotEmpty || _arrows.isNotEmpty;
+    return _dimensionLines.isNotEmpty ||
+        _arrows.isNotEmpty ||
+        _rectangles.isNotEmpty;
   }
 
   String _fileExtension(String path) {
@@ -881,7 +978,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                               (label == ToolbarConstants.dimension &&
                                   _selectedTool == MarkupTool.dimension) ||
                               (label == ToolbarConstants.arrow &&
-                                  _selectedTool == MarkupTool.arrow),
+                                  _selectedTool == MarkupTool.arrow) ||
+                              (label == ToolbarConstants.rectangle &&
+                                  _selectedTool == MarkupTool.rectangle),
                           isDisabled:
                               (label == ToolbarConstants.undo &&
                                   !_isUndoEnabled()) ||
@@ -995,9 +1094,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                       DimensionLinesOverlay(
                         lines: _dimensionLines,
                         arrows: _arrows,
+                        rectangles: _rectangles,
                         imageRect: imageRect,
                         selectedDimensionId: _selectedDimensionId,
                         selectedArrowId: _selectedArrowId,
+                        selectedRectangleId: _selectedRectangleId,
                         activeTool: _selectedTool,
                         activeStart: _activeDimensionStart,
                         activeEnd: _activeDimensionCurrent,
@@ -1040,12 +1141,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
 }
 
 class _NearestMarkupHit {
-  const _NearestMarkupHit({required this.markupId, required this.isDimension});
+  const _NearestMarkupHit({required this.markupId, required this.markupTool});
 
-  const _NearestMarkupHit.notFound() : markupId = -1, isDimension = false;
+  const _NearestMarkupHit.notFound()
+    : markupId = -1,
+      markupTool = MarkupTool.none;
 
   final int markupId;
-  final bool isDimension;
+  final MarkupTool markupTool;
 
   bool get found => markupId != -1;
 }

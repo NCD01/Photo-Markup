@@ -6,15 +6,18 @@ import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 
 class DimensionLinesOverlay extends StatefulWidget {
   const DimensionLinesOverlay({
     super.key,
     required this.lines,
     required this.arrows,
+    required this.rectangles,
     required this.imageRect,
     required this.selectedDimensionId,
     required this.selectedArrowId,
+    required this.selectedRectangleId,
     required this.activeTool,
     this.activeStart,
     this.activeEnd,
@@ -27,9 +30,11 @@ class DimensionLinesOverlay extends StatefulWidget {
 
   final List<DimensionLine> lines;
   final List<ArrowMarkup> arrows;
+  final List<RectangleMarkup> rectangles;
   final Rect imageRect;
   final int? selectedDimensionId;
   final int? selectedArrowId;
+  final int? selectedRectangleId;
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
@@ -115,9 +120,11 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
         painter: _DimensionLinesPainter(
           lines: List<DimensionLine>.of(widget.lines),
           arrows: List<ArrowMarkup>.of(widget.arrows),
+          rectangles: List<RectangleMarkup>.of(widget.rectangles),
           imageRect: widget.imageRect,
           selectedDimensionId: widget.selectedDimensionId,
           selectedArrowId: widget.selectedArrowId,
+          selectedRectangleId: widget.selectedRectangleId,
           activeTool: widget.activeTool,
           activeStart: widget.activeStart,
           activeEnd: widget.activeEnd,
@@ -132,9 +139,11 @@ class _DimensionLinesPainter extends CustomPainter {
   const _DimensionLinesPainter({
     required this.lines,
     required this.arrows,
+    required this.rectangles,
     required this.imageRect,
     required this.selectedDimensionId,
     required this.selectedArrowId,
+    required this.selectedRectangleId,
     required this.activeTool,
     required this.activeStart,
     required this.activeEnd,
@@ -142,9 +151,11 @@ class _DimensionLinesPainter extends CustomPainter {
 
   final List<DimensionLine> lines;
   final List<ArrowMarkup> arrows;
+  final List<RectangleMarkup> rectangles;
   final Rect imageRect;
   final int? selectedDimensionId;
   final int? selectedArrowId;
+  final int? selectedRectangleId;
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
@@ -201,6 +212,22 @@ class _DimensionLinesPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
+    final Paint rectangleOutlinePaint = Paint()
+      ..color = RectangleMarkupConstants.outlineColor
+      ..strokeWidth = RectangleMarkupConstants.strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final Paint selectedRectangleOutlinePaint = Paint()
+      ..color = RectangleMarkupConstants.selectedOutlineColor
+      ..strokeWidth =
+          RectangleMarkupConstants.strokeWidth *
+          RectangleMarkupConstants.selectedStrokeMultiplier
+      ..style = PaintingStyle.stroke;
+
+    final Paint rectangleFillPaint = Paint()
+      ..color = RectangleMarkupConstants.fillColor
+      ..style = PaintingStyle.fill;
+
     canvas.save();
     canvas.clipRect(imageRect);
 
@@ -239,9 +266,27 @@ class _DimensionLinesPainter extends CustomPainter {
       );
     }
 
+    for (final RectangleMarkup rectangle in rectangles) {
+      final bool isSelected = selectedRectangleId == rectangle.id;
+      final Rect rect = rectangle.rectInRect(imageRect);
+      _drawRectangle(
+        canvas,
+        rect,
+        rectangleFillPaint,
+        isSelected ? selectedRectangleOutlinePaint : rectangleOutlinePaint,
+      );
+    }
+
     if (activeStart != null && activeEnd != null) {
       if (activeTool == MarkupTool.arrow) {
         _drawArrow(canvas, activeStart!, activeEnd!, arrowPaint);
+      } else if (activeTool == MarkupTool.rectangle) {
+        _drawRectangle(
+          canvas,
+          Rect.fromPoints(activeStart!, activeEnd!),
+          rectangleFillPaint,
+          rectangleOutlinePaint,
+        );
       } else if (activeTool == MarkupTool.dimension) {
         _drawLine(
           canvas,
@@ -287,6 +332,19 @@ class _DimensionLinesPainter extends CustomPainter {
 
     canvas.drawLine(end, leftPoint, arrowPaint);
     canvas.drawLine(end, rightPoint, arrowPaint);
+  }
+
+  void _drawRectangle(
+    Canvas canvas,
+    Rect rect,
+    Paint fillPaint,
+    Paint outlinePaint,
+  ) {
+    if (rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+    canvas.drawRect(rect, fillPaint);
+    canvas.drawRect(rect, outlinePaint);
   }
 
   void _drawLine(
@@ -419,9 +477,11 @@ class _DimensionLinesPainter extends CustomPainter {
   bool shouldRepaint(covariant _DimensionLinesPainter oldDelegate) {
     return !listEquals(oldDelegate.lines, lines) ||
         !listEquals(oldDelegate.arrows, arrows) ||
+        !listEquals(oldDelegate.rectangles, rectangles) ||
         oldDelegate.imageRect != imageRect ||
         oldDelegate.selectedDimensionId != selectedDimensionId ||
         oldDelegate.selectedArrowId != selectedArrowId ||
+        oldDelegate.selectedRectangleId != selectedRectangleId ||
         oldDelegate.activeTool != activeTool ||
         oldDelegate.activeStart != activeStart ||
         oldDelegate.activeEnd != activeEnd;

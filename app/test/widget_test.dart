@@ -4,6 +4,7 @@ import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/main.dart';
 
@@ -39,6 +40,27 @@ void main() {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
     await tester.tap(
       find.widgetWithText(OutlinedButton, ToolbarConstants.dimension),
+    );
+    await tester.pump();
+    expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
+  });
+
+  testWidgets('selecting rectangle without image does not crash', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    final Finder rectangleButton = find.widgetWithText(
+      OutlinedButton,
+      ToolbarConstants.rectangle,
+    );
+    final Finder toolbarScrollable = find.byType(Scrollable);
+    await tester.scrollUntilVisible(
+      rectangleButton,
+      240,
+      scrollable: toolbarScrollable,
+    );
+    await tester.tap(
+      rectangleButton,
     );
     await tester.pump();
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
@@ -107,9 +129,11 @@ void main() {
                 ),
               ],
               arrows: const <ArrowMarkup>[],
+              rectangles: const <RectangleMarkup>[],
               imageRect: const Rect.fromLTWH(20, 20, 460, 280),
               selectedDimensionId: null,
               selectedArrowId: null,
+              selectedRectangleId: null,
               activeTool: MarkupTool.dimension,
               activeStart: const Offset(80, 220),
               activeEnd: const Offset(360, 240),

@@ -69,8 +69,7 @@ class UiCopyConstants {
   static const String exportSuccessMessage = 'Export complete.';
   static const String exportFailureMessage =
       'Could not export this image. Please try again.';
-  static const String eraseNoSelectionMessage =
-      'Select a markup to erase.';
+  static const String eraseNoSelectionMessage = 'Select a markup to erase.';
 }
 
 class ToolbarConstants {
@@ -79,6 +78,7 @@ class ToolbarConstants {
   static const String openPhoto = 'Open Photo';
   static const String dimension = 'Dimension';
   static const String arrow = 'Arrow';
+  static const String rectangle = 'Rectangle';
   static const String erase = 'Erase';
   static const String undo = 'Undo';
   static const String export = 'Export';
@@ -87,7 +87,7 @@ class ToolbarConstants {
     dimension,
     arrow,
     'Circle',
-    'Rectangle',
+    rectangle,
     'Freehand',
     'Text',
     erase,
@@ -174,6 +174,18 @@ class ArrowMarkupConstants {
   static const double arrowHeadLength = 16;
   static const double arrowHeadAngleDegrees = 28;
   static const double minLength = 8;
+}
+
+class RectangleMarkupConstants {
+  const RectangleMarkupConstants._();
+
+  static const Color outlineColor = Color(0xFF7A4B00);
+  static const Color selectedOutlineColor = Color(0xFFA46600);
+  static const Color fillColor = Color(0x1FBD8A2A);
+  static const double strokeWidth = 3;
+  static const double selectedStrokeMultiplier = 1.35;
+  static const double minSideLength = 8;
+  static const double selectionHitDistance = 26;
 }
 
 class ExportConstants {

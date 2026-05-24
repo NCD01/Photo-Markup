@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1G Arrow Tool MVP behavior and architecture notes.
+Changes: Added Phase 1H Rectangle Tool MVP behavior and architecture notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -15,7 +15,7 @@ Changes: Added Phase 1G Arrow Tool MVP behavior and architecture notes.
 - Structure/governance cleanup must not change runtime behavior.
 
 ## Required Contract
-Required sections are present and updated through Phase 1G.
+Required sections are present and updated through Phase 1H.
 
 ## Overview
 - App Name: `NCD Photo Markup`
@@ -28,7 +28,7 @@ Required sections are present and updated through Phase 1G.
 |---|---|---|---|
 | UI | `Shell screen, image import/open flow, canvas display, toolbar, and dimension overlay behavior` | `app/lib/main.dart` | `NCD / M` |
 | UI Config | `Centralized tunable constants for app copy/layout/theme/import labels/extensions/markup line styling` | `app/lib/core/constants/app_constants.dart` | `NCD / M` |
-| Markup Model | `Dimension line + arrow entities and tool enum` | `app/lib/features/markup/models/` | `NCD / M` |
+| Markup Model | `Dimension line + arrow + rectangle entities and tool enum` | `app/lib/features/markup/models/` | `NCD / M` |
 | Markup Widget | `Dimension lines overlay input capture, selection hit-testing, and custom rendering` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `NCD / M` |
 | Markup Utility | `Lightweight normalization for common measurement label formats` | `app/lib/features/markup/utils/dimension_label_formatter.dart` | `NCD / M` |
 | Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
@@ -43,14 +43,17 @@ Required sections are present and updated through Phase 1G.
 | `Canvas Image Display` | `Shows selected image centered with BoxFit.contain (no default cropping)` | `app/lib/main.dart` | `Loaded-image screenshot` |
 | `Dimension Tool Selection` | `Dimension button toggles active drawing mode with visible selected state` | `app/lib/main.dart` | `Widget tests + runtime smoke` |
 | `Arrow Tool Selection` | `Arrow button toggles active arrow drawing mode with visible selected state` | `app/lib/main.dart` | `Runtime smoke + code review` |
+| `Rectangle Tool Selection` | `Rectangle button toggles active rectangle drawing mode with visible selected state` | `app/lib/main.dart` | `Runtime smoke + code review` |
 | `Dimension Line Draw` | `Drag on overlay creates persistent straight dimension lines above image, clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Widget test drag callbacks + runtime smoke` |
 | `Arrow Draw` | `Drag on overlay creates persistent arrows with arrowheads above image, clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
+| `Rectangle Draw` | `Drag on overlay creates persistent rectangles above image, clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Dimension Selection` | `Tap line once to select; selected line shows highlighted visual state` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Arrow Selection` | `Tap arrow to select; selected arrow shows highlighted visual state` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
+| `Rectangle Selection` | `Tap rectangle to select; selected rectangle shows highlighted visual state` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Dimension Label Entry` | `After line creation, opens manual label dialog with Save/Skip options` | `app/lib/main.dart` | `Runtime smoke + formatter tests` |
 | `Dimension Label Render` | `Manual label appears near midpoint with readable background and bounds clamp` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Dimension Label Edit` | `Tap selected line again to re-open label dialog for updates` | `app/lib/main.dart` | `Runtime smoke + code review` |
-| `Erase Selected Markup` | `Erase button and Delete/Backspace remove selected dimension or arrow immediately` | `app/lib/main.dart` | `Widget test (no-selection safety) + runtime smoke` |
+| `Erase Selected Markup` | `Erase button and Delete/Backspace remove selected dimension, arrow, or rectangle immediately` | `app/lib/main.dart` | `Widget test (no-selection safety) + runtime smoke` |
 | `Undo Dimension` | `Undo removes most recently added dimension line` | `app/lib/main.dart` | `Widget tests` |
 | `Undo Latest Markup` | `Undo removes latest remaining markup regardless of type (dimension or arrow)` | `app/lib/main.dart` | `Runtime smoke + code review` |
 | `Export PNG` | `Prompts user for save location and exports visible marked canvas as PNG` | `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart` | `Analyze/test/build/run + pending owner manual E2E` |
@@ -97,13 +100,14 @@ Required sections are present and updated through Phase 1G.
 ## Known Risks and Deferred Items
 | ID | Risk/Item | Owner | Target Date | Notes |
 |---|---|---|---|---|
-| `RISK-001` | `Dimension + Arrow tools exist; remaining tools are still placeholders` | `NCD / M` | `Phase 1G+` | `Intentional` |
+| `RISK-001` | `Dimension + Arrow + Rectangle tools exist; remaining tools are still placeholders` | `NCD / M` | `Phase 1H+` | `Intentional` |
 | `RISK-002` | `Android runtime behavior not validated` | `NCD / M` | `Later phase` | `Intentional` |
 | `RISK-003` | `Manual picker cancel/select steps not fully automatable in this environment` | `Codex` | `Next interactive validation` | `OS SendKeys blocked` |
 | `RISK-004` | `Interactive Windows manual drawing + label entry/edit validation still needed` | `NCD / M` | `Next owner interactive run` | `Automated tests cover logic but not full operator flow` |
 | `RISK-005` | `Approved v1.5 icon is mini-logo style (small text/detail/padding), so taskbar-size readability is limited without a simplified icon standard` | `NCD / M` | `Future icon redesign phase` | `MVP accepts current transparent icon; redesign tracked in TODO-014` |
 | `RISK-006` | `Current export captures visible canvas resolution (viewport-based), not original-image full resolution` | `NCD / M` | `Future export enhancement` | `Tracked in TODO-015` |
 | `RISK-007` | `Arrow labels/annotations are intentionally deferred in Arrow MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-018` |
+| `RISK-008` | `Rectangle labels/annotations are intentionally deferred in Rectangle MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-019` |
 
 ## Visual and Runtime Behavior
 - App bar shows `NCD Photo Markup` and `v0.9`.
@@ -125,13 +129,17 @@ Required sections are present and updated through Phase 1G.
 - Dimension tool can be selected before photo load without crash.
 - When a photo is loaded and Dimension is selected, pointer drag creates a straight line overlay with endpoint markers.
 - When a photo is loaded and Arrow is selected, pointer drag creates an arrow overlay with a visible arrowhead.
+- When a photo is loaded and Rectangle is selected, pointer drag creates a rectangle overlay with visible outline and transparent fill.
 - Dimension drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Arrow drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
+- Rectangle drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Overlay painter clips drawing to the displayed image rectangle to prevent render bleed into white canvas.
 - Tapping a dimension line selects it for erase/edit actions.
 - Tapping an arrow selects it for erase actions.
+- Tapping a rectangle selects it for erase actions.
 - Selected lines render with highlighted stroke styling for clear visual feedback.
 - Erase removes the selected dimension/arrow (and dimension label); if nothing is selected, app shows a safe guidance message.
+- Erase removes the selected dimension/arrow/rectangle (and dimension label); if nothing is selected, app shows a safe guidance message.
 - Keyboard `Delete` and `Backspace` trigger the same selected-line erase path.
 - After line creation, label dialog allows manual text input or skip.
 - Pressing Enter/Done in the label input submits the same save path as tapping Save.
@@ -167,6 +175,7 @@ Required sections are present and updated through Phase 1G.
   - dimension label style/placement thresholds
   - dimension selection/erase copy and visual style tunables
   - arrow style/arrowhead/selection tunables
+  - rectangle outline/fill/selection tunables
 - Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages and are tracked in validation notes.
 - Splash duration remains tunable through `BrandingAssetConstants.startupSplashDurationMs`.
 - Splash footprint remains tunable through:

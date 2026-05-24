@@ -6,13 +6,14 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1G Arrow tool draw/select/erase behavior.
+Changes: Added Phase 1H Rectangle tool draw/select/erase behavior.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
 - `Photo Canvas Area` (implemented with image display)
 - `Dimension Overlay Layer` (implemented)
 - `Arrow Overlay Layer` (implemented)
+- `Rectangle Overlay Layer` (implemented)
 - `Dimension Label Dialog` (implemented)
 - `Export / Save Dialog` (implemented for PNG)
 - `Selected Dimension Erase Action` (implemented)
@@ -40,8 +41,8 @@ Changes: Added Phase 1G Arrow tool draw/select/erase behavior.
 - `home`
 - Read/write behavior: `MIXED`
 - Notes:
-- `Open Photo + Dimension + Arrow + Undo are functional in this phase`
-- `Erase removes currently selected dimension line/arrow (+dimension label when applicable)`
+- `Open Photo + Dimension + Arrow + Rectangle + Undo are functional in this phase`
+- `Erase removes currently selected dimension line/arrow/rectangle (+dimension label when applicable)`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
 - `Startup splash image is scaled to fill most of startup screen`
 - `Startup splash version text uses AppConstants.appVersion (shared with app bar version)`
@@ -83,6 +84,24 @@ Changes: Added Phase 1G Arrow tool draw/select/erase behavior.
 - `Single tap selects line; second tap on selected line re-opens label edit`
 - `Selected line visual state is highlighted`
 - `Delete/Backspace keyboard keys erase selected line`
+
+#### `Rectangle Overlay Layer`
+- Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+- Purpose: `Capture rectangle drag gestures and render rectangular scope areas`
+- Parent/master form: `Photo Canvas Area`
+- Child components:
+- `CustomPaint rectangle renderer`
+- `Transparent-fill + outline style`
+- `Shared pointer event listener`
+- Related widgets/components:
+- `DimensionLinesOverlay`
+- `RectangleMarkup` model
+- Read/write behavior: `MIXED`
+- Notes:
+- `Rectangle tool remains separate from Dimension and Arrow tools`
+- `Rectangle bounds are clamped to displayed photo rectangle`
+- `Selected rectangle visual state is highlighted`
+- `Erase/Delete/Backspace remove selected rectangle`
 
 #### `Arrow Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`

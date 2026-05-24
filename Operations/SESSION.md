@@ -1092,6 +1092,87 @@ Changes: Added Phase 1A Flutter app shell session.
 ## Constraints Confirmed
 - No push performed.
 
+# SESSION_2026-05-24_0008_phase1h_rectangle_mvp
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Implement Phase 1H Rectangle Tool MVP with shared selection/erase/undo/export behavior.
+
+## Actions
+- Verified clean preflight (`git status --short`).
+- Added rectangle model: `app/lib/features/markup/models/rectangle_markup.dart`.
+- Expanded tool enum with `MarkupTool.rectangle`.
+- Added rectangle tunables in `app_constants.dart`:
+  - outline color, selected outline color, fill color, stroke widths, min side size, selection hit distance.
+- Updated toolbar wiring:
+  - rectangle tool selection state.
+- Updated shared markup state/logic in `main.dart`:
+  - rectangle list and selected rectangle id
+  - rectangle draw creation path with bounds clamp
+  - erase/delete support for selected rectangles
+  - undo removes latest markup across dimension/arrow/rectangle
+  - nearest-hit selection supports dimension/arrow/rectangle
+- Updated overlay painter:
+  - renders rectangles with transparent fill and visible outline
+  - selected rectangle highlight
+  - active rectangle drag preview
+- Added widget test coverage for rectangle tool selection safety without image.
+
+## Logging/Debug Notes
+- Rectangle hit-testing uses nearest-point-to-rect distance and shared selection threshold.
+- Existing dimension label flow remains unchanged; only dimension second-tap opens label dialog.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS`
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Constraints Confirmed
+- No commit/push/version bump performed in this step.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+
+# SESSION_2026-05-24_0009_phase1h_commit_approval_rerun
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Re-run final validation and execute approved Phase 1H commit split to v0.11.
+
+## Actions
+- Confirmed dirty files match approved Phase 1H scope only.
+- Re-ran required validation:
+  - `verify-version-sync.ps1`
+  - `flutter pub get`
+  - `flutter analyze`
+  - `flutter test`
+  - `flutter build windows --debug`
+  - `flutter run -d windows --debug --no-resident`
+  - `.agent_temp` ignore check
+  - tunable constants gate scan
+- Recorded commit-approval rerun evidence in `VAL-101`.
+
+## Validation
+- All required checks passed for commit approval rerun.
+
+## Constraints Confirmed
+- No push performed.
+
 # SESSION_2026-05-24_0006_phase1g_arrow_mvp
 
 ## Context

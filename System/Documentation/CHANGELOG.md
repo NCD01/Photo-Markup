@@ -6,7 +6,39 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1G Arrow Tool MVP entry and final no-selection erase copy polish.
+Changes: Added Phase 1H Rectangle Tool MVP entry.
+
+## Unreleased - 2026-05-24 (Phase 1H Rectangle Tool MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Add Rectangle markup tool with selection/delete/undo/export integration.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/rectangle_markup.dart`
+  - `app/lib/features/markup/models/markup_tool.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added Rectangle tool selection and drag-to-create rectangle behavior.
+  - Added rectangle bounds clamping to displayed photo rectangle.
+  - Added field-visible rectangle outline with transparent fill.
+  - Added rectangle selection + selected visual state.
+  - Extended erase/delete keyboard behavior to selected rectangles.
+  - Preserved undo behavior to remove latest markup across dimension/arrow/rectangle.
+  - Preserved export behavior so deleted markups are excluded.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Owner interactive manual validation pending in target environment for full Phase 1H workflow.
 
 ## Unreleased - 2026-05-24 (Phase 1G Arrow Tool MVP)
 - Owner: NCD / M
