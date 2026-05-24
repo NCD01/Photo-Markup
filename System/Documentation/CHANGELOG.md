@@ -693,3 +693,15 @@ Changes: Added HEIC Windows fallback hotfix entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.13 - 2026-05-24
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve Phase 1J HEIC HEIF Import Support
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
