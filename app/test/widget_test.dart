@@ -12,8 +12,21 @@ void main() {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
 
     expect(find.text(AppConstants.appName), findsOneWidget);
+    expect(find.text(AppConstants.appVersion), findsOneWidget);
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
     expect(find.text(ToolbarConstants.openPhoto), findsOneWidget);
+  });
+
+  testWidgets('startup splash shows centralized app version', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: true));
+
+    expect(find.text(AppConstants.appVersion), findsOneWidget);
+    await tester.pump(
+      const Duration(milliseconds: BrandingAssetConstants.startupSplashDurationMs),
+    );
+    await tester.pumpAndSettle();
   });
 
   testWidgets('selecting dimension without image does not crash', (

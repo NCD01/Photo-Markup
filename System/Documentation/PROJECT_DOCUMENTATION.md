@@ -5,9 +5,9 @@ Version: `v0.5`
 Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-23`
+Last Updated: `2026-05-24`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1E PNG marked-image export MVP and export-failure root-cause/fix notes.
+Changes: Added splash/app version sync rule and automated version-sync check.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -100,6 +100,7 @@ Required sections are present and updated through Phase 1D.
 
 ## Visual and Runtime Behavior
 - App bar shows `NCD Photo Markup` and `v0.7`.
+- Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
 - Windows app icon resource uses a transparent approved-design master derived from v1.5:
@@ -155,6 +156,10 @@ Required sections are present and updated through Phase 1D.
 - Splash footprint remains tunable through:
   - `UiLayoutConstants.splashImageWidthFactor`
   - `UiLayoutConstants.splashImageHeightFactor`
+- Version sync contract:
+  - `VERSION` is the canonical release value.
+  - `scripts/bump-version.ps1` updates both `VERSION` and `AppConstants.appVersion`.
+  - `scripts/verify-version-sync.ps1` must pass to verify splash/app version parity.
 
 
 

@@ -142,6 +142,16 @@ class _StartupSplashGateState extends State<StartupSplashGate> {
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: UiLayoutConstants.splashVersionTopGap),
+                  const Text(
+                    AppConstants.appVersion,
+                    style: TextStyle(
+                      fontSize: UiLayoutConstants.splashVersionFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: AppThemeConstants.ncdBlue,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),

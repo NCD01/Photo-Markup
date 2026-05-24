@@ -102,6 +102,8 @@ class UiLayoutConstants {
   static const double splashImageHeightFactor = 0.88;
   static const double splashImageHorizontalPadding = 12;
   static const double splashTitleTopGap = 16;
+  static const double splashVersionTopGap = 6;
+  static const double splashVersionFontSize = 14;
   static const double loadedNameMaxWidth = 260;
   static const double appBarLoadedNameRightPadding = 10;
   static const double appBarVersionRightPadding = 16;

@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\FORM_DEFINITIONS.m
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-23`
+Last Updated: `2026-05-24`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1E export workflow behavior for user-selected PNG output.
+Changes: Added splash version source-of-truth sync behavior.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -41,6 +41,7 @@ Changes: Added Phase 1E export workflow behavior for user-selected PNG output.
 - `Open Photo + Dimension + Undo (dimension only) are functional in this phase`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
 - `Startup splash image is scaled to fill most of startup screen`
+- `Startup splash version text uses AppConstants.appVersion (shared with app bar version)`
 - `Windows app opens maximized on launch`
 
 #### `Photo Canvas Area`

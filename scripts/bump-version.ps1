@@ -18,6 +18,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $versionPath = Join-Path $repoRoot "VERSION"
+$appConstantsPath = Join-Path $repoRoot "app\\lib\\core\\constants\\app_constants.dart"
 $changelogPath = Join-Path $repoRoot "System\\Documentation\\CHANGELOG.md"
 $releaseNotesPath = Join-Path $repoRoot "System\\Documentation\\RELEASE_NOTES.md"
 
@@ -42,6 +43,25 @@ if ($Bump -eq "major") {
 
 $newVersion = "v$major.$minor"
 Set-Content -Path $versionPath -Value "$newVersion`n" -NoNewline
+
+if (-not (Test-Path $appConstantsPath)) {
+    throw "App constants file is missing: $appConstantsPath"
+}
+
+$appConstantsRaw = Get-Content -Raw $appConstantsPath
+$updatedAppConstants = [regex]::Replace(
+    $appConstantsRaw,
+    "static const String appVersion = 'v\d+\.\d+';",
+    "static const String appVersion = '$newVersion';",
+    1
+)
+
+if ($updatedAppConstants -eq $appConstantsRaw) {
+    throw "Could not update AppConstants.appVersion in $appConstantsPath"
+}
+
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($appConstantsPath, $updatedAppConstants, $utf8NoBom)
 
 if (-not $Author) {
     $Author = $env:USERNAME

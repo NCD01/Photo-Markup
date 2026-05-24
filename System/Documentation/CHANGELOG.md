@@ -4,9 +4,31 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-23`
+Last Updated: `2026-05-24`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1E export failure debug/fix entry for PNG marked-image export MVP.
+Changes: Added splash/app version sync fix and version drift guardrail.
+
+## Unreleased - 2026-05-24 (Splash/App Version Sync Fix)
+- Owner: NCD / M
+- Author: Codex
+- Type: Fix
+- Reason: Splash version display could drift from app/release version after bump.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `scripts/bump-version.ps1`
+  - `scripts/verify-version-sync.ps1`
+  - `app/test/widget_test.dart`
+  - `Operations/VALIDATION_MATRIX.md`
+  - `Operations/SESSION.md`
+  - `System/Documentation/PROJECT_DOCUMENTATION.md`
+  - `System/Documentation/FORM_DEFINITIONS.md`
+  - `scripts/README.md`
+- Changes:
+  - Splash now renders `AppConstants.appVersion` so splash and app bar share one version source.
+  - Added script-level version sync update in bump flow (`VERSION` + `AppConstants.appVersion`).
+  - Added `scripts/verify-version-sync.ps1` to fail fast on version drift.
+  - Added widget regression check for splash/app centralized version usage.
 
 ## Unreleased - 2026-05-23 (Phase 1E Export Failure Debug/Fix)
 - Owner: NCD / M

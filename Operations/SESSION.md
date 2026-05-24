@@ -1061,6 +1061,65 @@ Changes: Added Phase 1A Flutter app shell session.
 
 ## Constraints Confirmed
 - No commit/push/version bump performed in this step.
+
+# SESSION_2026-05-24_0003_version_sync_commit_approval_rerun
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Run final validation and execute approved commit split for splash/app version-sync fix.
+
+## Actions
+- Confirmed dirty scope matches approved version-sync files only.
+- Re-ran required validation:
+  - `verify-version-sync.ps1`
+  - `flutter pub get`
+  - `flutter analyze`
+  - `flutter test`
+  - `flutter build windows --debug`
+  - `flutter run -d windows --debug --no-resident`
+  - `.agent_temp` ignore check
+  - tunable constants scan
+
+## Validation
+- All required checks passed for commit approval rerun.
+
+## Constraints Confirmed
+- No push performed.
+
+# SESSION_2026-05-24_0002_splash_version_sync_fix
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Fix splash version drift so splash and app bar always use the same centralized app version source.
+
+## Actions
+- Verified clean preflight (`git status --short`).
+- Updated splash UI in `app/lib/main.dart` to render `AppConstants.appVersion`.
+- Added splash version layout tunables in `app/lib/core/constants/app_constants.dart`.
+- Updated `scripts/bump-version.ps1` so approved bumps update both:
+  - `VERSION`
+  - `app/lib/core/constants/app_constants.dart` (`AppConstants.appVersion`)
+- Added `scripts/verify-version-sync.ps1` to enforce parity between `VERSION` and `AppConstants.appVersion`.
+- Added widget regression coverage in `app/test/widget_test.dart` for splash version rendering.
+- Updated docs and validation matrix with the new version-sync rule.
+
+## Validation
+- `powershell -ExecutionPolicy Bypass -File scripts/verify-version-sync.ps1`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+
+## Constraints Confirmed
+- No commit/push/version bump performed in this step.
 - No Control Center integration added.
 - No project-folder autosave added.
 - No Apple/HEIC added.
