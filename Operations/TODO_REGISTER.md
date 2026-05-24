@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-23`
 Purpose: Track planned and in-progress work items.
-Changes: Added future icon standard/taskbar redesign TODO and marked Phase 1D icon iteration stop decision.
+Changes: Added Phase 1E export follow-up TODOs for full-resolution output and optional PDF export.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -29,6 +29,8 @@ Changes: Added future icon standard/taskbar redesign TODO and marked Phase 1D ic
 | `TODO-012` | `Measurement` | `Assess broader feet/inches parsing rules beyond lightweight Phase 1D formatter` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-013` | `Branding` | `Create and use transparent v1.5-derived icon source for Windows .ico regeneration` | `High` | `NCD / M` | `Done` | `DECISION-008` | `2026-05-23` |
 | `TODO-014` | `Branding` | `Future Icon Standard / Taskbar Icon Redesign` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-015` | `Export` | `Add full-resolution marked-image export path (not current viewport resolution)` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-016` | `Export` | `Evaluate optional PDF export workflow after PNG MVP is validated` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -41,6 +43,7 @@ Changes: Added future icon standard/taskbar redesign TODO and marked Phase 1D ic
 | `6` | `Manual QA` | `Dimension line interactive field validation` | `Done` | `Owner Windows interactive run` | `Owner reported manual items 1-6 PASS + bounds fix PASS` |
 | `7` | `Branding` | `Windows platform icon packaging follow-up` | `Done` | `Approved icon v1.5 source` | `app/windows/runner/resources/app_icon.ico replaced from approved asset` |
 | `8` | `Branding` | `Taskbar icon visual readability redesign standard` | `Open` | `Future simplified icon standard approval` | `Tracked in TODO-014` |
+| `9` | `Export` | `Viewport PNG export MVP shipped; full-resolution/PDF follow-up` | `Open` | `Owner approval for next export phase` | `Tracked in TODO-015/TODO-016` |
 
 
 

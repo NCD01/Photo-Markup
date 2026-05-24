@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
@@ -92,7 +93,7 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
           : null,
       child: CustomPaint(
         painter: _DimensionLinesPainter(
-          lines: widget.lines,
+          lines: List<DimensionLine>.of(widget.lines),
           imageRect: widget.imageRect,
           activeStart: widget.activeStart,
           activeEnd: widget.activeEnd,
@@ -312,7 +313,7 @@ class _DimensionLinesPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DimensionLinesPainter oldDelegate) {
-    return oldDelegate.lines != lines ||
+    return !listEquals(oldDelegate.lines, lines) ||
         oldDelegate.imageRect != imageRect ||
         oldDelegate.activeStart != activeStart ||
         oldDelegate.activeEnd != activeEnd;

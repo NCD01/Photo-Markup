@@ -65,6 +65,10 @@ class UiCopyConstants {
   static const String dimensionLabelHint = 'Example: 72" or 6\'-0"';
   static const String dimensionLabelSaveButton = 'Save';
   static const String dimensionLabelSkipButton = 'Skip';
+  static const String exportNoPhotoMessage = 'Load a photo before exporting.';
+  static const String exportSuccessMessage = 'Export complete.';
+  static const String exportFailureMessage =
+      'Could not export this image. Please try again.';
 }
 
 class ToolbarConstants {
@@ -73,6 +77,7 @@ class ToolbarConstants {
   static const String openPhoto = 'Open Photo';
   static const String dimension = 'Dimension';
   static const String undo = 'Undo';
+  static const String export = 'Export';
   static const List<String> labels = <String>[
     openPhoto,
     dimension,
@@ -84,7 +89,7 @@ class ToolbarConstants {
     'Erase',
     undo,
     'Save',
-    'Export',
+    export,
   ];
 }
 
@@ -149,4 +154,19 @@ class DimensionLineConstants {
   static const double labelBorderWidth = 1;
   static const double labelTapSelectDistance = 26;
   static const double tapMoveThreshold = 8;
+}
+
+class ExportConstants {
+  const ExportConstants._();
+
+  static const String saveDialogConfirmButtonText = 'Export PNG';
+  static const String saveTypeGroupLabel = 'PNG Image';
+  static const String outputExtension = 'png';
+  static const String defaultFileSuffix = '_marked';
+  static const double maxPixelRatio = 3.0;
+
+  static const XTypeGroup pngSaveTypeGroup = XTypeGroup(
+    label: saveTypeGroupLabel,
+    extensions: <String>[outputExtension],
+  );
 }

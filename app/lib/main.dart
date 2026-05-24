@@ -5,12 +5,19 @@ import 'dart:ui' as ui;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/features/export/services/marked_up_image_export_service.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 
 typedef OpenFileCallback = Future<XFile?> Function();
+typedef SaveLocationCallback =
+    Future<FileSaveLocation?> Function({
+      String? suggestedName,
+      String? confirmButtonText,
+      List<XTypeGroup> acceptedTypeGroups,
+    });
 
 void main() {
   const String startupImagePath = String.fromEnvironment(
@@ -24,11 +31,13 @@ class NcdPhotoMarkupApp extends StatelessWidget {
     super.key,
     this.initialImagePath,
     this.openFileOverride,
+    this.saveLocationOverride,
     this.showStartupSplash = true,
   });
 
   final String? initialImagePath;
   final OpenFileCallback? openFileOverride;
+  final SaveLocationCallback? saveLocationOverride;
   final bool showStartupSplash;
 
   @override
@@ -36,6 +45,7 @@ class NcdPhotoMarkupApp extends StatelessWidget {
     final Widget shell = PhotoMarkupShellScreen(
       initialImagePath: initialImagePath,
       openFileOverride: openFileOverride,
+      saveLocationOverride: saveLocationOverride,
     );
 
     return MaterialApp(
@@ -147,10 +157,12 @@ class PhotoMarkupShellScreen extends StatefulWidget {
     super.key,
     this.initialImagePath,
     this.openFileOverride,
+    this.saveLocationOverride,
   });
 
   final String? initialImagePath;
   final OpenFileCallback? openFileOverride;
+  final SaveLocationCallback? saveLocationOverride;
 
   @override
   State<PhotoMarkupShellScreen> createState() => _PhotoMarkupShellScreenState();
@@ -161,7 +173,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   String? _loadedFileName;
   String? _errorMessage;
   bool _isPickingFile = false;
+  bool _isExporting = false;
   Size? _loadedImagePixelSize;
+  final GlobalKey _canvasExportKey = GlobalKey();
 
   MarkupTool _selectedTool = MarkupTool.none;
   final List<DimensionLine> _dimensionLines = <DimensionLine>[];
@@ -305,6 +319,99 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       _undoMostRecentDimensionLine();
       return;
     }
+
+    if (label == ToolbarConstants.export) {
+      _exportMarkedUpImage();
+      return;
+    }
+  }
+
+  Future<void> _exportMarkedUpImage() async {
+    if (_isExporting) {
+      return;
+    }
+
+    if (_imagePath == null) {
+      _showSnack(UiCopyConstants.exportNoPhotoMessage);
+      return;
+    }
+
+    setState(() {
+      _isExporting = true;
+    });
+
+    try {
+      final FileSaveLocation? saveLocation = widget.saveLocationOverride != null
+          ? await widget.saveLocationOverride!(
+              suggestedName: _suggestedExportName(),
+              confirmButtonText: ExportConstants.saveDialogConfirmButtonText,
+              acceptedTypeGroups: const <XTypeGroup>[
+                ExportConstants.pngSaveTypeGroup,
+              ],
+            )
+          : await getSaveLocation(
+              suggestedName: _suggestedExportName(),
+              confirmButtonText: ExportConstants.saveDialogConfirmButtonText,
+              acceptedTypeGroups: const <XTypeGroup>[
+                ExportConstants.pngSaveTypeGroup,
+              ],
+            );
+
+      if (!mounted || saveLocation == null || saveLocation.path.isEmpty) {
+        return;
+      }
+
+      final double pixelRatio = MediaQuery.of(
+        context,
+      ).devicePixelRatio.clamp(1.0, ExportConstants.maxPixelRatio);
+      final String outputPath = _normalizeExportPath(saveLocation.path);
+
+      await MarkedUpImageExportService.exportBoundaryToPng(
+        boundaryKey: _canvasExportKey,
+        outputPath: outputPath,
+        pixelRatio: pixelRatio,
+      );
+
+      if (!mounted) {
+        return;
+      }
+      _showSnack(UiCopyConstants.exportSuccessMessage);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      _showSnack(UiCopyConstants.exportFailureMessage);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExporting = false;
+        });
+      }
+    }
+  }
+
+  String _suggestedExportName() {
+    final String sourceName = _loadedFileName ?? 'photo';
+    final int extensionIndex = sourceName.lastIndexOf('.');
+    final String baseName = extensionIndex > 0
+        ? sourceName.substring(0, extensionIndex)
+        : sourceName;
+    return '$baseName${ExportConstants.defaultFileSuffix}.${ExportConstants.outputExtension}';
+  }
+
+  String _normalizeExportPath(String path) {
+    final String lowerPath = path.toLowerCase();
+    final String extension = '.${ExportConstants.outputExtension}';
+    if (lowerPath.endsWith(extension)) {
+      return path;
+    }
+    return '$path$extension';
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _undoMostRecentDimensionLine() {
@@ -578,7 +685,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                             label == ToolbarConstants.dimension &&
                             _selectedTool == MarkupTool.dimension,
                         isDisabled:
-                            label == ToolbarConstants.undo && !_isUndoEnabled(),
+                            (label == ToolbarConstants.undo &&
+                                !_isUndoEnabled()) ||
+                            (label == ToolbarConstants.export && _isExporting),
                         onPressed: () => _onToolbarPressed(label),
                       ),
                     ),
@@ -660,42 +769,45 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                   constraints.maxHeight,
                 );
                 final Rect imageRect = _computeDisplayedImageRect(canvasSize);
-                return Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Center(
-                      child: Image.file(
-                        File(_imagePath!),
-                        fit: BoxFit.contain,
-                        errorBuilder:
-                            (_, Object error, StackTrace? stackTrace) {
-                              return const Text(
-                                ImageImportConstants.openErrorMessage,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppThemeConstants.errorAccent,
-                                  fontSize: UiLayoutConstants.messageFontSize,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              );
-                            },
+                return RepaintBoundary(
+                  key: _canvasExportKey,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: Image.file(
+                          File(_imagePath!),
+                          fit: BoxFit.contain,
+                          errorBuilder:
+                              (_, Object error, StackTrace? stackTrace) {
+                                return const Text(
+                                  ImageImportConstants.openErrorMessage,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppThemeConstants.errorAccent,
+                                    fontSize: UiLayoutConstants.messageFontSize,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                );
+                              },
+                        ),
                       ),
-                    ),
-                    DimensionLinesOverlay(
-                      lines: _dimensionLines,
-                      imageRect: imageRect,
-                      activeStart: _activeDimensionStart,
-                      activeEnd: _activeDimensionCurrent,
-                      isEnabled: _canDrawDimensionLine(imageRect),
-                      onStart: (Offset point) =>
-                          _onDimensionStart(point, imageRect),
-                      onUpdate: (Offset point) =>
-                          _onDimensionUpdate(point, imageRect),
-                      onEnd: () => _onDimensionEnd(imageRect),
-                      onTap: (Offset point) =>
-                          _onDimensionTap(point, imageRect),
-                    ),
-                  ],
+                      DimensionLinesOverlay(
+                        lines: _dimensionLines,
+                        imageRect: imageRect,
+                        activeStart: _activeDimensionStart,
+                        activeEnd: _activeDimensionCurrent,
+                        isEnabled: _canDrawDimensionLine(imageRect),
+                        onStart: (Offset point) =>
+                            _onDimensionStart(point, imageRect),
+                        onUpdate: (Offset point) =>
+                            _onDimensionUpdate(point, imageRect),
+                        onEnd: () => _onDimensionEnd(imageRect),
+                        onTap: (Offset point) =>
+                            _onDimensionTap(point, imageRect),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),

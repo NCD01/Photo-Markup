@@ -973,3 +973,95 @@ Changes: Added Phase 1A Flutter app shell session.
 - No Control Center integration added.
 - No project-folder autosave added.
 - No Apple/HEIC implementation added.
+
+# SESSION_2026-05-23_0022_phase1e_export_failure_debug_fix
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Debug and fix Phase 1E PNG export failure only.
+
+## Preflight
+- Ran `git status --short` and confirmed clean working tree before edits.
+
+## Failure Reproduction + Root Cause
+- Reproduction outcome (pre-fix): Export button appeared in toolbar but produced no export workflow.
+- User-visible behavior (pre-fix): no save dialog, no success/failure message.
+- Runtime exception/stack trace (pre-fix): none surfaced because export path was never invoked.
+- Failure stage: before save dialog, before render capture, before file write.
+- Root cause: `ToolbarConstants.export` action was not handled in `_onToolbarPressed`.
+- Diagnostic artifact: `.agent_temp/diagnostics/export_debug/export_failure_root_cause.txt`
+
+## Fix Applied
+- Added explicit Export toolbar handling in `main.dart`.
+- Added save dialog path via `file_selector.getSaveLocation` with PNG type group.
+- Added RepaintBoundary capture key on the marked canvas stack.
+- Added export service:
+  - `app/lib/features/export/services/marked_up_image_export_service.dart`
+  - waits for frame, validates boundary/context, captures PNG, writes bytes to selected path.
+- Added export UX handling:
+  - no-photo warning
+  - cancel-safe no-op
+  - success/failure snackbar messages
+  - export path extension normalization (`.png`)
+- Added export tunables/constants in `app_constants.dart`.
+- Added widget test for no-photo export warning path.
+
+## Validation
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Manual Validation Status
+- Interactive save-dialog cancel path: `NOT_VALIDATED` in this environment.
+- Interactive end-to-end export file creation/open check: `NOT_VALIDATED` in this environment.
+- Owner interactive run required for final manual signoff.
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+- No PDF export added.
+
+# SESSION_2026-05-24_0001_phase1e_commit_approval_rerun_and_repaint_fix
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Finalize approved Phase 1E commit scope and include immediate label repaint fix.
+
+## Actions
+- Re-ran full validation suite before commit approval flow.
+- Confirmed export MVP scope only (no unrelated feature additions).
+- Applied repaint reliability fix in `dimension_lines_overlay.dart`:
+  - painter receives a list snapshot (`List<DimensionLine>.of(...)`)
+  - `shouldRepaint` uses deep list comparison (`listEquals`)
+- Confirmed owner manual report: label now appears immediately after save.
+
+## Validation
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+
+## Constraints Confirmed
+- No commit/push/version bump performed in this step.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC added.
+- No PDF export added.

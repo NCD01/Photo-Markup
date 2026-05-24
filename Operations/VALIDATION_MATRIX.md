@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-23`
 Purpose: Track required validation activities and outcomes.
-Changes: Added Phase 1D closeout validation entries for icon artifact cleanup, MVP icon acceptance, and deferral documentation.
+Changes: Added Phase 1E export-failure debug/fix validation entries and manual export coverage status.
 
 ## Validation Matrix
 | ID | Validation | Command/Method | Trigger | Pass Criteria | Owner | Status | Evidence Path |
@@ -91,5 +91,12 @@ Changes: Added Phase 1D closeout validation entries for icon artifact cleanup, M
 | `VAL-078` | Approved-Design Post-Correction Full Validation | `cd app && flutter clean/pub get/analyze/test/build windows/run windows` | Approved-design icon correction complete | Full suite remains green with no label workflow regressions | `NCD / M` | `PASS` | `Terminal output 2026-05-23 (approved-design correction pass)` |
 | `VAL-079` | Icon Artifact Cleanup Gate | `git status` + file existence check | Stop icon iteration and clean commit scope | Experimental icon masters are removed/excluded; only final approved-design master remains | `NCD / M` | `PASS` | `System/Documentation/Images cleanup 2026-05-23` |
 | `VAL-080` | MVP Icon Deferral Documentation Gate | Manual doc review | Icon redesign deferred by owner | Deferral rationale and future icon standard backlog are recorded in docs/TODO | `NCD / M` | `PASS` | `PROJECT_DOCUMENTATION + TODO-014 + SESSION` |
+| `VAL-081` | Phase 1E Export Handler Wiring | Code review + runtime smoke | Export fail reported | Export toolbar action invokes save dialog/export flow instead of no-op | `NCD / M` | `PASS` | `main.dart _onToolbarPressed + _exportMarkedUpImage` |
+| `VAL-082` | Phase 1E Export Service Capture/Write | Service unit path + build/runtime smoke | Export capture/write logic added | RepaintBoundary capture encodes PNG and writes user-selected path without crashes in automated flow | `NCD / M` | `PASS` | `features/export/services/marked_up_image_export_service.dart + validation run 2026-05-23` |
+| `VAL-083` | Phase 1E No-Photo Export UX | Widget test | Export attempted without image | Friendly no-photo warning shown and no crash | `NCD / M` | `PASS` | `widget_test.dart export with no photo shows friendly warning` |
+| `VAL-084` | Phase 1E Save Dialog Cancel Manual Path | Manual interactive test | User cancels export save dialog | No crash and no file write | `NCD / M` | `NOT_VALIDATED` | `Interactive save-dialog cancel path not automatable in this run` |
+| `VAL-085` | Phase 1E End-to-End PNG Export Manual Path | Manual interactive test | User exports marked-up image | PNG output contains photo + line + label and original source remains unchanged | `NCD / M` | `NOT_VALIDATED` | `Interactive file-pick/draw/export/open verification pending owner run` |
+| `VAL-086` | Phase 1E Revalidation Suite | `cd app && flutter pub get/analyze/test/build/run` | Export fix complete | Full suite passes after export fix changes | `NCD / M` | `PASS` | `Terminal output 2026-05-23 (Phase 1E debug/fix)` |
+| `VAL-087` | Phase 1E Label Repaint Immediate Update | Code review + owner manual validation report | Label appeared only after later interactions | Saved label appears immediately after dialog save due painter list snapshot + deep equality repaint check | `NCD / M` | `PASS` | `dimension_lines_overlay.dart List.of + listEquals; owner manual pass` |
 
 

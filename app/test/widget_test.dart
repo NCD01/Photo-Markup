@@ -27,6 +27,26 @@ void main() {
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
+  testWidgets('export with no photo shows friendly warning', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    final Finder exportButton = find.widgetWithText(
+      OutlinedButton,
+      ToolbarConstants.export,
+    );
+    final Finder toolbarScrollable = find.byType(Scrollable);
+    await tester.scrollUntilVisible(
+      exportButton,
+      240,
+      scrollable: toolbarScrollable,
+    );
+    await tester.tap(exportButton);
+    await tester.pump();
+
+    expect(find.text(UiCopyConstants.exportNoPhotoMessage), findsOneWidget);
+  });
+
   testWidgets('dimension overlay reports drag callbacks', (
     WidgetTester tester,
   ) async {

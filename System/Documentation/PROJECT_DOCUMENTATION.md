@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-23`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Finalized Phase 1D MVP icon decision: keep current transparent v1.5-derived runtime icon and defer taskbar readability redesign.
+Changes: Added Phase 1E PNG marked-image export MVP and export-failure root-cause/fix notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -31,6 +31,7 @@ Required sections are present and updated through Phase 1D.
 | Markup Model | `Dimension line state entity and tool enum` | `app/lib/features/markup/models/` | `NCD / M` |
 | Markup Widget | `Dimension lines overlay input capture and custom rendering` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `NCD / M` |
 | Markup Utility | `Lightweight normalization for common measurement label formats` | `app/lib/features/markup/utils/dimension_label_formatter.dart` | `NCD / M` |
+| Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
 | API | `Not implemented` | `app/lib (planned)` | `NCD / M` |
 | Engine | `Not implemented` | `app/lib (planned)` | `NCD / M` |
 | Data | `No persistence yet; runtime-only selected file path` | `app/lib/main.dart` | `NCD / M` |
@@ -46,6 +47,7 @@ Required sections are present and updated through Phase 1D.
 | `Dimension Label Render` | `Manual label appears near midpoint with readable background and bounds clamp` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Dimension Label Edit` | `Tap near an existing line to re-open label dialog for updates` | `app/lib/main.dart` | `Runtime smoke + code review` |
 | `Undo Dimension` | `Undo removes most recently added dimension line` | `app/lib/main.dart` | `Widget tests` |
+| `Export PNG` | `Prompts user for save location and exports visible marked canvas as PNG` | `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart` | `Analyze/test/build/run + pending owner manual E2E` |
 | `Cancel Handling` | `Picker cancel leaves state stable and no crash` | `app/lib/main.dart` | `Runtime automation attempt + no runtime errors` |
 | `Other Toolbar Buttons` | `Remain placeholders with no markup behavior` | `app/lib/main.dart` | `Code review + widget/runtime observation` |
 | `Branding Assets` | `Startup splash and app bar icon load from app-local branding assets` | `app/assets/branding/` + `app/lib/main.dart` + `app/pubspec.yaml` | `Runtime smoke + asset registration review` |
@@ -94,6 +96,7 @@ Required sections are present and updated through Phase 1D.
 | `RISK-003` | `Manual picker cancel/select steps not fully automatable in this environment` | `Codex` | `Next interactive validation` | `OS SendKeys blocked` |
 | `RISK-004` | `Interactive Windows manual drawing + label entry/edit validation still needed` | `NCD / M` | `Next owner interactive run` | `Automated tests cover logic but not full operator flow` |
 | `RISK-005` | `Approved v1.5 icon is mini-logo style (small text/detail/padding), so taskbar-size readability is limited without a simplified icon standard` | `NCD / M` | `Future icon redesign phase` | `MVP accepts current transparent icon; redesign tracked in TODO-014` |
+| `RISK-006` | `Current export captures visible canvas resolution (viewport-based), not original-image full resolution` | `NCD / M` | `Future export enhancement` | `Tracked in TODO-015` |
 
 ## Visual and Runtime Behavior
 - App bar shows `NCD Photo Markup` and `v0.6`.
@@ -120,6 +123,12 @@ Required sections are present and updated through Phase 1D.
 - Saved labels render near the line midpoint and remain in displayed-image bounds as much as practical.
 - Tapping near an existing line re-opens the label dialog for editing.
 - Label dialog controller lifecycle is dialog-local to prevent disposed-controller crashes during Save/Enter/Skip teardown.
+- Label updates repaint immediately after save (no delayed redraw on next interaction).
+- Export button now performs explicit user-selected PNG export workflow:
+  - no photo loaded: friendly warning message
+  - cancel save dialog: no-op, no crash
+  - selected path: writes PNG containing visible photo + dimension lines + markers + labels
+  - original source image is not modified
 - Quick-entry measurement normalization currently outputs inches:
   - `72` -> `72"`
   - `6 6` -> `78"`

@@ -6,7 +6,35 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-23`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1D closeout decision to stop icon iteration, keep current transparent icon for MVP, and defer redesign.
+Changes: Added Phase 1E export failure debug/fix entry for PNG marked-image export MVP.
+
+## Unreleased - 2026-05-23 (Phase 1E Export Failure Debug/Fix)
+- Owner: NCD / M
+- Author: Codex
+- Type: Fix
+- Reason: Export button failed in Phase 1E attempt and required targeted debug/fix.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/export/services/marked_up_image_export_service.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Fixed root cause where Export toolbar action was not wired to any handler.
+  - Added user-selected PNG save dialog workflow.
+  - Added RepaintBoundary capture + PNG encode/write export service for marked canvas output.
+  - Added friendly no-photo warning, cancel-safe no-op, and success/failure user feedback.
+  - Added export-related tunable constants (suffix, extension, messages, pixel ratio cap).
+  - Fixed delayed dimension-label repaint by snapshotting painter line input and using deep list comparison in `shouldRepaint`.
+- Validation Evidence:
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - Export failure root-cause artifact: `.agent_temp/diagnostics/export_debug/export_failure_root_cause.txt`
+- Risks / Known Gaps:
+  - End-to-end interactive save-dialog cancel and exported-file visual verification are pending owner manual run in this environment.
 
 ## Unreleased - 2026-05-23 (Phase 1D Icon Iteration Stop + Deferral)
 - Owner: NCD / M

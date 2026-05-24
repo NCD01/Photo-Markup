@@ -6,14 +6,14 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-23`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1D approved-design icon correction note; no form interaction changes in this pass.
+Changes: Added Phase 1E export workflow behavior for user-selected PNG output.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
 - `Photo Canvas Area` (implemented with image display)
 - `Dimension Overlay Layer` (implemented)
 - `Dimension Label Dialog` (implemented)
-- `Export / Save Dialog` (planned)
+- `Export / Save Dialog` (implemented for PNG)
 
 ## Field Work Forms
 ### `Shell` Forms
@@ -95,6 +95,21 @@ Changes: Added Phase 1D approved-design icon correction note; no form interactio
 - `Skips are allowed; labels are optional`
 - `Enter/Done key submits label as Save`
 - `Dialog owns/disposes its own TextEditingController to avoid disposed-controller crashes during close/rebuild`
+- `Saved label repaint is immediate (no next-action refresh required)`
+
+#### `Export / Save Dialog`
+- Source path: `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart`
+- Purpose: `Prompt for output file location and export visible marked canvas PNG`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Save location prompt`
+- `Success/failure feedback snackbar`
+- Read/write behavior: `WRITE_ONLY`
+- Notes:
+- `Export is user-selected only; no automatic project-folder save`
+- `No-photo export shows friendly warning and does not crash`
+- `Cancel path performs no-op and does not crash`
+- `Current export output is viewport-resolution capture (full-resolution export deferred)`
 
 ## Dependency/Component Map
 | Name | Form | Purpose | Path |
@@ -109,6 +124,7 @@ Changes: Added Phase 1D approved-design icon correction note; no form interactio
 | `Dimension Model` | `Dimension Overlay Layer` | `Store start/end coordinates for each line` | `app/lib/features/markup/models/dimension_line.dart` |
 | `Dimension Label Dialog` | `Dimension Label Dialog` | `Collect manual label text with Save/Skip` | `app/lib/main.dart` |
 | `Dimension Label Formatter` | `Dimension Label Dialog` | `Normalize common feet/inches inputs` | `app/lib/features/markup/utils/dimension_label_formatter.dart` |
+| `Export Service` | `Export / Save Dialog` | `Capture marked canvas and write PNG bytes` | `app/lib/features/export/services/marked_up_image_export_service.dart` |
 
 ## Phase 1D Review Note
 - Dimension label entry/edit behavior is implemented on top of existing dimension overlay.
