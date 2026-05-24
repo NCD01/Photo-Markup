@@ -446,3 +446,15 @@ Changes: Added splash/app version sync fix and version drift guardrail.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.8 - 2026-05-24
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve splash version sync fix
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
