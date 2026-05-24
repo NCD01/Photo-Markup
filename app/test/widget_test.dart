@@ -24,7 +24,9 @@ void main() {
 
     expect(find.text(AppConstants.appVersion), findsOneWidget);
     await tester.pump(
-      const Duration(milliseconds: BrandingAssetConstants.startupSplashDurationMs),
+      const Duration(
+        milliseconds: BrandingAssetConstants.startupSplashDurationMs,
+      ),
     );
     await tester.pumpAndSettle();
   });
@@ -58,6 +60,26 @@ void main() {
     await tester.pump();
 
     expect(find.text(UiCopyConstants.exportNoPhotoMessage), findsOneWidget);
+  });
+
+  testWidgets('erase with no selected line shows gentle message', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    final Finder eraseButton = find.widgetWithText(
+      OutlinedButton,
+      ToolbarConstants.erase,
+    );
+    final Finder toolbarScrollable = find.byType(Scrollable);
+    await tester.scrollUntilVisible(
+      eraseButton,
+      240,
+      scrollable: toolbarScrollable,
+    );
+    await tester.tap(eraseButton);
+    await tester.pump();
+
+    expect(find.text(UiCopyConstants.eraseNoSelectionMessage), findsOneWidget);
   });
 
   testWidgets('dimension overlay reports drag callbacks', (

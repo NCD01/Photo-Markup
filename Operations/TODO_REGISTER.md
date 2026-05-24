@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\TODO_REGISTER.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-23`
+Last Updated: `2026-05-24`
 Purpose: Track planned and in-progress work items.
-Changes: Added Phase 1E export follow-up TODOs for full-resolution output and optional PDF export.
+Changes: Added Phase 1F follow-up TODO for multi-select/bulk erase workflow.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -31,6 +31,7 @@ Changes: Added Phase 1E export follow-up TODOs for full-resolution output and op
 | `TODO-014` | `Branding` | `Future Icon Standard / Taskbar Icon Redesign` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-015` | `Export` | `Add full-resolution marked-image export path (not current viewport resolution)` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-016` | `Export` | `Evaluate optional PDF export workflow after PNG MVP is validated` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-017` | `Markup` | `Evaluate multi-select and bulk erase workflow (single-select only in Phase 1F)` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -44,6 +45,7 @@ Changes: Added Phase 1E export follow-up TODOs for full-resolution output and op
 | `7` | `Branding` | `Windows platform icon packaging follow-up` | `Done` | `Approved icon v1.5 source` | `app/windows/runner/resources/app_icon.ico replaced from approved asset` |
 | `8` | `Branding` | `Taskbar icon visual readability redesign standard` | `Open` | `Future simplified icon standard approval` | `Tracked in TODO-014` |
 | `9` | `Export` | `Viewport PNG export MVP shipped; full-resolution/PDF follow-up` | `Open` | `Owner approval for next export phase` | `Tracked in TODO-015/TODO-016` |
+| `10` | `Markup` | `Single-select erase delivered; future multi-select/bulk erase follow-up` | `Open` | `Owner approval for expanded erase UX` | `Tracked in TODO-017` |
 
 
 

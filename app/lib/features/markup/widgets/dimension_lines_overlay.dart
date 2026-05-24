@@ -8,6 +8,7 @@ class DimensionLinesOverlay extends StatefulWidget {
     super.key,
     required this.lines,
     required this.imageRect,
+    this.selectedLineIndex,
     this.activeStart,
     this.activeEnd,
     required this.isEnabled,
@@ -19,6 +20,7 @@ class DimensionLinesOverlay extends StatefulWidget {
 
   final List<DimensionLine> lines;
   final Rect imageRect;
+  final int? selectedLineIndex;
   final Offset? activeStart;
   final Offset? activeEnd;
   final bool isEnabled;
@@ -58,43 +60,52 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
               _didDrag = false;
               widget.onStart(clamped);
             }
-          : null,
-      onPointerMove: widget.isEnabled
-          ? (PointerMoveEvent event) {
-              final Offset clamped = DimensionLine.clampToRect(
+          : (PointerDownEvent event) {
+              if (!widget.imageRect.contains(event.localPosition)) {
+                _resetPointerState();
+                return;
+              }
+              _pointerDownPoint = DimensionLine.clampToRect(
                 event.localPosition,
                 widget.imageRect,
               );
-              final Offset? pointerDown = _pointerDownPoint;
-              if (pointerDown != null &&
-                  (clamped - pointerDown).distance >=
-                      DimensionLineConstants.tapMoveThreshold) {
-                _didDrag = true;
-              }
-              widget.onUpdate(clamped);
-            }
-          : null,
-      onPointerUp: widget.isEnabled
-          ? (_) {
-              widget.onEnd();
-              if (_pointerDownPoint != null &&
-                  !_didDrag &&
-                  widget.onTap != null) {
-                widget.onTap!(_pointerDownPoint!);
-              }
-              _resetPointerState();
-            }
-          : null,
-      onPointerCancel: widget.isEnabled
-          ? (_) {
-              widget.onEnd();
-              _resetPointerState();
-            }
-          : null,
+              _didDrag = false;
+            },
+      onPointerMove: (PointerMoveEvent event) {
+        final Offset clamped = DimensionLine.clampToRect(
+          event.localPosition,
+          widget.imageRect,
+        );
+        final Offset? pointerDown = _pointerDownPoint;
+        if (pointerDown != null &&
+            (clamped - pointerDown).distance >=
+                DimensionLineConstants.tapMoveThreshold) {
+          _didDrag = true;
+        }
+        if (widget.isEnabled) {
+          widget.onUpdate(clamped);
+        }
+      },
+      onPointerUp: (_) {
+        if (widget.isEnabled) {
+          widget.onEnd();
+        }
+        if (_pointerDownPoint != null && !_didDrag && widget.onTap != null) {
+          widget.onTap!(_pointerDownPoint!);
+        }
+        _resetPointerState();
+      },
+      onPointerCancel: (_) {
+        if (widget.isEnabled) {
+          widget.onEnd();
+        }
+        _resetPointerState();
+      },
       child: CustomPaint(
         painter: _DimensionLinesPainter(
           lines: List<DimensionLine>.of(widget.lines),
           imageRect: widget.imageRect,
+          selectedLineIndex: widget.selectedLineIndex,
           activeStart: widget.activeStart,
           activeEnd: widget.activeEnd,
         ),
@@ -108,12 +119,14 @@ class _DimensionLinesPainter extends CustomPainter {
   const _DimensionLinesPainter({
     required this.lines,
     required this.imageRect,
+    required this.selectedLineIndex,
     required this.activeStart,
     required this.activeEnd,
   });
 
   final List<DimensionLine> lines;
   final Rect imageRect;
+  final int? selectedLineIndex;
   final Offset? activeStart;
   final Offset? activeEnd;
 
@@ -126,6 +139,14 @@ class _DimensionLinesPainter extends CustomPainter {
     final Paint linePaint = Paint()
       ..color = DimensionLineConstants.lineColor
       ..strokeWidth = DimensionLineConstants.strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final Paint selectedLinePaint = Paint()
+      ..color = DimensionLineConstants.selectedLineColor
+      ..strokeWidth =
+          DimensionLineConstants.strokeWidth *
+          DimensionLineConstants.selectedStrokeMultiplier
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
@@ -150,16 +171,18 @@ class _DimensionLinesPainter extends CustomPainter {
     canvas.save();
     canvas.clipRect(imageRect);
 
-    for (final DimensionLine line in lines) {
+    for (int i = 0; i < lines.length; i++) {
+      final DimensionLine line = lines[i];
+      final bool isSelected = selectedLineIndex == i;
       final Offset start = line.startInRect(imageRect);
       final Offset end = line.endInRect(imageRect);
       _drawLine(
         canvas,
         start,
         end,
-        linePaint,
+        isSelected ? selectedLinePaint : linePaint,
         endpointFillPaint,
-        endpointStrokePaint,
+        isSelected ? selectedLinePaint : endpointStrokePaint,
       );
       _drawLabelIfPresent(
         canvas: canvas,
@@ -315,6 +338,7 @@ class _DimensionLinesPainter extends CustomPainter {
   bool shouldRepaint(covariant _DimensionLinesPainter oldDelegate) {
     return !listEquals(oldDelegate.lines, lines) ||
         oldDelegate.imageRect != imageRect ||
+        oldDelegate.selectedLineIndex != selectedLineIndex ||
         oldDelegate.activeStart != activeStart ||
         oldDelegate.activeEnd != activeEnd;
   }

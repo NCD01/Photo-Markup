@@ -6,7 +6,36 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Canonical changelog for project changes.
-Changes: Added splash/app version sync fix and version drift guardrail.
+Changes: Added Phase 1F dimension selection + erase/delete workflow entry.
+
+## Unreleased - 2026-05-24 (Phase 1F Delete / Erase Selected Markup)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Add basic selection and delete/erase behavior for existing dimension markups.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added tap-to-select behavior for existing dimension lines.
+  - Added visual selected-line highlight in overlay rendering.
+  - Added Erase toolbar behavior to remove selected line + label.
+  - Added keyboard Delete/Backspace handling to erase selected line.
+  - Added safe no-selection erase message.
+  - Preserved undo-last-line behavior and export behavior (deleted lines are not exported).
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Owner interactive manual validation of selection/erase/export-after-delete remains pending.
 
 ## Unreleased - 2026-05-24 (Splash/App Version Sync Fix)
 - Owner: NCD / M

@@ -1062,6 +1062,69 @@ Changes: Added Phase 1A Flutter app shell session.
 ## Constraints Confirmed
 - No commit/push/version bump performed in this step.
 
+# SESSION_2026-05-24_0005_phase1f_commit_approval_rerun
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Re-run final validation and execute approved Phase 1F commit split.
+
+## Actions
+- Confirmed dirty files match approved Phase 1F scope only.
+- Re-ran required validation:
+  - `verify-version-sync.ps1`
+  - `flutter pub get`
+  - `flutter analyze`
+  - `flutter test`
+  - `flutter build windows --debug`
+  - `flutter run -d windows --debug --no-resident`
+  - `.agent_temp` ignore check
+  - tunable constants gate scan
+- Recorded owner manual Phase 1F validation as PASS in `VAL-092`.
+
+## Validation
+- All required checks passed for commit approval rerun.
+
+## Constraints Confirmed
+- No push performed.
+
+# SESSION_2026-05-24_0004_phase1f_selection_erase
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Implement Phase 1F basic selection and erase/delete behavior for existing dimension markups.
+
+## Actions
+- Verified clean preflight (`git status --short`).
+- Added selected-line state tracking in `app/lib/main.dart`.
+- Added tap-to-select behavior (single tap selects, second tap edits label).
+- Added Erase toolbar action to remove selected line + label.
+- Added keyboard `Delete` / `Backspace` handling for selected-line erase.
+- Added safe no-selection erase guidance message.
+- Updated overlay painter to highlight selected line and keep immediate repaint behavior.
+- Added widget regression test for no-selection erase safety.
+- Updated changelog/project/form/ui/validation/session/todo docs for Phase 1F.
+
+## Logging/Debug Notes
+- Selection is index-based (`_selectedDimensionLineIndex`) and reset on image reload/erase.
+- Overlay tap handling now remains active when drawing mode is off, allowing selection without active drag tool.
+- No changes were made to export service; export output reflects current in-memory line list, so deleted lines are excluded automatically.
+
+## Validation
+- See `Operations/VALIDATION_MATRIX.md` rows `VAL-090` to `VAL-092`.
+
+## Constraints Confirmed
+- No commit/push/version bump performed in this step.
+
 # SESSION_2026-05-24_0003_version_sync_commit_approval_rerun
 
 ## Context

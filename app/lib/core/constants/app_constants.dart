@@ -69,6 +69,8 @@ class UiCopyConstants {
   static const String exportSuccessMessage = 'Export complete.';
   static const String exportFailureMessage =
       'Could not export this image. Please try again.';
+  static const String eraseNoSelectionMessage =
+      'Select a dimension line to erase.';
 }
 
 class ToolbarConstants {
@@ -76,6 +78,7 @@ class ToolbarConstants {
 
   static const String openPhoto = 'Open Photo';
   static const String dimension = 'Dimension';
+  static const String erase = 'Erase';
   static const String undo = 'Undo';
   static const String export = 'Export';
   static const List<String> labels = <String>[
@@ -86,7 +89,7 @@ class ToolbarConstants {
     'Rectangle',
     'Freehand',
     'Text',
-    'Erase',
+    erase,
     undo,
     'Save',
     export,
@@ -147,14 +150,16 @@ class DimensionLineConstants {
   const DimensionLineConstants._();
 
   static const Color lineColor = Color(0xFF005C85);
+  static const Color selectedLineColor = AppThemeConstants.ncdBlue;
   static const double strokeWidth = 3;
+  static const double selectedStrokeMultiplier = 1.4;
   static const double endpointStrokeWidth = 1.2;
   static const Color endpointFillColor = Colors.white;
   static const Color labelTextColor = Colors.black87;
   static const Color labelBackgroundColor = Color(0xD9FFFFFF);
   static const Color labelBorderColor = Color(0xFF005C85);
   static const double labelBorderWidth = 1;
-  static const double labelTapSelectDistance = 26;
+  static const double selectionTapDistance = 26;
   static const double tapMoveThreshold = 8;
 }
 

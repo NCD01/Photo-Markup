@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added splash/app version sync rule and automated version-sync check.
+Changes: Added Phase 1F dimension selection and erase/delete behavior notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -15,7 +15,7 @@ Changes: Added splash/app version sync rule and automated version-sync check.
 - Structure/governance cleanup must not change runtime behavior.
 
 ## Required Contract
-Required sections are present and updated through Phase 1D.
+Required sections are present and updated through Phase 1F.
 
 ## Overview
 - App Name: `NCD Photo Markup`
@@ -29,7 +29,7 @@ Required sections are present and updated through Phase 1D.
 | UI | `Shell screen, image import/open flow, canvas display, toolbar, and dimension overlay behavior` | `app/lib/main.dart` | `NCD / M` |
 | UI Config | `Centralized tunable constants for app copy/layout/theme/import labels/extensions/markup line styling` | `app/lib/core/constants/app_constants.dart` | `NCD / M` |
 | Markup Model | `Dimension line state entity and tool enum` | `app/lib/features/markup/models/` | `NCD / M` |
-| Markup Widget | `Dimension lines overlay input capture and custom rendering` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `NCD / M` |
+| Markup Widget | `Dimension lines overlay input capture, selection hit-testing, and custom rendering` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `NCD / M` |
 | Markup Utility | `Lightweight normalization for common measurement label formats` | `app/lib/features/markup/utils/dimension_label_formatter.dart` | `NCD / M` |
 | Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
 | API | `Not implemented` | `app/lib (planned)` | `NCD / M` |
@@ -43,9 +43,11 @@ Required sections are present and updated through Phase 1D.
 | `Canvas Image Display` | `Shows selected image centered with BoxFit.contain (no default cropping)` | `app/lib/main.dart` | `Loaded-image screenshot` |
 | `Dimension Tool Selection` | `Dimension button toggles active drawing mode with visible selected state` | `app/lib/main.dart` | `Widget tests + runtime smoke` |
 | `Dimension Line Draw` | `Drag on overlay creates persistent straight dimension lines above image, clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Widget test drag callbacks + runtime smoke` |
+| `Dimension Selection` | `Tap line once to select; selected line shows highlighted visual state` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Dimension Label Entry` | `After line creation, opens manual label dialog with Save/Skip options` | `app/lib/main.dart` | `Runtime smoke + formatter tests` |
 | `Dimension Label Render` | `Manual label appears near midpoint with readable background and bounds clamp` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
-| `Dimension Label Edit` | `Tap near an existing line to re-open label dialog for updates` | `app/lib/main.dart` | `Runtime smoke + code review` |
+| `Dimension Label Edit` | `Tap selected line again to re-open label dialog for updates` | `app/lib/main.dart` | `Runtime smoke + code review` |
+| `Erase Selected Line` | `Erase button and Delete/Backspace remove selected line + label with immediate repaint` | `app/lib/main.dart` | `Widget test (no-selection safety) + runtime smoke` |
 | `Undo Dimension` | `Undo removes most recently added dimension line` | `app/lib/main.dart` | `Widget tests` |
 | `Export PNG` | `Prompts user for save location and exports visible marked canvas as PNG` | `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart` | `Analyze/test/build/run + pending owner manual E2E` |
 | `Cancel Handling` | `Picker cancel leaves state stable and no crash` | `app/lib/main.dart` | `Runtime automation attempt + no runtime errors` |
@@ -119,6 +121,10 @@ Required sections are present and updated through Phase 1D.
 - When a photo is loaded and Dimension is selected, pointer drag creates a straight line overlay with endpoint markers.
 - Dimension drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Overlay painter clips drawing to the displayed image rectangle to prevent render bleed into white canvas.
+- Tapping a dimension line selects it for erase/edit actions.
+- Selected lines render with highlighted stroke styling for clear visual feedback.
+- Erase removes the selected line and label; if nothing is selected, app shows a safe guidance message.
+- Keyboard `Delete` and `Backspace` trigger the same selected-line erase path.
 - After line creation, label dialog allows manual text input or skip.
 - Pressing Enter/Done in the label input submits the same save path as tapping Save.
 - Saved labels render near the line midpoint and remain in displayed-image bounds as much as practical.
@@ -151,6 +157,7 @@ Required sections are present and updated through Phase 1D.
   - dimension line styling and drag thresholds
   - dimension label dialog copy
   - dimension label style/placement thresholds
+  - dimension selection/erase copy and visual style tunables
 - Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages and are tracked in validation notes.
 - Splash duration remains tunable through `BrandingAssetConstants.startupSplashDurationMs`.
 - Splash footprint remains tunable through:

@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added splash version source-of-truth sync behavior.
+Changes: Added Phase 1F dimension selection and erase/delete behavior.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -14,6 +14,7 @@ Changes: Added splash version source-of-truth sync behavior.
 - `Dimension Overlay Layer` (implemented)
 - `Dimension Label Dialog` (implemented)
 - `Export / Save Dialog` (implemented for PNG)
+- `Selected Dimension Erase Action` (implemented)
 
 ## Field Work Forms
 ### `Shell` Forms
@@ -39,6 +40,7 @@ Changes: Added splash version source-of-truth sync behavior.
 - Read/write behavior: `MIXED`
 - Notes:
 - `Open Photo + Dimension + Undo (dimension only) are functional in this phase`
+- `Erase removes currently selected dimension line + label`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
 - `Startup splash image is scaled to fill most of startup screen`
 - `Startup splash version text uses AppConstants.appVersion (shared with app bar version)`
@@ -77,6 +79,9 @@ Changes: Added splash version source-of-truth sync behavior.
 - `Painter clips draw operations to displayed image rectangle`
 - `Line labels render near midpoint with readable chip styling`
 - `Tap-near-line can trigger label edit flow`
+- `Single tap selects line; second tap on selected line re-opens label edit`
+- `Selected line visual state is highlighted`
+- `Delete/Backspace keyboard keys erase selected line`
 
 #### `Dimension Label Dialog`
 - Source path: `app/lib/main.dart`

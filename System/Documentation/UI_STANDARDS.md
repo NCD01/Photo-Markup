@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-23`
+Last Updated: `2026-05-24`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1D dimension label dialog/chip readability pattern notes.
+Changes: Added Phase 1F selected-markup highlight and erase interaction notes.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -24,6 +24,8 @@ Changes: Added Phase 1D dimension label dialog/chip readability pattern notes.
 - Dimension label chips: high-contrast text with semi-opaque light background and border
 - Dimension label entry: touch-friendly dialog with explicit Save/Skip actions
 - Dimension label entry should also support Enter/Done keyboard submit for fast field entry on desktop tablets.
+- Selected markup state must be visually obvious (stroke color/weight contrast from non-selected lines).
+- Erase interaction must be safe: no-selection click should be gentle guidance, never crash.
 - Startup splash and app-bar icon should use app-local branding assets, not doc-folder runtime paths.
 - Startup splash should visually occupy most of the launch window while keeping full image visible (`BoxFit.contain`).
 
