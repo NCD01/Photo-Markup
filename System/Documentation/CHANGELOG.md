@@ -412,3 +412,15 @@ Changes: Added Phase 1E export failure debug/fix entry for PNG marked-image expo
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.7 - 2026-05-24
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve Phase 1E PNG Export MVP
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.

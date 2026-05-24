@@ -99,7 +99,7 @@ Required sections are present and updated through Phase 1D.
 | `RISK-006` | `Current export captures visible canvas resolution (viewport-based), not original-image full resolution` | `NCD / M` | `Future export enhancement` | `Tracked in TODO-015` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.6`.
+- App bar shows `NCD Photo Markup` and `v0.7`.
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
 - Windows app icon resource uses a transparent approved-design master derived from v1.5:
