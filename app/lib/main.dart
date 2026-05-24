@@ -9,6 +9,7 @@ import 'package:ncd_photo_markup/features/export/services/marked_up_image_export
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
@@ -193,9 +194,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   final List<DimensionLine> _dimensionLines = <DimensionLine>[];
   final List<ArrowMarkup> _arrows = <ArrowMarkup>[];
   final List<RectangleMarkup> _rectangles = <RectangleMarkup>[];
+  final List<OvalMarkup> _ovals = <OvalMarkup>[];
   int? _selectedDimensionId;
   int? _selectedArrowId;
   int? _selectedRectangleId;
+  int? _selectedOvalId;
   int _nextMarkupId = 1;
   Offset? _activeDimensionStart;
   Offset? _activeDimensionCurrent;
@@ -296,6 +299,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       _dimensionLines.clear();
       _arrows.clear();
       _rectangles.clear();
+      _ovals.clear();
       _nextMarkupId = 1;
     });
   }
@@ -347,6 +351,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (label == ToolbarConstants.rectangle) {
       setState(() {
         _selectedTool = MarkupTool.rectangle;
+      });
+      return;
+    }
+
+    if (label == ToolbarConstants.circle) {
+      setState(() {
+        _selectedTool = MarkupTool.oval;
       });
       return;
     }
@@ -465,23 +476,35 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedDimensionId = null;
     _selectedArrowId = null;
     _selectedRectangleId = null;
+    _selectedOvalId = null;
   }
 
   void _selectDimensionById(int id) {
     _selectedDimensionId = id;
     _selectedArrowId = null;
+    _selectedRectangleId = null;
+    _selectedOvalId = null;
   }
 
   void _selectArrowById(int id) {
     _selectedArrowId = id;
     _selectedDimensionId = null;
     _selectedRectangleId = null;
+    _selectedOvalId = null;
   }
 
   void _selectRectangleById(int id) {
     _selectedRectangleId = id;
     _selectedDimensionId = null;
     _selectedArrowId = null;
+    _selectedOvalId = null;
+  }
+
+  void _selectOvalById(int id) {
+    _selectedOvalId = id;
+    _selectedDimensionId = null;
+    _selectedArrowId = null;
+    _selectedRectangleId = null;
   }
 
   void _undoMostRecentMarkup() {
@@ -506,31 +529,46 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       }
     }
 
+    int latestOvalId = -1;
+    for (final OvalMarkup oval in _ovals) {
+      if (oval.id > latestOvalId) {
+        latestOvalId = oval.id;
+      }
+    }
+
     if (latestDimensionId == -1 &&
         latestArrowId == -1 &&
-        latestRectangleId == -1) {
+        latestRectangleId == -1 &&
+        latestOvalId == -1) {
       return;
     }
 
     setState(() {
       if (latestDimensionId >= latestArrowId &&
-          latestDimensionId >= latestRectangleId) {
+          latestDimensionId >= latestRectangleId &&
+          latestDimensionId >= latestOvalId) {
         _dimensionLines.removeWhere(
           (DimensionLine line) => line.id == latestDimensionId,
         );
         if (_selectedDimensionId == latestDimensionId) {
           _clearMarkupSelection();
         }
-      } else if (latestArrowId >= latestRectangleId) {
+      } else if (latestArrowId >= latestRectangleId &&
+          latestArrowId >= latestOvalId) {
         _arrows.removeWhere((ArrowMarkup arrow) => arrow.id == latestArrowId);
         if (_selectedArrowId == latestArrowId) {
           _clearMarkupSelection();
         }
-      } else {
+      } else if (latestRectangleId >= latestOvalId) {
         _rectangles.removeWhere(
           (RectangleMarkup rectangle) => rectangle.id == latestRectangleId,
         );
         if (_selectedRectangleId == latestRectangleId) {
+          _clearMarkupSelection();
+        }
+      } else {
+        _ovals.removeWhere((OvalMarkup oval) => oval.id == latestOvalId);
+        if (_selectedOvalId == latestOvalId) {
           _clearMarkupSelection();
         }
       }
@@ -564,6 +602,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         _rectangles.removeWhere(
           (RectangleMarkup rectangle) => rectangle.id == selectedRectangleId,
         );
+        _clearMarkupSelection();
+      });
+      return;
+    }
+
+    final int? selectedOvalId = _selectedOvalId;
+    if (selectedOvalId != null) {
+      setState(() {
+        _ovals.removeWhere((OvalMarkup oval) => oval.id == selectedOvalId);
         _clearMarkupSelection();
       });
       return;
@@ -656,6 +703,29 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       return;
     }
 
+    if (_selectedTool == MarkupTool.oval) {
+      final OvalMarkup oval = OvalMarkup.fromCanvasPoints(
+        id: _allocateMarkupId(),
+        startPoint: start,
+        endPoint: end,
+        imageRect: imageRect,
+      );
+      if (oval.widthInRect(imageRect) < OvalMarkupConstants.minAxisLength ||
+          oval.heightInRect(imageRect) < OvalMarkupConstants.minAxisLength) {
+        if (mounted) {
+          setState(() {});
+        }
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _ovals.add(oval);
+          _selectOvalById(oval.id);
+        });
+      }
+      return;
+    }
+
     if (_selectedTool == MarkupTool.dimension) {
       final DimensionLine line = DimensionLine.fromCanvasPoints(
         id: _allocateMarkupId(),
@@ -727,7 +797,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
 
   Future<void> _onDimensionTap(Offset point, Rect imageRect) async {
     if (_imagePath == null ||
-        (_dimensionLines.isEmpty && _arrows.isEmpty && _rectangles.isEmpty)) {
+        (_dimensionLines.isEmpty &&
+            _arrows.isEmpty &&
+            _rectangles.isEmpty &&
+            _ovals.isEmpty)) {
       return;
     }
 
@@ -738,7 +811,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (!nearestHit.found) {
       if (_selectedDimensionId != null ||
           _selectedArrowId != null ||
-          _selectedRectangleId != null) {
+          _selectedRectangleId != null ||
+          _selectedOvalId != null) {
         setState(() {
           _clearMarkupSelection();
         });
@@ -749,7 +823,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (nearestHit.markupTool == MarkupTool.dimension) {
       if (_selectedDimensionId != nearestHit.markupId ||
           _selectedArrowId != null ||
-          _selectedRectangleId != null) {
+          _selectedRectangleId != null ||
+          _selectedOvalId != null) {
         setState(() {
           _selectDimensionById(nearestHit.markupId);
         });
@@ -762,7 +837,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (nearestHit.markupTool == MarkupTool.arrow &&
         (_selectedArrowId != nearestHit.markupId ||
             _selectedDimensionId != null ||
-            _selectedRectangleId != null)) {
+            _selectedRectangleId != null ||
+            _selectedOvalId != null)) {
       setState(() {
         _selectArrowById(nearestHit.markupId);
       });
@@ -772,9 +848,21 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (nearestHit.markupTool == MarkupTool.rectangle &&
         (_selectedRectangleId != nearestHit.markupId ||
             _selectedDimensionId != null ||
-            _selectedArrowId != null)) {
+            _selectedArrowId != null ||
+            _selectedOvalId != null)) {
       setState(() {
         _selectRectangleById(nearestHit.markupId);
+      });
+      return;
+    }
+
+    if (nearestHit.markupTool == MarkupTool.oval &&
+        (_selectedOvalId != nearestHit.markupId ||
+            _selectedDimensionId != null ||
+            _selectedArrowId != null ||
+            _selectedRectangleId != null)) {
+      setState(() {
+        _selectOvalById(nearestHit.markupId);
       });
     }
   }
@@ -811,7 +899,22 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       }
     }
 
-    if (bestDistance > RectangleMarkupConstants.selectionHitDistance) {
+    for (final OvalMarkup oval in _ovals) {
+      final double distance = oval.distanceToPointInRect(point, imageRect);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMarkupId = oval.id;
+        bestTool = MarkupTool.oval;
+      }
+    }
+
+    final double selectionDistanceLimit =
+        RectangleMarkupConstants.selectionHitDistance >
+            OvalMarkupConstants.selectionHitDistance
+        ? RectangleMarkupConstants.selectionHitDistance
+        : OvalMarkupConstants.selectionHitDistance;
+
+    if (bestDistance > selectionDistanceLimit) {
       return const _NearestMarkupHit.notFound();
     }
 
@@ -833,7 +936,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   bool _canDrawMarkup(Rect imageRect) {
     return (_selectedTool == MarkupTool.dimension ||
             _selectedTool == MarkupTool.arrow ||
-            _selectedTool == MarkupTool.rectangle) &&
+            _selectedTool == MarkupTool.rectangle ||
+            _selectedTool == MarkupTool.oval) &&
         _imagePath != null &&
         imageRect.width > 0 &&
         imageRect.height > 0;
@@ -842,7 +946,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   bool _isUndoEnabled() {
     return _dimensionLines.isNotEmpty ||
         _arrows.isNotEmpty ||
-        _rectangles.isNotEmpty;
+        _rectangles.isNotEmpty ||
+        _ovals.isNotEmpty;
   }
 
   String _fileExtension(String path) {
@@ -979,6 +1084,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                                   _selectedTool == MarkupTool.dimension) ||
                               (label == ToolbarConstants.arrow &&
                                   _selectedTool == MarkupTool.arrow) ||
+                              (label == ToolbarConstants.circle &&
+                                  _selectedTool == MarkupTool.oval) ||
                               (label == ToolbarConstants.rectangle &&
                                   _selectedTool == MarkupTool.rectangle),
                           isDisabled:
@@ -1095,10 +1202,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                         lines: _dimensionLines,
                         arrows: _arrows,
                         rectangles: _rectangles,
+                        ovals: _ovals,
                         imageRect: imageRect,
                         selectedDimensionId: _selectedDimensionId,
                         selectedArrowId: _selectedArrowId,
                         selectedRectangleId: _selectedRectangleId,
+                        selectedOvalId: _selectedOvalId,
                         activeTool: _selectedTool,
                         activeStart: _activeDimensionStart,
                         activeEnd: _activeDimensionCurrent,

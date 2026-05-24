@@ -78,6 +78,7 @@ class ToolbarConstants {
   static const String openPhoto = 'Open Photo';
   static const String dimension = 'Dimension';
   static const String arrow = 'Arrow';
+  static const String circle = 'Circle';
   static const String rectangle = 'Rectangle';
   static const String erase = 'Erase';
   static const String undo = 'Undo';
@@ -86,7 +87,7 @@ class ToolbarConstants {
     openPhoto,
     dimension,
     arrow,
-    'Circle',
+    circle,
     rectangle,
     'Freehand',
     'Text',
@@ -185,6 +186,18 @@ class RectangleMarkupConstants {
   static const double strokeWidth = 3;
   static const double selectedStrokeMultiplier = 1.35;
   static const double minSideLength = 8;
+  static const double selectionHitDistance = 26;
+}
+
+class OvalMarkupConstants {
+  const OvalMarkupConstants._();
+
+  static const Color outlineColor = Color(0xFF8B1E00);
+  static const Color selectedOutlineColor = Color(0xFFC02A00);
+  static const Color fillColor = Color(0x1FD4572A);
+  static const double strokeWidth = 3;
+  static const double selectedStrokeMultiplier = 1.35;
+  static const double minAxisLength = 8;
   static const double selectionHitDistance = 26;
 }
 

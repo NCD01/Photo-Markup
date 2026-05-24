@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1H rectangle visual/selection standards.
+Changes: Added Phase 1I circle/oval visual/selection standards.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -25,6 +25,8 @@ Changes: Added Phase 1H rectangle visual/selection standards.
 - Arrow stroke baseline: `3.2px` with selected-state stroke multiplier
 - Rectangle outline baseline: `#7A4B00` with transparent fill
 - Rectangle stroke baseline: `3px` with selected-state stroke multiplier
+- Circle/Oval outline baseline: `#8B1E00` with transparent fill
+- Circle/Oval stroke baseline: `3px` with selected-state stroke multiplier
 - Dimension label chips: high-contrast text with semi-opaque light background and border
 - Dimension label entry: touch-friendly dialog with explicit Save/Skip actions
 - Dimension label entry should also support Enter/Done keyboard submit for fast field entry on desktop tablets.

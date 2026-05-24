@@ -8,6 +8,38 @@ Last Updated: `2026-05-24`
 Purpose: Canonical changelog for project changes.
 Changes: Added Phase 1H Rectangle Tool MVP entry.
 
+## Unreleased - 2026-05-24 (Phase 1I Circle/Oval Tool MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Add Circle/Oval markup tool with selection/delete/undo/export integration.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/oval_markup.dart`
+  - `app/lib/features/markup/models/markup_tool.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added Circle toolbar selection wired to `MarkupTool.oval`.
+  - Added oval drag-to-create behavior using clamped start/end points within displayed photo bounds.
+  - Added oval rendering above photo with transparent fill + visible outline.
+  - Added selected-oval highlight state.
+  - Added shared selection/erase/delete/backspace/undo support for oval markups.
+  - Preserved export behavior so deleted markups are excluded and remaining markups are exported.
+  - Preserved existing dimension label, arrow, rectangle, and PNG export flows.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Owner interactive manual Phase 1I workflow validation remains pending in target environment.
+
 ## Unreleased - 2026-05-24 (Phase 1H Rectangle Tool MVP)
 - Owner: NCD / M
 - Author: Codex

@@ -4,6 +4,7 @@ import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/main.dart';
@@ -59,9 +60,26 @@ void main() {
       240,
       scrollable: toolbarScrollable,
     );
-    await tester.tap(
-      rectangleButton,
+    await tester.tap(rectangleButton);
+    await tester.pump();
+    expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
+  });
+
+  testWidgets('selecting circle without image does not crash', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    final Finder circleButton = find.widgetWithText(
+      OutlinedButton,
+      ToolbarConstants.circle,
     );
+    final Finder toolbarScrollable = find.byType(Scrollable);
+    await tester.scrollUntilVisible(
+      circleButton,
+      240,
+      scrollable: toolbarScrollable,
+    );
+    await tester.tap(circleButton);
     await tester.pump();
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
@@ -130,10 +148,12 @@ void main() {
               ],
               arrows: const <ArrowMarkup>[],
               rectangles: const <RectangleMarkup>[],
+              ovals: const <OvalMarkup>[],
               imageRect: const Rect.fromLTWH(20, 20, 460, 280),
               selectedDimensionId: null,
               selectedArrowId: null,
               selectedRectangleId: null,
+              selectedOvalId: null,
               activeTool: MarkupTool.dimension,
               activeStart: const Offset(80, 220),
               activeEnd: const Offset(360, 240),

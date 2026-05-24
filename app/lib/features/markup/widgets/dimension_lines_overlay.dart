@@ -6,6 +6,7 @@ import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 
 class DimensionLinesOverlay extends StatefulWidget {
@@ -14,10 +15,12 @@ class DimensionLinesOverlay extends StatefulWidget {
     required this.lines,
     required this.arrows,
     required this.rectangles,
+    required this.ovals,
     required this.imageRect,
     required this.selectedDimensionId,
     required this.selectedArrowId,
     required this.selectedRectangleId,
+    required this.selectedOvalId,
     required this.activeTool,
     this.activeStart,
     this.activeEnd,
@@ -31,10 +34,12 @@ class DimensionLinesOverlay extends StatefulWidget {
   final List<DimensionLine> lines;
   final List<ArrowMarkup> arrows;
   final List<RectangleMarkup> rectangles;
+  final List<OvalMarkup> ovals;
   final Rect imageRect;
   final int? selectedDimensionId;
   final int? selectedArrowId;
   final int? selectedRectangleId;
+  final int? selectedOvalId;
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
@@ -121,10 +126,12 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
           lines: List<DimensionLine>.of(widget.lines),
           arrows: List<ArrowMarkup>.of(widget.arrows),
           rectangles: List<RectangleMarkup>.of(widget.rectangles),
+          ovals: List<OvalMarkup>.of(widget.ovals),
           imageRect: widget.imageRect,
           selectedDimensionId: widget.selectedDimensionId,
           selectedArrowId: widget.selectedArrowId,
           selectedRectangleId: widget.selectedRectangleId,
+          selectedOvalId: widget.selectedOvalId,
           activeTool: widget.activeTool,
           activeStart: widget.activeStart,
           activeEnd: widget.activeEnd,
@@ -140,10 +147,12 @@ class _DimensionLinesPainter extends CustomPainter {
     required this.lines,
     required this.arrows,
     required this.rectangles,
+    required this.ovals,
     required this.imageRect,
     required this.selectedDimensionId,
     required this.selectedArrowId,
     required this.selectedRectangleId,
+    required this.selectedOvalId,
     required this.activeTool,
     required this.activeStart,
     required this.activeEnd,
@@ -152,10 +161,12 @@ class _DimensionLinesPainter extends CustomPainter {
   final List<DimensionLine> lines;
   final List<ArrowMarkup> arrows;
   final List<RectangleMarkup> rectangles;
+  final List<OvalMarkup> ovals;
   final Rect imageRect;
   final int? selectedDimensionId;
   final int? selectedArrowId;
   final int? selectedRectangleId;
+  final int? selectedOvalId;
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
@@ -228,6 +239,22 @@ class _DimensionLinesPainter extends CustomPainter {
       ..color = RectangleMarkupConstants.fillColor
       ..style = PaintingStyle.fill;
 
+    final Paint ovalOutlinePaint = Paint()
+      ..color = OvalMarkupConstants.outlineColor
+      ..strokeWidth = OvalMarkupConstants.strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final Paint selectedOvalOutlinePaint = Paint()
+      ..color = OvalMarkupConstants.selectedOutlineColor
+      ..strokeWidth =
+          OvalMarkupConstants.strokeWidth *
+          OvalMarkupConstants.selectedStrokeMultiplier
+      ..style = PaintingStyle.stroke;
+
+    final Paint ovalFillPaint = Paint()
+      ..color = OvalMarkupConstants.fillColor
+      ..style = PaintingStyle.fill;
+
     canvas.save();
     canvas.clipRect(imageRect);
 
@@ -277,6 +304,17 @@ class _DimensionLinesPainter extends CustomPainter {
       );
     }
 
+    for (final OvalMarkup oval in ovals) {
+      final bool isSelected = selectedOvalId == oval.id;
+      final Rect rect = oval.rectInRect(imageRect);
+      _drawOval(
+        canvas,
+        rect,
+        ovalFillPaint,
+        isSelected ? selectedOvalOutlinePaint : ovalOutlinePaint,
+      );
+    }
+
     if (activeStart != null && activeEnd != null) {
       if (activeTool == MarkupTool.arrow) {
         _drawArrow(canvas, activeStart!, activeEnd!, arrowPaint);
@@ -286,6 +324,13 @@ class _DimensionLinesPainter extends CustomPainter {
           Rect.fromPoints(activeStart!, activeEnd!),
           rectangleFillPaint,
           rectangleOutlinePaint,
+        );
+      } else if (activeTool == MarkupTool.oval) {
+        _drawOval(
+          canvas,
+          Rect.fromPoints(activeStart!, activeEnd!),
+          ovalFillPaint,
+          ovalOutlinePaint,
         );
       } else if (activeTool == MarkupTool.dimension) {
         _drawLine(
@@ -300,6 +345,19 @@ class _DimensionLinesPainter extends CustomPainter {
     }
 
     canvas.restore();
+  }
+
+  void _drawOval(
+    Canvas canvas,
+    Rect rect,
+    Paint fillPaint,
+    Paint outlinePaint,
+  ) {
+    if (rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+    canvas.drawOval(rect, fillPaint);
+    canvas.drawOval(rect, outlinePaint);
   }
 
   void _drawArrow(Canvas canvas, Offset start, Offset end, Paint arrowPaint) {
@@ -478,10 +536,12 @@ class _DimensionLinesPainter extends CustomPainter {
     return !listEquals(oldDelegate.lines, lines) ||
         !listEquals(oldDelegate.arrows, arrows) ||
         !listEquals(oldDelegate.rectangles, rectangles) ||
+        !listEquals(oldDelegate.ovals, ovals) ||
         oldDelegate.imageRect != imageRect ||
         oldDelegate.selectedDimensionId != selectedDimensionId ||
         oldDelegate.selectedArrowId != selectedArrowId ||
         oldDelegate.selectedRectangleId != selectedRectangleId ||
+        oldDelegate.selectedOvalId != selectedOvalId ||
         oldDelegate.activeTool != activeTool ||
         oldDelegate.activeStart != activeStart ||
         oldDelegate.activeEnd != activeEnd;

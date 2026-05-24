@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Track planned and in-progress work items.
-Changes: Added Phase 1H follow-up TODO for optional rectangle labels/annotations.
+Changes: Added Phase 1I follow-up TODO for optional circle/oval labels/annotations.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -34,6 +34,7 @@ Changes: Added Phase 1H follow-up TODO for optional rectangle labels/annotations
 | `TODO-017` | `Markup` | `Evaluate multi-select and bulk erase workflow (single-select only in Phase 1F)` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-018` | `Markup` | `Evaluate optional arrow annotation/labels after Arrow MVP stabilizes` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-019` | `Markup` | `Evaluate optional rectangle labels/annotations after Rectangle MVP stabilizes` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-020` | `Markup` | `Evaluate optional circle/oval labels/annotations after Circle/Oval MVP stabilizes` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -50,6 +51,7 @@ Changes: Added Phase 1H follow-up TODO for optional rectangle labels/annotations
 | `10` | `Markup` | `Single-select erase delivered; future multi-select/bulk erase follow-up` | `Open` | `Owner approval for expanded erase UX` | `Tracked in TODO-017` |
 | `11` | `Markup` | `Arrow MVP delivered; optional arrow-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-018` |
 | `12` | `Markup` | `Rectangle MVP delivered; optional rectangle-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-019` |
+| `13` | `Markup` | `Circle/Oval MVP delivered; optional circle/oval-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-020` |
 
 
 

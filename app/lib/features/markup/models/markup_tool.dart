@@ -1,1 +1,1 @@
-enum MarkupTool { none, dimension, arrow, rectangle }
+enum MarkupTool { none, dimension, arrow, rectangle, oval }

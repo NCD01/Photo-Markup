@@ -1349,4 +1349,95 @@ Changes: Added Phase 1A Flutter app shell session.
 - No Control Center integration added.
 - No project-folder autosave added.
 - No Apple/HEIC added.
+
+# SESSION_2026-05-24_0010_phase1i_circle_oval_mvp
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Implement Phase 1I Circle/Oval Tool MVP with shared selection/erase/undo/export behavior.
+
+## Actions
+- Ran clean preflight check (`git status --short`).
+- Added oval model:
+  - `app/lib/features/markup/models/oval_markup.dart`
+- Expanded tool enum with `MarkupTool.oval`.
+- Added oval tunables in `app/lib/core/constants/app_constants.dart`:
+  - outline/selected/fill colors
+  - stroke/selected stroke multiplier
+  - minimum axis length
+  - selection hit distance
+- Updated `app/lib/main.dart`:
+  - circle toolbar wiring
+  - oval state list + selected oval state
+  - oval draw creation path with displayed-photo bounds clamp
+  - shared selection hit-testing now includes ovals
+  - erase/delete/backspace now supports selected oval
+  - undo now removes latest markup across dimension/arrow/rectangle/oval
+- Updated overlay painter/input:
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - renders ovals with transparent fill + outline
+  - selected oval highlight
+  - active oval drag preview
+- Updated widget tests for:
+  - selecting Circle with no image crash safety
+  - overlay constructor parity with new oval inputs
+
+## Validation
+- `git status --short` preflight: `PASS` (clean)
+- `powershell -ExecutionPolicy Bypass -File scripts/verify-version-sync.ps1`: `PASS`
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+- Owner interactive manual Phase 1I workflow: `NOT_VALIDATED` in this environment
+
+## Logging/Debug Notes
+- No blocking runtime or build errors encountered during Phase 1I implementation.
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+- No unrelated tools/shapes added.
 - No PDF export added.
+
+# SESSION_2026-05-24_0011_phase1i_commit_approval_rerun
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Re-run final validation and execute approved Phase 1I commit split to v0.12 with push.
+
+## Actions
+- Confirmed dirty files match approved Phase 1I scope only.
+- Re-ran required validation:
+  - `verify-version-sync.ps1`
+  - `flutter pub get`
+  - `flutter analyze`
+  - `flutter test`
+  - `flutter build windows --debug`
+  - `flutter run -d windows --debug --no-resident`
+  - `.agent_temp` ignore check
+  - tunable constants gate scan
+
+## Logging/Debug Notes
+- Flutter commands hung inside sandbox during rerun; re-executed outside sandbox and completed successfully.
+
+## Validation
+- All required checks passed for commit approval rerun.
+
+## Constraints Confirmed
+- No new features added beyond approved Phase 1I scope.
