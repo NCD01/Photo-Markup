@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/main.dart';
 
@@ -99,11 +101,16 @@ void main() {
             child: DimensionLinesOverlay(
               lines: const <DimensionLine>[
                 DimensionLine(
+                  id: 1,
                   startNormalized: Offset(0.2, 0.3),
                   endNormalized: Offset(0.7, 0.6),
                 ),
               ],
+              arrows: const <ArrowMarkup>[],
               imageRect: const Rect.fromLTWH(20, 20, 460, 280),
+              selectedDimensionId: null,
+              selectedArrowId: null,
+              activeTool: MarkupTool.dimension,
               activeStart: const Offset(80, 220),
               activeEnd: const Offset(360, 240),
               isEnabled: true,

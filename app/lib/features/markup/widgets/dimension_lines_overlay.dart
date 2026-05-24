@@ -1,14 +1,21 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 
 class DimensionLinesOverlay extends StatefulWidget {
   const DimensionLinesOverlay({
     super.key,
     required this.lines,
+    required this.arrows,
     required this.imageRect,
-    this.selectedLineIndex,
+    required this.selectedDimensionId,
+    required this.selectedArrowId,
+    required this.activeTool,
     this.activeStart,
     this.activeEnd,
     required this.isEnabled,
@@ -19,8 +26,11 @@ class DimensionLinesOverlay extends StatefulWidget {
   });
 
   final List<DimensionLine> lines;
+  final List<ArrowMarkup> arrows;
   final Rect imageRect;
-  final int? selectedLineIndex;
+  final int? selectedDimensionId;
+  final int? selectedArrowId;
+  final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
   final bool isEnabled;
@@ -104,8 +114,11 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
       child: CustomPaint(
         painter: _DimensionLinesPainter(
           lines: List<DimensionLine>.of(widget.lines),
+          arrows: List<ArrowMarkup>.of(widget.arrows),
           imageRect: widget.imageRect,
-          selectedLineIndex: widget.selectedLineIndex,
+          selectedDimensionId: widget.selectedDimensionId,
+          selectedArrowId: widget.selectedArrowId,
+          activeTool: widget.activeTool,
           activeStart: widget.activeStart,
           activeEnd: widget.activeEnd,
         ),
@@ -118,15 +131,21 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
 class _DimensionLinesPainter extends CustomPainter {
   const _DimensionLinesPainter({
     required this.lines,
+    required this.arrows,
     required this.imageRect,
-    required this.selectedLineIndex,
+    required this.selectedDimensionId,
+    required this.selectedArrowId,
+    required this.activeTool,
     required this.activeStart,
     required this.activeEnd,
   });
 
   final List<DimensionLine> lines;
+  final List<ArrowMarkup> arrows;
   final Rect imageRect;
-  final int? selectedLineIndex;
+  final int? selectedDimensionId;
+  final int? selectedArrowId;
+  final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
 
@@ -168,12 +187,26 @@ class _DimensionLinesPainter extends CustomPainter {
       ..strokeWidth = DimensionLineConstants.labelBorderWidth
       ..style = PaintingStyle.stroke;
 
+    final Paint arrowPaint = Paint()
+      ..color = ArrowMarkupConstants.lineColor
+      ..strokeWidth = ArrowMarkupConstants.strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final Paint selectedArrowPaint = Paint()
+      ..color = ArrowMarkupConstants.selectedLineColor
+      ..strokeWidth =
+          ArrowMarkupConstants.strokeWidth *
+          ArrowMarkupConstants.selectedStrokeMultiplier
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
     canvas.save();
     canvas.clipRect(imageRect);
 
     for (int i = 0; i < lines.length; i++) {
       final DimensionLine line = lines[i];
-      final bool isSelected = selectedLineIndex == i;
+      final bool isSelected = selectedDimensionId == line.id;
       final Offset start = line.startInRect(imageRect);
       final Offset end = line.endInRect(imageRect);
       _drawLine(
@@ -194,18 +227,66 @@ class _DimensionLinesPainter extends CustomPainter {
       );
     }
 
-    if (activeStart != null && activeEnd != null) {
-      _drawLine(
+    for (final ArrowMarkup arrow in arrows) {
+      final bool isSelected = selectedArrowId == arrow.id;
+      final Offset start = arrow.startInRect(imageRect);
+      final Offset end = arrow.endInRect(imageRect);
+      _drawArrow(
         canvas,
-        activeStart!,
-        activeEnd!,
-        linePaint,
-        endpointFillPaint,
-        endpointStrokePaint,
+        start,
+        end,
+        isSelected ? selectedArrowPaint : arrowPaint,
       );
     }
 
+    if (activeStart != null && activeEnd != null) {
+      if (activeTool == MarkupTool.arrow) {
+        _drawArrow(canvas, activeStart!, activeEnd!, arrowPaint);
+      } else if (activeTool == MarkupTool.dimension) {
+        _drawLine(
+          canvas,
+          activeStart!,
+          activeEnd!,
+          linePaint,
+          endpointFillPaint,
+          endpointStrokePaint,
+        );
+      }
+    }
+
     canvas.restore();
+  }
+
+  void _drawArrow(Canvas canvas, Offset start, Offset end, Paint arrowPaint) {
+    canvas.drawLine(start, end, arrowPaint);
+
+    final Offset direction = end - start;
+    final double length = direction.distance;
+    if (length < ArrowMarkupConstants.minLength) {
+      return;
+    }
+
+    final double directionAngle = math.atan2(direction.dy, direction.dx);
+    final double angleRad =
+        ArrowMarkupConstants.arrowHeadAngleDegrees * (math.pi / 180.0);
+    final double leftAngle = directionAngle + math.pi - angleRad;
+    final double rightAngle = directionAngle + math.pi + angleRad;
+
+    final Offset leftPoint =
+        end +
+        Offset(
+          ArrowMarkupConstants.arrowHeadLength * math.cos(leftAngle),
+          ArrowMarkupConstants.arrowHeadLength * math.sin(leftAngle),
+        );
+    final Offset rightPoint =
+        end +
+        Offset(
+          ArrowMarkupConstants.arrowHeadLength * math.cos(rightAngle),
+          ArrowMarkupConstants.arrowHeadLength * math.sin(rightAngle),
+        );
+
+    canvas.drawLine(end, leftPoint, arrowPaint);
+    canvas.drawLine(end, rightPoint, arrowPaint);
   }
 
   void _drawLine(
@@ -337,8 +418,11 @@ class _DimensionLinesPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _DimensionLinesPainter oldDelegate) {
     return !listEquals(oldDelegate.lines, lines) ||
+        !listEquals(oldDelegate.arrows, arrows) ||
         oldDelegate.imageRect != imageRect ||
-        oldDelegate.selectedLineIndex != selectedLineIndex ||
+        oldDelegate.selectedDimensionId != selectedDimensionId ||
+        oldDelegate.selectedArrowId != selectedArrowId ||
+        oldDelegate.activeTool != activeTool ||
         oldDelegate.activeStart != activeStart ||
         oldDelegate.activeEnd != activeEnd;
   }

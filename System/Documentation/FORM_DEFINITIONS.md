@@ -6,12 +6,13 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1F dimension selection and erase/delete behavior.
+Changes: Added Phase 1G Arrow tool draw/select/erase behavior.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
 - `Photo Canvas Area` (implemented with image display)
 - `Dimension Overlay Layer` (implemented)
+- `Arrow Overlay Layer` (implemented)
 - `Dimension Label Dialog` (implemented)
 - `Export / Save Dialog` (implemented for PNG)
 - `Selected Dimension Erase Action` (implemented)
@@ -39,8 +40,8 @@ Changes: Added Phase 1F dimension selection and erase/delete behavior.
 - `home`
 - Read/write behavior: `MIXED`
 - Notes:
-- `Open Photo + Dimension + Undo (dimension only) are functional in this phase`
-- `Erase removes currently selected dimension line + label`
+- `Open Photo + Dimension + Arrow + Undo are functional in this phase`
+- `Erase removes currently selected dimension line/arrow (+dimension label when applicable)`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
 - `Startup splash image is scaled to fill most of startup screen`
 - `Startup splash version text uses AppConstants.appVersion (shared with app bar version)`
@@ -74,7 +75,7 @@ Changes: Added Phase 1F dimension selection and erase/delete behavior.
 - Read/write behavior: `MIXED`
 - Notes:
 - `Overlay draws above image and does not modify original file`
-- `Supports multiple lines and undo-last-line behavior`
+- `Supports multiple dimension lines/arrows and undo-latest-markup behavior`
 - `Pointer start/update is clamped to displayed image rectangle`
 - `Painter clips draw operations to displayed image rectangle`
 - `Line labels render near midpoint with readable chip styling`
@@ -82,6 +83,24 @@ Changes: Added Phase 1F dimension selection and erase/delete behavior.
 - `Single tap selects line; second tap on selected line re-opens label edit`
 - `Selected line visual state is highlighted`
 - `Delete/Backspace keyboard keys erase selected line`
+
+#### `Arrow Overlay Layer`
+- Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+- Purpose: `Capture arrow drag gestures and render arrows with visible arrowheads`
+- Parent/master form: `Photo Canvas Area`
+- Child components:
+- `CustomPaint arrow renderer`
+- `Arrowhead render logic`
+- `Shared pointer event listener`
+- Related widgets/components:
+- `DimensionLinesOverlay`
+- `ArrowMarkup` model
+- Read/write behavior: `MIXED`
+- Notes:
+- `Arrow tool remains separate from Dimension tool`
+- `Arrow start/end points are clamped to displayed photo bounds`
+- `Selected arrow visual state is highlighted`
+- `Erase/Delete/Backspace remove selected arrow`
 
 #### `Dimension Label Dialog`
 - Source path: `app/lib/main.dart`

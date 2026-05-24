@@ -1092,6 +1092,88 @@ Changes: Added Phase 1A Flutter app shell session.
 ## Constraints Confirmed
 - No push performed.
 
+# SESSION_2026-05-24_0006_phase1g_arrow_mvp
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Implement Phase 1G Arrow Tool MVP without breaking existing dimension, erase, undo, and export behavior.
+
+## Actions
+- Verified clean preflight (`git status --short`).
+- Added arrow model: `app/lib/features/markup/models/arrow_markup.dart`.
+- Expanded tool enum with `MarkupTool.arrow`.
+- Added arrow tunables in `app_constants.dart`:
+  - color, selected color, stroke width, selected multiplier, arrowhead length/angle, min length.
+- Refactored shared markup handling in `main.dart`:
+  - separate lists for dimensions and arrows
+  - shared selection state for dimension/arrow
+  - erase/delete support for selected dimension or arrow
+  - undo now removes latest markup regardless of type
+  - arrow draw creation path with bounds clamp
+- Updated overlay painter to render:
+  - dimensions + labels
+  - arrows with arrowheads
+  - selected visual state for both markup types
+  - active preview based on selected tool
+- Preserved existing label dialog flow and export flow.
+
+## Logging/Debug Notes
+- `flutter build windows --debug` produced one transient MSBuild `MSB8066` failure on first run; immediate rerun succeeded with no code changes.
+- `flutter run -d windows --debug --no-resident` succeeded during the same validation cycle.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS`
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS` (after one transient retry)
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate scan: `PASS`
+
+## Constraints Confirmed
+- No commit/push/version bump performed in this step.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No Apple/HEIC implementation added.
+
+# SESSION_2026-05-24_0007_phase1g_final_polish_commit_approval
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: master / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Apply final Phase 1G polish copy update and execute approved commit split to v0.10.
+
+## Actions
+- Updated centralized erase guidance copy:
+  - `Select a dimension line to erase.` -> `Select a markup to erase.`
+  - Source: `app/lib/core/constants/app_constants.dart`
+- Re-ran full required validation suite.
+- Recorded owner manual Phase 1G validation as PASS (`VAL-096`).
+- Logged final commit-approval rerun evidence (`VAL-097`).
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.9` pre-bump)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Constraints Confirmed
+- No push performed.
+
 # SESSION_2026-05-24_0004_phase1f_selection_erase
 
 ## Context

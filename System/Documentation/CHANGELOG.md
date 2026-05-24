@@ -6,7 +6,41 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1F dimension selection + erase/delete workflow entry.
+Changes: Added Phase 1G Arrow Tool MVP entry and final no-selection erase copy polish.
+
+## Unreleased - 2026-05-24 (Phase 1G Arrow Tool MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Add Arrow markup tool with selection/delete/undo/export integration.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/arrow_markup.dart`
+  - `app/lib/features/markup/models/dimension_line.dart`
+  - `app/lib/features/markup/models/markup_tool.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added Arrow tool selection and drag-to-create arrow behavior.
+  - Added visible arrowhead rendering and tablet-visible stroke defaults.
+  - Added arrow bounds clamping to displayed photo rectangle.
+  - Added arrow selection + selected visual state.
+  - Added erase/delete keyboard behavior for selected arrows.
+  - Updated undo to remove latest markup regardless of type (dimension or arrow).
+  - Preserved export behavior so deleted markups are excluded.
+  - Final polish: updated no-selection erase copy to `Select a markup to erase.` (centralized constant).
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS` (one transient failure, immediate rerun PASS)
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - No open Phase 1G functional blockers after owner manual PASS.
 
 ## Unreleased - 2026-05-24 (Phase 1F Delete / Erase Selected Markup)
 - Owner: NCD / M

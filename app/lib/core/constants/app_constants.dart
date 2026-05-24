@@ -70,7 +70,7 @@ class UiCopyConstants {
   static const String exportFailureMessage =
       'Could not export this image. Please try again.';
   static const String eraseNoSelectionMessage =
-      'Select a dimension line to erase.';
+      'Select a markup to erase.';
 }
 
 class ToolbarConstants {
@@ -78,13 +78,14 @@ class ToolbarConstants {
 
   static const String openPhoto = 'Open Photo';
   static const String dimension = 'Dimension';
+  static const String arrow = 'Arrow';
   static const String erase = 'Erase';
   static const String undo = 'Undo';
   static const String export = 'Export';
   static const List<String> labels = <String>[
     openPhoto,
     dimension,
-    'Arrow',
+    arrow,
     'Circle',
     'Rectangle',
     'Freehand',
@@ -161,6 +162,18 @@ class DimensionLineConstants {
   static const double labelBorderWidth = 1;
   static const double selectionTapDistance = 26;
   static const double tapMoveThreshold = 8;
+}
+
+class ArrowMarkupConstants {
+  const ArrowMarkupConstants._();
+
+  static const Color lineColor = Color(0xFF006B3F);
+  static const Color selectedLineColor = Color(0xFF009A5F);
+  static const double strokeWidth = 3.2;
+  static const double selectedStrokeMultiplier = 1.35;
+  static const double arrowHeadLength = 16;
+  static const double arrowHeadAngleDegrees = 28;
+  static const double minLength = 8;
 }
 
 class ExportConstants {

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/export/services/marked_up_image_export_service.dart';
+import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
@@ -189,7 +190,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
 
   MarkupTool _selectedTool = MarkupTool.none;
   final List<DimensionLine> _dimensionLines = <DimensionLine>[];
-  int? _selectedDimensionLineIndex;
+  final List<ArrowMarkup> _arrows = <ArrowMarkup>[];
+  int? _selectedDimensionId;
+  int? _selectedArrowId;
+  int _nextMarkupId = 1;
   Offset? _activeDimensionStart;
   Offset? _activeDimensionCurrent;
 
@@ -283,10 +287,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       _loadedFileName = _fileNameFromPath(path);
       _loadedImagePixelSize = imageSize;
       _errorMessage = null;
-      _selectedDimensionLineIndex = null;
+      _clearMarkupSelection();
       _activeDimensionStart = null;
       _activeDimensionCurrent = null;
       _dimensionLines.clear();
+      _arrows.clear();
+      _nextMarkupId = 1;
     });
   }
 
@@ -327,13 +333,20 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       return;
     }
 
+    if (label == ToolbarConstants.arrow) {
+      setState(() {
+        _selectedTool = MarkupTool.arrow;
+      });
+      return;
+    }
+
     if (label == ToolbarConstants.undo) {
-      _undoMostRecentDimensionLine();
+      _undoMostRecentMarkup();
       return;
     }
 
     if (label == ToolbarConstants.erase) {
-      _eraseSelectedDimensionLine();
+      _eraseSelectedMarkup();
       return;
     }
 
@@ -431,47 +444,101 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _undoMostRecentDimensionLine() {
-    if (_dimensionLines.isEmpty) {
+  int _allocateMarkupId() {
+    final int id = _nextMarkupId;
+    _nextMarkupId += 1;
+    return id;
+  }
+
+  void _clearMarkupSelection() {
+    _selectedDimensionId = null;
+    _selectedArrowId = null;
+  }
+
+  void _selectDimensionById(int id) {
+    _selectedDimensionId = id;
+    _selectedArrowId = null;
+  }
+
+  void _selectArrowById(int id) {
+    _selectedArrowId = id;
+    _selectedDimensionId = null;
+  }
+
+  void _undoMostRecentMarkup() {
+    int latestDimensionId = -1;
+    for (final DimensionLine line in _dimensionLines) {
+      if (line.id > latestDimensionId) {
+        latestDimensionId = line.id;
+      }
+    }
+
+    int latestArrowId = -1;
+    for (final ArrowMarkup arrow in _arrows) {
+      if (arrow.id > latestArrowId) {
+        latestArrowId = arrow.id;
+      }
+    }
+
+    if (latestDimensionId == -1 && latestArrowId == -1) {
       return;
     }
+
     setState(() {
-      final int removedIndex = _dimensionLines.length - 1;
-      _dimensionLines.removeLast();
-      if (_selectedDimensionLineIndex == removedIndex) {
-        _selectedDimensionLineIndex = null;
+      if (latestDimensionId >= latestArrowId) {
+        _dimensionLines.removeWhere(
+          (DimensionLine line) => line.id == latestDimensionId,
+        );
+        if (_selectedDimensionId == latestDimensionId) {
+          _clearMarkupSelection();
+        }
+      } else {
+        _arrows.removeWhere((ArrowMarkup arrow) => arrow.id == latestArrowId);
+        if (_selectedArrowId == latestArrowId) {
+          _clearMarkupSelection();
+        }
       }
     });
   }
 
-  void _eraseSelectedDimensionLine() {
-    final int? selectedIndex = _selectedDimensionLineIndex;
-    if (selectedIndex == null ||
-        selectedIndex < 0 ||
-        selectedIndex >= _dimensionLines.length) {
-      _showSnack(UiCopyConstants.eraseNoSelectionMessage);
+  void _eraseSelectedMarkup() {
+    final int? selectedDimensionId = _selectedDimensionId;
+    if (selectedDimensionId != null) {
+      setState(() {
+        _dimensionLines.removeWhere(
+          (DimensionLine line) => line.id == selectedDimensionId,
+        );
+        _clearMarkupSelection();
+      });
       return;
     }
 
-    setState(() {
-      _dimensionLines.removeAt(selectedIndex);
-      _selectedDimensionLineIndex = null;
-    });
+    final int? selectedArrowId = _selectedArrowId;
+    if (selectedArrowId != null) {
+      setState(() {
+        _arrows.removeWhere((ArrowMarkup arrow) => arrow.id == selectedArrowId);
+        _clearMarkupSelection();
+      });
+      return;
+    }
+
+    _showSnack(UiCopyConstants.eraseNoSelectionMessage);
   }
 
   void _onDimensionStart(Offset startPoint, Rect imageRect) {
-    if (!_canDrawDimensionLine(imageRect) || !imageRect.contains(startPoint)) {
+    if (!_canDrawMarkup(imageRect) || !imageRect.contains(startPoint)) {
       return;
     }
     final Offset clamped = DimensionLine.clampToRect(startPoint, imageRect);
     setState(() {
       _activeDimensionStart = clamped;
       _activeDimensionCurrent = clamped;
+      _clearMarkupSelection();
     });
   }
 
   void _onDimensionUpdate(Offset currentPoint, Rect imageRect) {
-    if (_activeDimensionStart == null || !_canDrawDimensionLine(imageRect)) {
+    if (_activeDimensionStart == null || !_canDrawMarkup(imageRect)) {
       return;
     }
     setState(() {
@@ -485,36 +552,68 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   Future<void> _onDimensionEnd(Rect imageRect) async {
     final Offset? start = _activeDimensionStart;
     final Offset? end = _activeDimensionCurrent;
-    if (start == null || end == null) {
-      return;
-    }
+    _activeDimensionStart = null;
+    _activeDimensionCurrent = null;
 
-    final DimensionLine line = DimensionLine.fromCanvasPoints(
-      startPoint: start,
-      endPoint: end,
-      imageRect: imageRect,
-    );
-
-    int? newLineIndex;
-    setState(() {
-      _activeDimensionStart = null;
-      _activeDimensionCurrent = null;
-      if (line.lengthInRect(imageRect) >=
-          UiLayoutConstants.dimensionTapDragMinDistance) {
-        _dimensionLines.add(line);
-        newLineIndex = _dimensionLines.length - 1;
-        _selectedDimensionLineIndex = newLineIndex;
+    if (start == null || end == null || !_canDrawMarkup(imageRect)) {
+      if (mounted) {
+        setState(() {});
       }
-    });
-
-    if (!mounted || newLineIndex == null) {
       return;
     }
-    await _promptForDimensionLabelForLine(newLineIndex!);
+
+    if (_selectedTool == MarkupTool.arrow) {
+      final ArrowMarkup arrow = ArrowMarkup.fromCanvasPoints(
+        id: _allocateMarkupId(),
+        startPoint: start,
+        endPoint: end,
+        imageRect: imageRect,
+      );
+      if (arrow.lengthInRect(imageRect) < ArrowMarkupConstants.minLength) {
+        if (mounted) {
+          setState(() {});
+        }
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _arrows.add(arrow);
+          _selectArrowById(arrow.id);
+        });
+      }
+      return;
+    }
+
+    if (_selectedTool == MarkupTool.dimension) {
+      final DimensionLine line = DimensionLine.fromCanvasPoints(
+        id: _allocateMarkupId(),
+        startPoint: start,
+        endPoint: end,
+        imageRect: imageRect,
+      );
+
+      int? newLineId;
+      setState(() {
+        if (line.lengthInRect(imageRect) >=
+            UiLayoutConstants.dimensionTapDragMinDistance) {
+          _dimensionLines.add(line);
+          newLineId = line.id;
+          _selectDimensionById(line.id);
+        }
+      });
+
+      if (!mounted || newLineId == null) {
+        return;
+      }
+      await _promptForDimensionLabelById(newLineId!);
+    }
   }
 
-  Future<void> _promptForDimensionLabelForLine(int lineIndex) async {
-    if (lineIndex < 0 || lineIndex >= _dimensionLines.length) {
+  Future<void> _promptForDimensionLabelById(int dimensionId) async {
+    final int lineIndex = _dimensionLines.indexWhere(
+      (DimensionLine line) => line.id == dimensionId,
+    );
+    if (lineIndex == -1) {
       return;
     }
 
@@ -526,16 +625,20 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (!mounted || updatedLabel == null) {
       return;
     }
-    if (lineIndex < 0 || lineIndex >= _dimensionLines.length) {
+
+    final int refreshIndex = _dimensionLines.indexWhere(
+      (DimensionLine line) => line.id == dimensionId,
+    );
+    if (refreshIndex == -1) {
       return;
     }
 
     final String normalized = DimensionLabelFormatter.format(updatedLabel);
     setState(() {
-      _dimensionLines[lineIndex] = normalized.isEmpty
-          ? _dimensionLines[lineIndex].copyWith(clearLabel: true)
-          : _dimensionLines[lineIndex].copyWith(label: normalized);
-      _selectedDimensionLineIndex = lineIndex;
+      _dimensionLines[refreshIndex] = normalized.isEmpty
+          ? _dimensionLines[refreshIndex].copyWith(clearLabel: true)
+          : _dimensionLines[refreshIndex].copyWith(label: normalized);
+      _selectDimensionById(dimensionId);
     });
   }
 
@@ -551,50 +654,74 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   }
 
   Future<void> _onDimensionTap(Offset point, Rect imageRect) async {
-    if (_imagePath == null || _dimensionLines.isEmpty) {
+    if (_imagePath == null || (_dimensionLines.isEmpty && _arrows.isEmpty)) {
       return;
     }
 
-    final int lineIndex = _findNearestLineIndex(point, imageRect);
-    if (lineIndex == -1) {
-      if (_selectedDimensionLineIndex != null) {
+    final _NearestMarkupHit nearestHit = _findNearestMarkupHit(
+      point,
+      imageRect,
+    );
+    if (!nearestHit.found) {
+      if (_selectedDimensionId != null || _selectedArrowId != null) {
         setState(() {
-          _selectedDimensionLineIndex = null;
+          _clearMarkupSelection();
         });
       }
       return;
     }
 
-    if (_selectedDimensionLineIndex != lineIndex) {
-      setState(() {
-        _selectedDimensionLineIndex = lineIndex;
-      });
+    if (nearestHit.isDimension) {
+      if (_selectedDimensionId != nearestHit.markupId ||
+          _selectedArrowId != null) {
+        setState(() {
+          _selectDimensionById(nearestHit.markupId);
+        });
+        return;
+      }
+      await _promptForDimensionLabelById(nearestHit.markupId);
       return;
     }
 
-    await _promptForDimensionLabelForLine(lineIndex);
+    if (_selectedArrowId != nearestHit.markupId ||
+        _selectedDimensionId != null) {
+      setState(() {
+        _selectArrowById(nearestHit.markupId);
+      });
+    }
   }
 
-  int _findNearestLineIndex(Offset point, Rect imageRect) {
-    int bestIndex = -1;
+  _NearestMarkupHit _findNearestMarkupHit(Offset point, Rect imageRect) {
+    int bestMarkupId = -1;
+    bool bestIsDimension = true;
     double bestDistance = double.infinity;
 
-    for (int i = 0; i < _dimensionLines.length; i++) {
-      final double distance = _dimensionLines[i].distanceToPointInRect(
-        point,
-        imageRect,
-      );
+    for (final DimensionLine line in _dimensionLines) {
+      final double distance = line.distanceToPointInRect(point, imageRect);
       if (distance < bestDistance) {
         bestDistance = distance;
-        bestIndex = i;
+        bestMarkupId = line.id;
+        bestIsDimension = true;
+      }
+    }
+
+    for (final ArrowMarkup arrow in _arrows) {
+      final double distance = arrow.distanceToPointInRect(point, imageRect);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMarkupId = arrow.id;
+        bestIsDimension = false;
       }
     }
 
     if (bestDistance > DimensionLineConstants.selectionTapDistance) {
-      return -1;
+      return const _NearestMarkupHit.notFound();
     }
 
-    return bestIndex;
+    return _NearestMarkupHit(
+      markupId: bestMarkupId,
+      isDimension: bestIsDimension,
+    );
   }
 
   KeyEventResult _onShellKeyEvent(FocusNode node, KeyEvent event) {
@@ -603,21 +730,22 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     }
     if (event.logicalKey == LogicalKeyboardKey.delete ||
         event.logicalKey == LogicalKeyboardKey.backspace) {
-      _eraseSelectedDimensionLine();
+      _eraseSelectedMarkup();
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
   }
 
-  bool _canDrawDimensionLine(Rect imageRect) {
-    return _selectedTool == MarkupTool.dimension &&
+  bool _canDrawMarkup(Rect imageRect) {
+    return (_selectedTool == MarkupTool.dimension ||
+            _selectedTool == MarkupTool.arrow) &&
         _imagePath != null &&
         imageRect.width > 0 &&
         imageRect.height > 0;
   }
 
   bool _isUndoEnabled() {
-    return _dimensionLines.isNotEmpty;
+    return _dimensionLines.isNotEmpty || _arrows.isNotEmpty;
   }
 
   String _fileExtension(String path) {
@@ -750,8 +878,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                         child: _ToolbarActionButton(
                           label: label,
                           isSelected:
-                              label == ToolbarConstants.dimension &&
-                              _selectedTool == MarkupTool.dimension,
+                              (label == ToolbarConstants.dimension &&
+                                  _selectedTool == MarkupTool.dimension) ||
+                              (label == ToolbarConstants.arrow &&
+                                  _selectedTool == MarkupTool.arrow),
                           isDisabled:
                               (label == ToolbarConstants.undo &&
                                   !_isUndoEnabled()) ||
@@ -864,11 +994,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                       ),
                       DimensionLinesOverlay(
                         lines: _dimensionLines,
+                        arrows: _arrows,
                         imageRect: imageRect,
-                        selectedLineIndex: _selectedDimensionLineIndex,
+                        selectedDimensionId: _selectedDimensionId,
+                        selectedArrowId: _selectedArrowId,
+                        activeTool: _selectedTool,
                         activeStart: _activeDimensionStart,
                         activeEnd: _activeDimensionCurrent,
-                        isEnabled: _canDrawDimensionLine(imageRect),
+                        isEnabled: _canDrawMarkup(imageRect),
                         onStart: (Offset point) =>
                             _onDimensionStart(point, imageRect),
                         onUpdate: (Offset point) =>
@@ -904,6 +1037,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       ],
     );
   }
+}
+
+class _NearestMarkupHit {
+  const _NearestMarkupHit({required this.markupId, required this.isDimension});
+
+  const _NearestMarkupHit.notFound() : markupId = -1, isDimension = false;
+
+  final int markupId;
+  final bool isDimension;
+
+  bool get found => markupId != -1;
 }
 
 class _ToolbarActionButton extends StatelessWidget {

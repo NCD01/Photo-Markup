@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
 
-class DimensionLine {
-  const DimensionLine({
+class ArrowMarkup {
+  const ArrowMarkup({
     required this.id,
     required this.startNormalized,
     required this.endNormalized,
-    this.label,
   });
 
   final int id;
   final Offset startNormalized;
   final Offset endNormalized;
-  final String? label;
 
-  factory DimensionLine.fromCanvasPoints({
+  factory ArrowMarkup.fromCanvasPoints({
     required int id,
     required Offset startPoint,
     required Offset endPoint,
     required Rect imageRect,
   }) {
-    return DimensionLine(
+    return ArrowMarkup(
       id: id,
       startNormalized: _normalizePoint(
         _clampPoint(startPoint, imageRect),
@@ -29,21 +27,6 @@ class DimensionLine {
         _clampPoint(endPoint, imageRect),
         imageRect,
       ),
-    );
-  }
-
-  DimensionLine copyWith({
-    int? id,
-    Offset? startNormalized,
-    Offset? endNormalized,
-    String? label,
-    bool clearLabel = false,
-  }) {
-    return DimensionLine(
-      id: id ?? this.id,
-      startNormalized: startNormalized ?? this.startNormalized,
-      endNormalized: endNormalized ?? this.endNormalized,
-      label: clearLabel ? null : (label ?? this.label),
     );
   }
 
@@ -57,12 +40,6 @@ class DimensionLine {
 
   double lengthInRect(Rect imageRect) {
     return (endInRect(imageRect) - startInRect(imageRect)).distance;
-  }
-
-  Offset midpointInRect(Rect imageRect) {
-    final Offset start = startInRect(imageRect);
-    final Offset end = endInRect(imageRect);
-    return Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
   }
 
   double distanceToPointInRect(Offset point, Rect imageRect) {
@@ -86,10 +63,6 @@ class DimensionLine {
       start.dy + (segment.dy * clampedProjection),
     );
     return (point - nearest).distance;
-  }
-
-  static Offset clampToRect(Offset point, Rect rect) {
-    return _clampPoint(point, rect);
   }
 
   static Offset _normalizePoint(Offset point, Rect imageRect) {
@@ -121,13 +94,12 @@ class DimensionLine {
     if (identical(this, other)) {
       return true;
     }
-    return other is DimensionLine &&
+    return other is ArrowMarkup &&
         other.id == id &&
         other.startNormalized == startNormalized &&
-        other.endNormalized == endNormalized &&
-        other.label == label;
+        other.endNormalized == endNormalized;
   }
 
   @override
-  int get hashCode => Object.hash(id, startNormalized, endNormalized, label);
+  int get hashCode => Object.hash(id, startNormalized, endNormalized);
 }
