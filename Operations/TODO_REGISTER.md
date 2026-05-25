@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Track planned and in-progress work items.
-Changes: Added Phase 1J follow-up TODO for real HEIC/HEIF validation corpus on Windows.
+Changes: Added post-MVP prioritized Critical/High/Medium backlog list (Phase 1K follow-up planning).
 
 ## Quick Rules
 - Keep IDs stable.
@@ -86,4 +86,64 @@ Changes: Added Phase 1J follow-up TODO for real HEIC/HEIF validation corpus on W
 - Avoid tiny unreadable text at `16/24/32 px`.
 - Verify alpha transparency and visual quality as separate validation gates.
 - Document Windows icon cache troubleshooting steps for validation and owner QA.
+
+## Post-MVP Priority Backlog
+### Critical (Open)
+1. Text Note Tool
+- Add independent text notes (not tied to dimension lines), touch-friendly entry, render/export support, and select/edit/delete parity.
+- Voice-to-text remains separate unless approved.
+2. Editable Markup Save / Reopen
+- Save editable markup separately from exported PNG and reopen later with original image unchanged.
+- Keep standalone; no Control Center integration/autosave yet.
+3. Full-Resolution Export
+- Add export using original image dimensions with correct markup scaling/placement.
+- Keep PNG first; PDF remains separate.
+4. Markup Color / Stroke Presets
+- Add field presets for color/stroke/fill/selected-state styling with centralized config.
+5. Better Touch Toolbar / Active Tool UX
+- Improve touch targets, spacing, active-state clarity, and accidental-change prevention.
+6. Move / Adjust Selected Markup
+- Add move/resize/endpoint adjustment with bounds safety to reduce erase/redraw rework.
+7. Better Undo / Redo History
+- Add redo and predictable history across add/delete/move/edit/style actions.
+8. Export Naming and Save Location Workflow
+- Improve default naming, suffixes, and safe destination memory (without project-folder autosave).
+9. Field Reliability / Large Image Performance
+- Harden performance for large jobsite photos; protect responsiveness and original-file integrity.
+
+### High (Open)
+10. Multiple-Photo Markup Sets
+- Group multiple photos with sequencing/thumbnails/per-photo markup state.
+11. Control Center Integration Adapter
+- Future adapter-only integration; preserve standalone MVP and separate asset outputs.
+12. Samsung Tablet / Android Validation
+- Validate touch/pen, picker, HEIC/JPG/PNG import, export, and toolbar sizing on Samsung tablet.
+13. Apple Platform Compatibility Review
+- Review iPad/iPhone/macOS feasibility and workflows; no implementation until approved.
+14. HEIC/HEIF Dependency/Fallback Hardening
+- Clarify dependency expectations, missing-fallback messaging, and future packaging strategy.
+15. Export Quality / Output Review
+- Validate readability/quality across sizes; confirm selected-state export behavior policy.
+
+### Medium (Open)
+16. Icon / Taskbar Branding Redesign Standard
+- Define taskbar-first/vector icon standards and alpha/readability QA gates.
+17. Optional PDF Export Evaluation
+- Evaluate PDF after full-resolution PNG export is solved.
+18. Voice-to-Text Notes
+- Optional enhancement for Text Note Tool with typed fallback.
+19. Shape/Text Styling Panel
+- Add touch-friendly style controls (color/thickness/fill/font) later.
+20. Editable Project File Format / Data Schema
+- Define portable saved-markup schema for future integration.
+21. Import/Export Error Handling Polish
+- Improve user-friendly failures while keeping technical diagnostics available.
+22. Onboarding / Quick Help Overlay
+- Optional quick guidance for core gestures/tools.
+23. Tool-Specific Cursor / Touch Feedback
+- Improve draw previews/active tool cues/drag feedback.
+24. Markup Layer / Z-Order Management
+- Evaluate bring-forward/send-backward only if overlap complexity requires it.
+25. Governance Icon Standard Follow-Up
+- Add/update governance icon/splash standards in governance source (master rules, alpha, ICO frames, cache notes).
 

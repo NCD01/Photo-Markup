@@ -6,7 +6,28 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1K Freehand Tool MVP entry.
+Changes: Added post-MVP roadmap TODO documentation entry.
+
+## Unreleased - 2026-05-24 (Post-MVP Roadmap TODO Prioritization)
+- Owner: NCD / M
+- Author: Codex
+- Type: Documentation
+- Reason: Capture prioritized post-MVP backlog for planning and sequencing.
+- Scope:
+  - `Operations/TODO_REGISTER.md`
+  - `Operations/SESSION.md`
+  - `System/Documentation/PROJECT_DOCUMENTATION.md`
+- Changes:
+  - Added explicit Critical/High/Medium post-MVP priority list (items 1-25).
+  - Added roadmap summary link in project documentation.
+  - Logged session notes for docs-only backlog update.
+- Validation Evidence:
+  - `git status --short` preflight: `PASS` (clean before doc edits)
+  - Documentation/path sanity review: `PASS`
+  - `verify-version-sync.ps1`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Backlog items remain planning-only until approved for implementation phases.
 
 ## Unreleased - 2026-05-24 (Phase 1K Freehand Tool MVP)
 - Owner: NCD / M

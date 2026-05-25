@@ -1588,3 +1588,25 @@ Changes: Added Phase 1J HEIC/HEIF import support session and validation notes.
 - No project-folder autosave added.
 - No unrelated tools/shapes added.
 - No PDF/full-resolution export changes.
+
+# SESSION_2026-05-24_0015_post_mvp_priority_backlog_docs_update
+
+## Goal
+- Add post-MVP Critical/High/Medium TODO priority list.
+
+## Changes
+- Updated `Operations/TODO_REGISTER.md` with prioritized backlog items 1-25 and status `Open`.
+- Updated roadmap summary in `System/Documentation/PROJECT_DOCUMENTATION.md` to reference new priority groupings.
+
+## Validation
+- `git status --short` preflight: `PASS` (clean)
+- Documentation/path sanity review: `PASS`
+- `git status --short` post-update: `PASS` (docs-only dirty set)
+
+## Logging/Debug Notes
+- Docs-only update. No Flutter/runtime commands required.
+
+## Constraints Confirmed
+- No app code changed.
+- No app behavior changed.
+- No commit/push/version bump performed.

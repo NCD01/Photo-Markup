@@ -213,6 +213,10 @@ Required sections are present and updated through Phase 1J.
 ## Roadmap (Near-Future)
 - Future Phase: Extended Apple compatibility beyond MVP HEIC/HEIF import (see Operations/TODO_REGISTER.md).
 - Future Phase: NCD Control Center Integration via isolated adapter/service boundaries (see Operations/TODO_REGISTER.md).
+- Post-MVP priorities are now grouped as Critical/High/Medium in `Operations/TODO_REGISTER.md`:
+  - Critical: Text Note Tool, Editable Save/Reopen, Full-Resolution Export, Presets, Touch UX, Move/Adjust, Undo/Redo, Export Naming, Large-Image Performance.
+  - High: Multi-photo sets, Control Center adapter, Samsung/Android validation, Apple review, HEIC fallback hardening, export-quality review.
+  - Medium: Icon standard redesign, optional PDF, voice-to-text notes, styling panel, editable schema, error polish, onboarding, touch feedback, z-order, governance icon standard follow-up.
 
 ## Phase 1A.1 Structure Note
 - This phase updates repository structure, governance scripts, and documentation references only.
