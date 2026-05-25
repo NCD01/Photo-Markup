@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track concise session history and handoff state.
-Changes: Added Phase 1L Text Note Tool MVP session and validation notes.
+Changes: Added Phase 1M Move/Adjust Selected Markup MVP session and validation notes.
 
 # SESSION_2026-05-22_0001_bootstrap_phase0
 
@@ -1693,3 +1693,52 @@ Changes: Added Phase 1L Text Note Tool MVP session and validation notes.
 
 ## Constraints Confirmed
 - No scope expansion beyond approved Phase 1L work.
+
+# SESSION_2026-05-25_0018_phase1m_move_adjust_selected_markup_mvp
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add Phase 1M whole-markup move workflow so selected markups can be repositioned without erase/redraw.
+
+## Actions
+- Added shared move geometry utility:
+  - `app/lib/features/markup/utils/markup_move_utils.dart`
+- Added move tunables:
+  - `MarkupMoveConstants` in `app/lib/core/constants/app_constants.dart`
+- Updated `app/lib/main.dart`:
+  - drag-selected move session lifecycle
+  - whole-markup move for dimension/arrow/rectangle/oval/freehand/text note
+  - movement threshold to separate tap vs drag intent
+  - bounds clamping to displayed image rectangle
+  - preserved tap-to-edit behavior for text notes after move
+- Added tests:
+  - `app/test/markup_move_utils_test.dart`
+- Updated required operations/system docs for Phase 1M scope and deferred advanced handles.
+
+## Logging/Debug Notes
+- Move operations apply per-pointer delta and clamp against displayed photo bounds before model updates.
+- Dimension labels move with their dimension line because label anchors from moved line geometry.
+- Advanced endpoint editing/resize handles were intentionally deferred to avoid gesture instability in MVP.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.16`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+- Owner interactive manual move workflow: `NOT_VALIDATED` in this environment
+
+## Constraints Confirmed
+- No commit/push/version bump performed in this step.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No unrelated tools/shapes added.
+- No PDF/full-resolution export added.

@@ -250,6 +250,15 @@ class TextNoteMarkupConstants {
   static const double selectionHitDistance = 26;
 }
 
+class MarkupMoveConstants {
+  const MarkupMoveConstants._();
+
+  static const double dragActivationDistance = 8;
+  static const double selectionStartHitDistance = 24;
+  static const double boundsPadding = 0;
+  static const double minimumMoveDelta = 0.5;
+}
+
 class ExportConstants {
   const ExportConstants._();
 

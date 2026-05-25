@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-24`
+Last Updated: `2026-05-25`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1J image import copy/file-type standards for HEIC/HEIF handling.
+Changes: Added Phase 1M selected-markup drag-move interaction standard.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -32,6 +32,9 @@ Changes: Added Phase 1J image import copy/file-type standards for HEIC/HEIF hand
 - Dimension label entry should also support Enter/Done keyboard submit for fast field entry on desktop tablets.
 - Selected markup state must be visually obvious (stroke color/weight contrast from non-selected lines).
 - Erase interaction must be safe: no-selection click should be gentle guidance, never crash.
+- Dragging a selected markup should move the whole markup with a movement threshold to avoid accidental tap/edit conflicts.
+- Whole-markup move must remain clamped to the displayed image rectangle.
+- Advanced resize/endpoint handles are optional and should be deferred if they introduce unstable gesture conflicts.
 - Startup splash and app-bar icon should use app-local branding assets, not doc-folder runtime paths.
 - Startup splash should visually occupy most of the launch window while keeping full image visible (`BoxFit.contain`).
 - Import picker/file-type scope should list all currently supported image formats (`jpg/jpeg/png/webp/heic/heif`).

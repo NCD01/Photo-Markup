@@ -6,7 +6,35 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1L Text Note Tool MVP entry.
+Changes: Added Phase 1M Move/Adjust Selected Markup MVP entry.
+
+## Unreleased - 2026-05-25 (Phase 1M Move / Adjust Selected Markup MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Allow field users to reposition selected markups without erase/redraw.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/utils/markup_move_utils.dart`
+  - `app/test/markup_move_utils_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added drag-selected whole-markup move behavior for dimension, arrow, rectangle, oval, freehand, and text note markups.
+  - Added movement threshold to reduce tap/edit gesture conflicts.
+  - Added per-markup bounds clamping to keep moved markups inside displayed photo bounds.
+  - Preserved existing create/select/edit/delete/undo/export workflows.
+  - Deferred endpoint-handle and resize-handle editing to a future phase.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Advanced endpoint/resize adjustments remain deferred by design for stability.
 
 ## Unreleased - 2026-05-25 (Phase 1L Text Note Tool MVP)
 - Owner: NCD / M

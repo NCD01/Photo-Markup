@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:file_selector/file_selector.dart';
@@ -16,6 +17,7 @@ import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
+import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 
 typedef OpenFileCallback = Future<XFile?> Function();
@@ -213,6 +215,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   Offset? _activeDimensionStart;
   Offset? _activeDimensionCurrent;
   final List<Offset> _activeFreehandPoints = <Offset>[];
+  _MoveSession? _activeMoveSession;
+  bool _didMoveSelectedMarkup = false;
 
   @override
   void initState() {
@@ -369,6 +373,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       _freehands.clear();
       _textNotes.clear();
       _activeFreehandPoints.clear();
+      _activeMoveSession = null;
+      _didMoveSelectedMarkup = false;
       _nextMarkupId = 1;
     });
   }
@@ -790,7 +796,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   }
 
   void _onDimensionStart(Offset startPoint, Rect imageRect) {
-    if (!_canDrawMarkup(imageRect) || !imageRect.contains(startPoint)) {
+    if (!imageRect.contains(startPoint)) {
+      return;
+    }
+    _didMoveSelectedMarkup = false;
+    if (_tryStartMoveSelectedMarkup(startPoint, imageRect)) {
+      return;
+    }
+    if (!_canDrawMarkup(imageRect)) {
       return;
     }
     final Offset clamped = DimensionLine.clampToRect(startPoint, imageRect);
@@ -806,6 +819,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   }
 
   void _onDimensionUpdate(Offset currentPoint, Rect imageRect) {
+    if (_activeMoveSession != null) {
+      _updateMoveSelectedMarkup(currentPoint, imageRect);
+      return;
+    }
     if (_activeDimensionStart == null || !_canDrawMarkup(imageRect)) {
       return;
     }
@@ -826,6 +843,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   }
 
   Future<void> _onDimensionEnd(Rect imageRect) async {
+    if (_activeMoveSession != null) {
+      _activeMoveSession = null;
+      return;
+    }
+
     final Offset? start = _activeDimensionStart;
     final Offset? end = _activeDimensionCurrent;
     final List<Offset> freehandPoints = List<Offset>.of(_activeFreehandPoints);
@@ -1071,7 +1093,434 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     );
   }
 
+  bool _tryStartMoveSelectedMarkup(Offset point, Rect imageRect) {
+    final _SelectedMarkup? selectedMarkup = _selectedMarkup();
+    if (selectedMarkup == null) {
+      return false;
+    }
+    final double distance = _distanceToSelectedMarkup(
+      selectedMarkup,
+      point,
+      imageRect,
+    );
+    if (distance > _selectionDistanceForTool(selectedMarkup.tool)) {
+      return false;
+    }
+
+    _activeMoveSession = _MoveSession(
+      markupId: selectedMarkup.markupId,
+      markupTool: selectedMarkup.tool,
+      startPoint: point,
+      lastPoint: point,
+    );
+    return true;
+  }
+
+  _SelectedMarkup? _selectedMarkup() {
+    if (_selectedDimensionId != null) {
+      return _SelectedMarkup(
+        markupId: _selectedDimensionId!,
+        tool: MarkupTool.dimension,
+      );
+    }
+    if (_selectedArrowId != null) {
+      return _SelectedMarkup(
+        markupId: _selectedArrowId!,
+        tool: MarkupTool.arrow,
+      );
+    }
+    if (_selectedRectangleId != null) {
+      return _SelectedMarkup(
+        markupId: _selectedRectangleId!,
+        tool: MarkupTool.rectangle,
+      );
+    }
+    if (_selectedOvalId != null) {
+      return _SelectedMarkup(markupId: _selectedOvalId!, tool: MarkupTool.oval);
+    }
+    if (_selectedFreehandId != null) {
+      return _SelectedMarkup(
+        markupId: _selectedFreehandId!,
+        tool: MarkupTool.freehand,
+      );
+    }
+    if (_selectedTextNoteId != null) {
+      return _SelectedMarkup(
+        markupId: _selectedTextNoteId!,
+        tool: MarkupTool.textNote,
+      );
+    }
+    return null;
+  }
+
+  double _selectionDistanceForTool(MarkupTool tool) {
+    final double minimumHitDistance =
+        MarkupMoveConstants.selectionStartHitDistance;
+    switch (tool) {
+      case MarkupTool.dimension:
+      case MarkupTool.arrow:
+        return math.max(
+          DimensionLineConstants.selectionTapDistance,
+          minimumHitDistance,
+        );
+      case MarkupTool.rectangle:
+        return math.max(
+          RectangleMarkupConstants.selectionHitDistance,
+          minimumHitDistance,
+        );
+      case MarkupTool.oval:
+        return math.max(
+          OvalMarkupConstants.selectionHitDistance,
+          minimumHitDistance,
+        );
+      case MarkupTool.freehand:
+        return math.max(
+          FreehandMarkupConstants.selectionHitDistance,
+          minimumHitDistance,
+        );
+      case MarkupTool.textNote:
+        return math.max(
+          TextNoteMarkupConstants.selectionHitDistance,
+          minimumHitDistance,
+        );
+      case MarkupTool.none:
+        return math.max(
+          DimensionLineConstants.selectionTapDistance,
+          minimumHitDistance,
+        );
+    }
+  }
+
+  double _distanceToSelectedMarkup(
+    _SelectedMarkup selectedMarkup,
+    Offset point,
+    Rect imageRect,
+  ) {
+    switch (selectedMarkup.tool) {
+      case MarkupTool.dimension:
+        final int index = _dimensionLines.indexWhere(
+          (DimensionLine line) => line.id == selectedMarkup.markupId,
+        );
+        if (index == -1) {
+          return double.infinity;
+        }
+        return _dimensionLines[index].distanceToPointInRect(point, imageRect);
+      case MarkupTool.arrow:
+        final int index = _arrows.indexWhere(
+          (ArrowMarkup arrow) => arrow.id == selectedMarkup.markupId,
+        );
+        if (index == -1) {
+          return double.infinity;
+        }
+        return _arrows[index].distanceToPointInRect(point, imageRect);
+      case MarkupTool.rectangle:
+        final int index = _rectangles.indexWhere(
+          (RectangleMarkup rectangle) =>
+              rectangle.id == selectedMarkup.markupId,
+        );
+        if (index == -1) {
+          return double.infinity;
+        }
+        return _rectangles[index].distanceToPointInRect(point, imageRect);
+      case MarkupTool.oval:
+        final int index = _ovals.indexWhere(
+          (OvalMarkup oval) => oval.id == selectedMarkup.markupId,
+        );
+        if (index == -1) {
+          return double.infinity;
+        }
+        return _ovals[index].distanceToPointInRect(point, imageRect);
+      case MarkupTool.freehand:
+        final int index = _freehands.indexWhere(
+          (FreehandMarkup freehand) => freehand.id == selectedMarkup.markupId,
+        );
+        if (index == -1) {
+          return double.infinity;
+        }
+        return _freehands[index].distanceToPointInRect(point, imageRect);
+      case MarkupTool.textNote:
+        final int index = _textNotes.indexWhere(
+          (TextNoteMarkup note) => note.id == selectedMarkup.markupId,
+        );
+        if (index == -1) {
+          return double.infinity;
+        }
+        return _distanceToTextNote(_textNotes[index], point, imageRect);
+      case MarkupTool.none:
+        return double.infinity;
+    }
+  }
+
+  void _updateMoveSelectedMarkup(Offset currentPoint, Rect imageRect) {
+    final _MoveSession? moveSession = _activeMoveSession;
+    if (moveSession == null) {
+      return;
+    }
+    final Offset clampedPoint = DimensionLine.clampToRect(
+      currentPoint,
+      imageRect,
+    );
+    final double travelDistance =
+        (clampedPoint - moveSession.startPoint).distance;
+    if (!moveSession.isDragActive &&
+        travelDistance < MarkupMoveConstants.dragActivationDistance) {
+      return;
+    }
+
+    moveSession.isDragActive = true;
+    final Offset requestedDelta = clampedPoint - moveSession.lastPoint;
+    if (requestedDelta.distance < MarkupMoveConstants.minimumMoveDelta) {
+      return;
+    }
+    final Offset appliedDelta = _moveMarkupByDelta(
+      markupTool: moveSession.markupTool,
+      markupId: moveSession.markupId,
+      requestedDelta: requestedDelta,
+      imageRect: imageRect,
+    );
+    moveSession.lastPoint = clampedPoint;
+    if (appliedDelta.distance > 0) {
+      _didMoveSelectedMarkup = true;
+    }
+  }
+
+  Offset _moveMarkupByDelta({
+    required MarkupTool markupTool,
+    required int markupId,
+    required Offset requestedDelta,
+    required Rect imageRect,
+  }) {
+    switch (markupTool) {
+      case MarkupTool.dimension:
+        return _moveDimensionByDelta(markupId, requestedDelta, imageRect);
+      case MarkupTool.arrow:
+        return _moveArrowByDelta(markupId, requestedDelta, imageRect);
+      case MarkupTool.rectangle:
+        return _moveRectangleByDelta(markupId, requestedDelta, imageRect);
+      case MarkupTool.oval:
+        return _moveOvalByDelta(markupId, requestedDelta, imageRect);
+      case MarkupTool.freehand:
+        return _moveFreehandByDelta(markupId, requestedDelta, imageRect);
+      case MarkupTool.textNote:
+        return _moveTextNoteByDelta(markupId, requestedDelta, imageRect);
+      case MarkupTool.none:
+        return Offset.zero;
+    }
+  }
+
+  Offset _moveDimensionByDelta(int markupId, Offset delta, Rect imageRect) {
+    final int index = _dimensionLines.indexWhere(
+      (DimensionLine line) => line.id == markupId,
+    );
+    if (index == -1) {
+      return Offset.zero;
+    }
+    final DimensionLine line = _dimensionLines[index];
+    final List<Offset> points = <Offset>[
+      line.startInRect(imageRect),
+      line.endInRect(imageRect),
+    ];
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: points,
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    final List<Offset> moved = MarkupMoveUtils.translatePoints(
+      points,
+      appliedDelta,
+    );
+    final DimensionLine movedLine = DimensionLine.fromCanvasPoints(
+      id: line.id,
+      startPoint: moved.first,
+      endPoint: moved.last,
+      imageRect: imageRect,
+    ).copyWith(label: line.label);
+    setState(() {
+      _dimensionLines[index] = movedLine;
+    });
+    return appliedDelta;
+  }
+
+  Offset _moveArrowByDelta(int markupId, Offset delta, Rect imageRect) {
+    final int index = _arrows.indexWhere(
+      (ArrowMarkup arrow) => arrow.id == markupId,
+    );
+    if (index == -1) {
+      return Offset.zero;
+    }
+    final ArrowMarkup arrow = _arrows[index];
+    final List<Offset> points = <Offset>[
+      arrow.startInRect(imageRect),
+      arrow.endInRect(imageRect),
+    ];
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: points,
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    final List<Offset> moved = MarkupMoveUtils.translatePoints(
+      points,
+      appliedDelta,
+    );
+    final ArrowMarkup movedArrow = ArrowMarkup.fromCanvasPoints(
+      id: arrow.id,
+      startPoint: moved.first,
+      endPoint: moved.last,
+      imageRect: imageRect,
+    );
+    setState(() {
+      _arrows[index] = movedArrow;
+    });
+    return appliedDelta;
+  }
+
+  Offset _moveRectangleByDelta(int markupId, Offset delta, Rect imageRect) {
+    final int index = _rectangles.indexWhere(
+      (RectangleMarkup rectangle) => rectangle.id == markupId,
+    );
+    if (index == -1) {
+      return Offset.zero;
+    }
+    final RectangleMarkup rectangle = _rectangles[index];
+    final Rect rect = rectangle.rectInRect(imageRect);
+    final List<Offset> points = <Offset>[rect.topLeft, rect.bottomRight];
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: points,
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    final List<Offset> moved = MarkupMoveUtils.translatePoints(
+      points,
+      appliedDelta,
+    );
+    final RectangleMarkup movedRectangle = RectangleMarkup.fromCanvasPoints(
+      id: rectangle.id,
+      startPoint: moved.first,
+      endPoint: moved.last,
+      imageRect: imageRect,
+    );
+    setState(() {
+      _rectangles[index] = movedRectangle;
+    });
+    return appliedDelta;
+  }
+
+  Offset _moveOvalByDelta(int markupId, Offset delta, Rect imageRect) {
+    final int index = _ovals.indexWhere(
+      (OvalMarkup oval) => oval.id == markupId,
+    );
+    if (index == -1) {
+      return Offset.zero;
+    }
+    final OvalMarkup oval = _ovals[index];
+    final Rect rect = oval.rectInRect(imageRect);
+    final List<Offset> points = <Offset>[rect.topLeft, rect.bottomRight];
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: points,
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    final List<Offset> moved = MarkupMoveUtils.translatePoints(
+      points,
+      appliedDelta,
+    );
+    final OvalMarkup movedOval = OvalMarkup.fromCanvasPoints(
+      id: oval.id,
+      startPoint: moved.first,
+      endPoint: moved.last,
+      imageRect: imageRect,
+    );
+    setState(() {
+      _ovals[index] = movedOval;
+    });
+    return appliedDelta;
+  }
+
+  Offset _moveFreehandByDelta(int markupId, Offset delta, Rect imageRect) {
+    final int index = _freehands.indexWhere(
+      (FreehandMarkup freehand) => freehand.id == markupId,
+    );
+    if (index == -1) {
+      return Offset.zero;
+    }
+    final FreehandMarkup freehand = _freehands[index];
+    final List<Offset> points = freehand.pointsInRect(imageRect);
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: points,
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    final List<Offset> moved = MarkupMoveUtils.translatePoints(
+      points,
+      appliedDelta,
+    );
+    final FreehandMarkup movedFreehand = FreehandMarkup.fromCanvasPoints(
+      id: freehand.id,
+      points: moved,
+      imageRect: imageRect,
+    );
+    setState(() {
+      _freehands[index] = movedFreehand;
+    });
+    return appliedDelta;
+  }
+
+  Offset _moveTextNoteByDelta(int markupId, Offset delta, Rect imageRect) {
+    final int index = _textNotes.indexWhere(
+      (TextNoteMarkup note) => note.id == markupId,
+    );
+    if (index == -1) {
+      return Offset.zero;
+    }
+    final TextNoteMarkup note = _textNotes[index];
+    final Offset anchor = note.anchorInRect(imageRect);
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: <Offset>[anchor],
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    final Offset moved = anchor + appliedDelta;
+    final TextNoteMarkup movedNote = TextNoteMarkup.fromCanvasPoint(
+      id: note.id,
+      anchorPoint: moved,
+      text: note.text,
+      imageRect: imageRect,
+    );
+    setState(() {
+      _textNotes[index] = movedNote;
+    });
+    return appliedDelta;
+  }
+
   Future<void> _onDimensionTap(Offset point, Rect imageRect) async {
+    if (_didMoveSelectedMarkup) {
+      _didMoveSelectedMarkup = false;
+      return;
+    }
     if (_imagePath == null) {
       return;
     }
@@ -1363,6 +1812,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         imageRect.height > 0;
   }
 
+  bool _isOverlayInteractionEnabled(Rect imageRect) {
+    return _imagePath != null && imageRect.width > 0 && imageRect.height > 0;
+  }
+
   bool _isUndoEnabled() {
     return _dimensionLines.isNotEmpty ||
         _arrows.isNotEmpty ||
@@ -1642,7 +2095,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                         activeStart: _activeDimensionStart,
                         activeEnd: _activeDimensionCurrent,
                         activeFreehandPoints: _activeFreehandPoints,
-                        isEnabled: _canDrawMarkup(imageRect),
+                        isEnabled: _isOverlayInteractionEnabled(imageRect),
                         onStart: (Offset point) =>
                             _onDimensionStart(point, imageRect),
                         onUpdate: (Offset point) =>
@@ -1691,6 +2144,28 @@ class _NearestMarkupHit {
   final MarkupTool markupTool;
 
   bool get found => markupId != -1;
+}
+
+class _SelectedMarkup {
+  const _SelectedMarkup({required this.markupId, required this.tool});
+
+  final int markupId;
+  final MarkupTool tool;
+}
+
+class _MoveSession {
+  _MoveSession({
+    required this.markupId,
+    required this.markupTool,
+    required this.startPoint,
+    required this.lastPoint,
+  });
+
+  final int markupId;
+  final MarkupTool markupTool;
+  final Offset startPoint;
+  Offset lastPoint;
+  bool isDragActive = false;
 }
 
 class _ToolbarActionButton extends StatelessWidget {

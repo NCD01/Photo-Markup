@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1L Text Note Tool MVP architecture and behavior notes.
+Changes: Added Phase 1M Move/Adjust Selected Markup MVP architecture and behavior notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -15,7 +15,7 @@ Changes: Added Phase 1L Text Note Tool MVP architecture and behavior notes.
 - Structure/governance cleanup must not change runtime behavior.
 
 ## Required Contract
-Required sections are present and updated through Phase 1L.
+Required sections are present and updated through Phase 1M.
 
 ## Overview
 - App Name: `NCD Photo Markup`
@@ -31,6 +31,7 @@ Required sections are present and updated through Phase 1L.
 | Markup Model | `Dimension line + arrow + rectangle + oval + freehand + text note entities and tool enum` | `app/lib/features/markup/models/` | `NCD / M` |
 | Markup Widget | `Dimension lines overlay input capture, selection hit-testing, and custom rendering` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `NCD / M` |
 | Markup Utility | `Lightweight normalization for common measurement label formats` | `app/lib/features/markup/utils/dimension_label_formatter.dart` | `NCD / M` |
+| Move Utility | `Whole-markup move translation/clamp helpers used by drag-selected move workflow` | `app/lib/features/markup/utils/markup_move_utils.dart` | `NCD / M` |
 | Import Service | `Converts HEIC/HEIF source files into temporary PNG working copies for canvas display` | `app/lib/features/import/services/image_import_service.dart` | `NCD / M` |
 | Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
 | API | `Not implemented` | `app/lib (planned)` | `NCD / M` |
@@ -61,6 +62,7 @@ Required sections are present and updated through Phase 1L.
 | `Text Note Tool Selection` | `Text Note button toggles active note placement mode with visible selected state` | `app/lib/main.dart` | `Runtime smoke + widget tests` |
 | `Text Note Create/Edit` | `Tap photo opens note dialog; Save creates/updates note at tapped anchor` | `app/lib/main.dart` + `app/lib/features/markup/models/text_note_markup.dart` | `Runtime smoke + model tests` |
 | `Text Note Selection` | `Tap note to select; tap selected note again to edit text` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
+| `Move Selected Markup` | `Drag already-selected markup to reposition it while clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/utils/markup_move_utils.dart` | `Utility tests + runtime smoke` |
 | `Dimension Label Entry` | `After line creation, opens manual label dialog with Save/Skip options` | `app/lib/main.dart` | `Runtime smoke + formatter tests` |
 | `Dimension Label Render` | `Manual label appears near midpoint with readable background and bounds clamp` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Dimension Label Edit` | `Tap selected line again to re-open label dialog for updates` | `app/lib/main.dart` | `Runtime smoke + code review` |
@@ -124,9 +126,10 @@ Required sections are present and updated through Phase 1L.
 | `RISK-008` | `Rectangle labels/annotations are intentionally deferred in Rectangle MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-019` |
 | `RISK-009` | `Circle/Oval labels/annotations are intentionally deferred in Circle/Oval MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-020` |
 | `RISK-010` | `Desktop HEIC conversion now uses package-first plus external converter fallback; deployment environments must still provide fallback converter availability` | `NCD / M` | `Near-term validation cycle` | `Provided sample IMG_2434.HEIC now converts successfully; deployment hardening tracked in TODO-021/TODO-023` |
+| `RISK-011` | `Endpoint and resize-handle editing is intentionally deferred after whole-markup move MVP to avoid gesture conflicts` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-027` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.15`.
+- App bar shows `NCD Photo Markup` and `v0.16`.
 - Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
@@ -160,8 +163,9 @@ Required sections are present and updated through Phase 1L.
 - Tapping a rectangle selects it for erase actions.
 - Tapping an oval selects it for erase actions.
 - Tapping a text note selects it for erase/edit actions.
+- Dragging a selected markup moves the whole markup (dimension/arrow/rectangle/oval/freehand/text note) within displayed image bounds.
+- Dimension line labels move with their line during whole-markup move.
 - Selected lines render with highlighted stroke styling for clear visual feedback.
-- Erase removes the selected dimension/arrow (and dimension label); if nothing is selected, app shows a safe guidance message.
 - Erase removes the selected dimension/arrow/rectangle/oval/freehand/text note; if nothing is selected, app shows a safe guidance message.
 - Keyboard `Delete` and `Backspace` trigger the same selected-line erase path.
 - After line creation, label dialog allows manual text input or skip.
@@ -203,6 +207,7 @@ Required sections are present and updated through Phase 1L.
   - oval outline/fill/selection tunables
   - freehand stroke/selection/point-threshold tunables
   - text note dialog copy and note chip style/selection tunables
+  - markup move threshold/hit-distance/fine-delta/bounds-padding tunables
 - Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages and are tracked in validation notes.
 - Splash duration remains tunable through `BrandingAssetConstants.startupSplashDurationMs`.
 - Splash footprint remains tunable through:
@@ -221,9 +226,9 @@ Required sections are present and updated through Phase 1L.
 - Future Phase: Extended Apple compatibility beyond MVP HEIC/HEIF import (see Operations/TODO_REGISTER.md).
 - Future Phase: NCD Control Center Integration via isolated adapter/service boundaries (see Operations/TODO_REGISTER.md).
 - Post-MVP priorities are now grouped as Critical/High/Medium in `Operations/TODO_REGISTER.md`:
-  - Critical: Text Note Tool, Editable Save/Reopen, Full-Resolution Export, Presets, Touch UX, Move/Adjust, Undo/Redo, Export Naming, Large-Image Performance.
+  - Critical: Editable Save/Reopen, Full-Resolution Export, Presets, Touch UX, Undo/Redo, Export Naming, Large-Image Performance.
   - High: Multi-photo sets, Control Center adapter, Samsung/Android validation, Apple review, HEIC fallback hardening, export-quality review.
-  - Medium: Icon standard redesign, optional PDF, voice-to-text notes, styling panel, editable schema, error polish, onboarding, touch feedback, z-order, governance icon standard follow-up.
+  - Medium: Icon standard redesign, optional PDF, voice-to-text notes, styling panel, editable schema, error polish, onboarding, touch feedback, z-order, governance icon standard follow-up, advanced endpoint/resize handles.
 
 ## Phase 1A.1 Structure Note
 - This phase updates repository structure, governance scripts, and documentation references only.

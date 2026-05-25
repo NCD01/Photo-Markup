@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track required validation activities and outcomes.
-Changes: Added Phase 1L Text Note Tool MVP validation gates and evidence status.
+Changes: Added Phase 1M Move/Adjust Selected Markup MVP validation gates and evidence status.
 
 ## Validation Matrix
 | ID | Validation | Command/Method | Trigger | Pass Criteria | Owner | Status | Evidence Path |
@@ -142,3 +142,8 @@ Changes: Added Phase 1L Text Note Tool MVP validation gates and evidence status.
 | `VAL-127` | Phase 1L Text Note Toolbar Safety Test | `flutter test` (`widget_test.dart`) | Text note toolbar added | Selecting Text Note without photo remains safe (no crash) | `NCD / M` | `PASS` | `widget_test.dart selecting text note without image does not crash` |
 | `VAL-128` | Phase 1L Manual Text Note Workflow | Manual interactive workflow (create/edit/select/erase/delete/undo/export) | Text Note MVP behavior changes | End-to-end text note workflow verified interactively | `NCD / M` | `PASS` | `Owner reported manual Phase 1L required behavior PASS (2026-05-25)` |
 | `VAL-129` | Phase 1L HEIC+Text Note Combined Manual Check | Manual workflow with HEIC/HEIF import then text note placement | Text note + converted-image compatibility | Text note creation/edit works on converted HEIC/HEIF image | `NCD / M` | `NOT_VALIDATED` | `Owner manual validation pending` |
+| `VAL-130` | Phase 1M Move/Adjust Static/Unit Gate | `flutter analyze` + `flutter test` | Move/adjust MVP code changes | Analyzer/tests pass with whole-markup move integration and no regressions | `NCD / M` | `PASS` | `Terminal output 2026-05-25 (Phase 1M)` |
+| `VAL-131` | Phase 1M Move/Adjust Build/Run Gate | `flutter build windows --debug` + `flutter run -d windows --debug --no-resident` | Move/adjust MVP runtime changes | Windows build/startup smoke pass with move workflow changes | `NCD / M` | `PASS` | `Terminal output 2026-05-25 (Phase 1M)` |
+| `VAL-132` | Phase 1M Bounds Clamp Gate | `flutter test` (`markup_move_utils_test.dart`) | Move geometry utilities added | Whole-markup move translation clamps to displayed image bounds | `NCD / M` | `PASS` | `markup_move_utils_test.dart results` |
+| `VAL-133` | Phase 1M Manual Move/Adjust Workflow | Manual interactive workflow (select, drag move, export-after-move) | Move/adjust MVP behavior changes | End-to-end move workflow verified interactively | `NCD / M` | `NOT_VALIDATED` | `Owner manual validation pending` |
+| `VAL-134` | Phase 1M HEIC+Move Combined Manual Check | Manual workflow with HEIC/HEIF import then move markups | Move + converted-image compatibility | Move workflow works on converted HEIC/HEIF image | `NCD / M` | `NOT_VALIDATED` | `Owner manual validation pending` |

@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1L Text Note Tool MVP form behavior.
+Changes: Added Phase 1M Move/Adjust Selected Markup MVP form behavior.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -22,6 +22,7 @@ Changes: Added Phase 1L Text Note Tool MVP form behavior.
 - `Text Note Dialog` (implemented)
 - `Export / Save Dialog` (implemented for PNG)
 - `Selected Markup Erase Action` (implemented)
+- `Selected Markup Move/Adjust Action` (implemented, whole-markup move MVP)
 
 ## Field Work Forms
 ### `Shell` Forms
@@ -49,6 +50,7 @@ Changes: Added Phase 1L Text Note Tool MVP form behavior.
 - Notes:
 - `Open Photo + Dimension + Arrow + Rectangle + Circle + Freehand + Text Note + Undo are functional in this phase`
 - `Erase removes currently selected dimension/arrow/rectangle/oval/freehand/text note (+dimension label when applicable)`
+- `Dragging a selected markup moves the whole markup while clamped to displayed photo bounds`
 - `Open Photo supports jpg/jpeg/png/webp/heic/heif`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
 - `Startup splash image is scaled to fill most of startup screen`
@@ -112,6 +114,7 @@ Changes: Added Phase 1L Text Note Tool MVP form behavior.
 - `Single tap selects line; second tap on selected line re-opens label edit`
 - `Selected line visual state is highlighted`
 - `Delete/Backspace keyboard keys erase selected line`
+- `Dragging a selected line moves the line + label together`
 
 #### `Text Note Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -130,6 +133,7 @@ Changes: Added Phase 1L Text Note Tool MVP form behavior.
 - `Text notes render with readable font and contrast chip styling`
 - `Tap selected note again re-opens edit dialog`
 - `Erase/Delete/Backspace support text note deletion`
+- `Dragging a selected note moves note position instead of opening edit`
 
 #### `Freehand Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -148,6 +152,7 @@ Changes: Added Phase 1L Text Note Tool MVP form behavior.
 - `Freehand uses minimum point distance threshold to reduce over-capture`
 - `Selected freehand stroke uses highlighted visual state`
 - `Erase/Delete/Backspace support freehand deletion`
+- `Dragging a selected freehand stroke moves the whole stroke`
 
 #### `Circle/Oval Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -166,6 +171,7 @@ Changes: Added Phase 1L Text Note Tool MVP form behavior.
 - `Oval bounds are clamped to displayed photo rectangle`
 - `Selected oval visual state is highlighted`
 - `Erase/Delete/Backspace remove selected oval`
+- `Dragging a selected oval moves the whole oval`
 
 #### `Rectangle Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -184,6 +190,7 @@ Changes: Added Phase 1L Text Note Tool MVP form behavior.
 - `Rectangle bounds are clamped to displayed photo rectangle`
 - `Selected rectangle visual state is highlighted`
 - `Erase/Delete/Backspace remove selected rectangle`
+- `Dragging a selected rectangle moves the whole rectangle`
 
 #### `Arrow Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -202,6 +209,7 @@ Changes: Added Phase 1L Text Note Tool MVP form behavior.
 - `Arrow start/end points are clamped to displayed photo bounds`
 - `Selected arrow visual state is highlighted`
 - `Erase/Delete/Backspace remove selected arrow`
+- `Dragging a selected arrow moves the whole arrow`
 
 #### `Dimension Label Dialog`
 - Source path: `app/lib/main.dart`
@@ -270,6 +278,7 @@ Changes: Added Phase 1L Text Note Tool MVP form behavior.
 | `Dimension Model` | `Dimension Overlay Layer` | `Store start/end coordinates for each line` | `app/lib/features/markup/models/dimension_line.dart` |
 | `Text Note Model` | `Text Note Overlay Layer` | `Store normalized anchor + text for each note` | `app/lib/features/markup/models/text_note_markup.dart` |
 | `Text Note Dialog` | `Text Note Dialog` | `Collect standalone note text with Save/Skip` | `app/lib/main.dart` |
+| `Move Utility` | `Selected Markup Move/Adjust Action` | `Clamp/apply whole-markup movement inside displayed image bounds` | `app/lib/features/markup/utils/markup_move_utils.dart` |
 | `Oval Model` | `Circle/Oval Overlay Layer` | `Store start/end coordinates for each oval` | `app/lib/features/markup/models/oval_markup.dart` |
 | `Dimension Label Dialog` | `Dimension Label Dialog` | `Collect manual label text with Save/Skip` | `app/lib/main.dart` |
 | `Dimension Label Formatter` | `Dimension Label Dialog` | `Normalize common feet/inches inputs` | `app/lib/features/markup/utils/dimension_label_formatter.dart` |
