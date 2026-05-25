@@ -298,6 +298,15 @@ class _DimensionLinesPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
+    final Paint handleFillPaint = Paint()
+      ..color = MarkupHandleConstants.fillColor
+      ..style = PaintingStyle.fill;
+
+    final Paint handleBorderPaint = Paint()
+      ..color = MarkupHandleConstants.activeBorderColor
+      ..strokeWidth = MarkupHandleConstants.activeBorderWidth
+      ..style = PaintingStyle.stroke;
+
     canvas.save();
     canvas.clipRect(imageRect);
 
@@ -372,6 +381,102 @@ class _DimensionLinesPainter extends CustomPainter {
       _drawTextNote(canvas, note, isSelected: isSelected);
     }
 
+    if (selectedDimensionId != null) {
+      for (final DimensionLine line in lines) {
+        if (line.id == selectedDimensionId) {
+          _drawHandle(
+            canvas,
+            line.startInRect(imageRect),
+            handleFillPaint,
+            handleBorderPaint,
+          );
+          _drawHandle(
+            canvas,
+            line.endInRect(imageRect),
+            handleFillPaint,
+            handleBorderPaint,
+          );
+          break;
+        }
+      }
+    }
+
+    if (selectedArrowId != null) {
+      for (final ArrowMarkup arrow in arrows) {
+        if (arrow.id == selectedArrowId) {
+          _drawHandle(
+            canvas,
+            arrow.startInRect(imageRect),
+            handleFillPaint,
+            handleBorderPaint,
+          );
+          _drawHandle(
+            canvas,
+            arrow.endInRect(imageRect),
+            handleFillPaint,
+            handleBorderPaint,
+          );
+          break;
+        }
+      }
+    }
+
+    if (selectedRectangleId != null) {
+      for (final RectangleMarkup rectangle in rectangles) {
+        if (rectangle.id == selectedRectangleId) {
+          final Rect rect = rectangle.rectInRect(imageRect);
+          _drawHandle(canvas, rect.topLeft, handleFillPaint, handleBorderPaint);
+          _drawHandle(
+            canvas,
+            rect.topRight,
+            handleFillPaint,
+            handleBorderPaint,
+          );
+          _drawHandle(
+            canvas,
+            rect.bottomRight,
+            handleFillPaint,
+            handleBorderPaint,
+          );
+          _drawHandle(
+            canvas,
+            rect.bottomLeft,
+            handleFillPaint,
+            handleBorderPaint,
+          );
+          break;
+        }
+      }
+    }
+
+    if (selectedOvalId != null) {
+      for (final OvalMarkup oval in ovals) {
+        if (oval.id == selectedOvalId) {
+          final Rect rect = oval.rectInRect(imageRect);
+          _drawHandle(canvas, rect.topLeft, handleFillPaint, handleBorderPaint);
+          _drawHandle(
+            canvas,
+            rect.topRight,
+            handleFillPaint,
+            handleBorderPaint,
+          );
+          _drawHandle(
+            canvas,
+            rect.bottomRight,
+            handleFillPaint,
+            handleBorderPaint,
+          );
+          _drawHandle(
+            canvas,
+            rect.bottomLeft,
+            handleFillPaint,
+            handleBorderPaint,
+          );
+          break;
+        }
+      }
+    }
+
     if (activeStart != null && activeEnd != null) {
       if (activeTool == MarkupTool.arrow) {
         _drawArrow(canvas, activeStart!, activeEnd!, arrowPaint);
@@ -421,6 +526,16 @@ class _DimensionLinesPainter extends CustomPainter {
       path.lineTo(points[i].dx, points[i].dy);
     }
     canvas.drawPath(path, paint);
+  }
+
+  void _drawHandle(
+    Canvas canvas,
+    Offset point,
+    Paint fillPaint,
+    Paint borderPaint,
+  ) {
+    canvas.drawCircle(point, MarkupHandleConstants.visibleRadius, fillPaint);
+    canvas.drawCircle(point, MarkupHandleConstants.visibleRadius, borderPaint);
   }
 
   void _drawTextNote(

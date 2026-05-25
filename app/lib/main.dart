@@ -17,6 +17,7 @@ import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
+import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 
@@ -216,6 +217,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   Offset? _activeDimensionCurrent;
   final List<Offset> _activeFreehandPoints = <Offset>[];
   _MoveSession? _activeMoveSession;
+  _HandleDragSession? _activeHandleDragSession;
   bool _didMoveSelectedMarkup = false;
 
   @override
@@ -374,6 +376,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       _textNotes.clear();
       _activeFreehandPoints.clear();
       _activeMoveSession = null;
+      _activeHandleDragSession = null;
       _didMoveSelectedMarkup = false;
       _nextMarkupId = 1;
     });
@@ -506,11 +509,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         context,
       ).devicePixelRatio.clamp(1.0, ExportConstants.maxPixelRatio);
       final String outputPath = _normalizeExportPath(saveLocation.path);
+      final Rect? exportCropRect = _computeExportCropRect();
+      if (exportCropRect == null || exportCropRect.isEmpty) {
+        _showSnack(UiCopyConstants.exportFailureMessage);
+        return;
+      }
 
       await MarkedUpImageExportService.exportBoundaryToPng(
         boundaryKey: _canvasExportKey,
         outputPath: outputPath,
         pixelRatio: pixelRatio,
+        cropRectLogical: exportCropRect,
       );
 
       if (!mounted) {
@@ -549,6 +558,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     return '$path$extension';
   }
 
+  Rect? _computeExportCropRect() {
+    final RenderObject? renderObject = _canvasExportKey.currentContext
+        ?.findRenderObject();
+    if (renderObject is! RenderBox || renderObject.size.isEmpty) {
+      return null;
+    }
+    return _computeDisplayedImageRect(renderObject.size);
+  }
+
   void _showSnack(String message) {
     ScaffoldMessenger.of(
       context,
@@ -568,6 +586,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedOvalId = null;
     _selectedFreehandId = null;
     _selectedTextNoteId = null;
+    _activeHandleDragSession = null;
   }
 
   void _selectDimensionById(int id) {
@@ -800,6 +819,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       return;
     }
     _didMoveSelectedMarkup = false;
+    if (_tryStartHandleDrag(startPoint, imageRect)) {
+      return;
+    }
     if (_tryStartMoveSelectedMarkup(startPoint, imageRect)) {
       return;
     }
@@ -819,6 +841,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   }
 
   void _onDimensionUpdate(Offset currentPoint, Rect imageRect) {
+    if (_activeHandleDragSession != null) {
+      _updateHandleDrag(currentPoint, imageRect);
+      return;
+    }
     if (_activeMoveSession != null) {
       _updateMoveSelectedMarkup(currentPoint, imageRect);
       return;
@@ -843,6 +869,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   }
 
   Future<void> _onDimensionEnd(Rect imageRect) async {
+    if (_activeHandleDragSession != null) {
+      _activeHandleDragSession = null;
+      return;
+    }
     if (_activeMoveSession != null) {
       _activeMoveSession = null;
       return;
@@ -1091,6 +1121,319 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         return _TextNoteDialog(initialValue: initialValue);
       },
     );
+  }
+
+  bool _tryStartHandleDrag(Offset point, Rect imageRect) {
+    final int? selectedDimensionId = _selectedDimensionId;
+    if (selectedDimensionId != null) {
+      final int index = _dimensionLines.indexWhere(
+        (DimensionLine line) => line.id == selectedDimensionId,
+      );
+      if (index != -1) {
+        final DimensionLine line = _dimensionLines[index];
+        final Offset start = line.startInRect(imageRect);
+        final Offset end = line.endInRect(imageRect);
+        if ((point - start).distance <= MarkupHandleConstants.hitDistance) {
+          _activeHandleDragSession = _HandleDragSession(
+            markupId: selectedDimensionId,
+            handleKind: _HandleKind.dimensionStart,
+            startPoint: point,
+          );
+          return true;
+        }
+        if ((point - end).distance <= MarkupHandleConstants.hitDistance) {
+          _activeHandleDragSession = _HandleDragSession(
+            markupId: selectedDimensionId,
+            handleKind: _HandleKind.dimensionEnd,
+            startPoint: point,
+          );
+          return true;
+        }
+      }
+    }
+
+    final int? selectedArrowId = _selectedArrowId;
+    if (selectedArrowId != null) {
+      final int index = _arrows.indexWhere(
+        (ArrowMarkup arrow) => arrow.id == selectedArrowId,
+      );
+      if (index != -1) {
+        final ArrowMarkup arrow = _arrows[index];
+        final Offset start = arrow.startInRect(imageRect);
+        final Offset end = arrow.endInRect(imageRect);
+        if ((point - start).distance <= MarkupHandleConstants.hitDistance) {
+          _activeHandleDragSession = _HandleDragSession(
+            markupId: selectedArrowId,
+            handleKind: _HandleKind.arrowStart,
+            startPoint: point,
+          );
+          return true;
+        }
+        if ((point - end).distance <= MarkupHandleConstants.hitDistance) {
+          _activeHandleDragSession = _HandleDragSession(
+            markupId: selectedArrowId,
+            handleKind: _HandleKind.arrowEnd,
+            startPoint: point,
+          );
+          return true;
+        }
+      }
+    }
+
+    final int? selectedRectangleId = _selectedRectangleId;
+    if (selectedRectangleId != null) {
+      final int index = _rectangles.indexWhere(
+        (RectangleMarkup rectangle) => rectangle.id == selectedRectangleId,
+      );
+      if (index != -1) {
+        final Rect rect = _rectangles[index].rectInRect(imageRect);
+        final int? cornerIndex = MarkupHandleUtils.hitCornerIndex(
+          point,
+          corners: MarkupHandleUtils.rectangleCorners(rect),
+          hitDistance: MarkupHandleConstants.hitDistance,
+        );
+        if (cornerIndex != null) {
+          _activeHandleDragSession = _HandleDragSession(
+            markupId: selectedRectangleId,
+            handleKind: _HandleKind.rectangleCorner,
+            cornerIndex: cornerIndex,
+            startPoint: point,
+          );
+          return true;
+        }
+      }
+    }
+
+    final int? selectedOvalId = _selectedOvalId;
+    if (selectedOvalId != null) {
+      final int index = _ovals.indexWhere(
+        (OvalMarkup oval) => oval.id == selectedOvalId,
+      );
+      if (index != -1) {
+        final Rect rect = _ovals[index].rectInRect(imageRect);
+        final int? cornerIndex = MarkupHandleUtils.hitCornerIndex(
+          point,
+          corners: MarkupHandleUtils.rectangleCorners(rect),
+          hitDistance: MarkupHandleConstants.hitDistance,
+        );
+        if (cornerIndex != null) {
+          _activeHandleDragSession = _HandleDragSession(
+            markupId: selectedOvalId,
+            handleKind: _HandleKind.ovalCorner,
+            cornerIndex: cornerIndex,
+            startPoint: point,
+          );
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  void _updateHandleDrag(Offset currentPoint, Rect imageRect) {
+    final _HandleDragSession? handleSession = _activeHandleDragSession;
+    if (handleSession == null) {
+      return;
+    }
+    final Offset clampedPoint = DimensionLine.clampToRect(
+      currentPoint,
+      imageRect,
+    );
+    final double travelDistance =
+        (clampedPoint - handleSession.startPoint).distance;
+    if (!handleSession.isDragActive &&
+        travelDistance < MarkupHandleConstants.dragActivationDistance) {
+      return;
+    }
+    handleSession.isDragActive = true;
+
+    bool changed = false;
+    switch (handleSession.handleKind) {
+      case _HandleKind.dimensionStart:
+        changed = _adjustDimensionEndpoint(
+          markupId: handleSession.markupId,
+          imageRect: imageRect,
+          moveStart: true,
+          point: clampedPoint,
+        );
+        break;
+      case _HandleKind.dimensionEnd:
+        changed = _adjustDimensionEndpoint(
+          markupId: handleSession.markupId,
+          imageRect: imageRect,
+          moveStart: false,
+          point: clampedPoint,
+        );
+        break;
+      case _HandleKind.arrowStart:
+        changed = _adjustArrowEndpoint(
+          markupId: handleSession.markupId,
+          imageRect: imageRect,
+          moveStart: true,
+          point: clampedPoint,
+        );
+        break;
+      case _HandleKind.arrowEnd:
+        changed = _adjustArrowEndpoint(
+          markupId: handleSession.markupId,
+          imageRect: imageRect,
+          moveStart: false,
+          point: clampedPoint,
+        );
+        break;
+      case _HandleKind.rectangleCorner:
+        changed = _resizeRectangleFromCorner(
+          markupId: handleSession.markupId,
+          cornerIndex: handleSession.cornerIndex!,
+          imageRect: imageRect,
+          point: clampedPoint,
+        );
+        break;
+      case _HandleKind.ovalCorner:
+        changed = _resizeOvalFromCorner(
+          markupId: handleSession.markupId,
+          cornerIndex: handleSession.cornerIndex!,
+          imageRect: imageRect,
+          point: clampedPoint,
+        );
+        break;
+    }
+    if (changed) {
+      _didMoveSelectedMarkup = true;
+    }
+  }
+
+  bool _adjustDimensionEndpoint({
+    required int markupId,
+    required Rect imageRect,
+    required bool moveStart,
+    required Offset point,
+  }) {
+    final int index = _dimensionLines.indexWhere(
+      (DimensionLine line) => line.id == markupId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final DimensionLine line = _dimensionLines[index];
+    final Offset start = moveStart ? point : line.startInRect(imageRect);
+    final Offset end = moveStart ? line.endInRect(imageRect) : point;
+    final DimensionLine updated = DimensionLine.fromCanvasPoints(
+      id: line.id,
+      startPoint: start,
+      endPoint: end,
+      imageRect: imageRect,
+    ).copyWith(label: line.label);
+    if (updated == line) {
+      return false;
+    }
+    setState(() {
+      _dimensionLines[index] = updated;
+    });
+    return true;
+  }
+
+  bool _adjustArrowEndpoint({
+    required int markupId,
+    required Rect imageRect,
+    required bool moveStart,
+    required Offset point,
+  }) {
+    final int index = _arrows.indexWhere(
+      (ArrowMarkup arrow) => arrow.id == markupId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final ArrowMarkup arrow = _arrows[index];
+    final Offset start = moveStart ? point : arrow.startInRect(imageRect);
+    final Offset end = moveStart ? arrow.endInRect(imageRect) : point;
+    final ArrowMarkup updated = ArrowMarkup.fromCanvasPoints(
+      id: arrow.id,
+      startPoint: start,
+      endPoint: end,
+      imageRect: imageRect,
+    );
+    if (updated == arrow) {
+      return false;
+    }
+    setState(() {
+      _arrows[index] = updated;
+    });
+    return true;
+  }
+
+  bool _resizeRectangleFromCorner({
+    required int markupId,
+    required int cornerIndex,
+    required Rect imageRect,
+    required Offset point,
+  }) {
+    final int index = _rectangles.indexWhere(
+      (RectangleMarkup rectangle) => rectangle.id == markupId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final RectangleMarkup rectangle = _rectangles[index];
+    final Rect resized = MarkupHandleUtils.resizeRectFromCorner(
+      currentRect: rectangle.rectInRect(imageRect),
+      cornerIndex: cornerIndex,
+      dragPoint: point,
+      bounds: imageRect,
+      minWidth: RectangleMarkupConstants.minSideLength,
+      minHeight: RectangleMarkupConstants.minSideLength,
+    );
+    final RectangleMarkup updated = RectangleMarkup.fromCanvasPoints(
+      id: rectangle.id,
+      startPoint: resized.topLeft,
+      endPoint: resized.bottomRight,
+      imageRect: imageRect,
+    );
+    if (updated == rectangle) {
+      return false;
+    }
+    setState(() {
+      _rectangles[index] = updated;
+    });
+    return true;
+  }
+
+  bool _resizeOvalFromCorner({
+    required int markupId,
+    required int cornerIndex,
+    required Rect imageRect,
+    required Offset point,
+  }) {
+    final int index = _ovals.indexWhere(
+      (OvalMarkup oval) => oval.id == markupId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final OvalMarkup oval = _ovals[index];
+    final Rect resized = MarkupHandleUtils.resizeRectFromCorner(
+      currentRect: oval.rectInRect(imageRect),
+      cornerIndex: cornerIndex,
+      dragPoint: point,
+      bounds: imageRect,
+      minWidth: OvalMarkupConstants.minAxisLength,
+      minHeight: OvalMarkupConstants.minAxisLength,
+    );
+    final OvalMarkup updated = OvalMarkup.fromCanvasPoints(
+      id: oval.id,
+      startPoint: resized.topLeft,
+      endPoint: resized.bottomRight,
+      imageRect: imageRect,
+    );
+    if (updated == oval) {
+      return false;
+    }
+    setState(() {
+      _ovals[index] = updated;
+    });
+    return true;
   }
 
   bool _tryStartMoveSelectedMarkup(Offset point, Rect imageRect) {
@@ -2165,6 +2508,30 @@ class _MoveSession {
   final MarkupTool markupTool;
   final Offset startPoint;
   Offset lastPoint;
+  bool isDragActive = false;
+}
+
+enum _HandleKind {
+  dimensionStart,
+  dimensionEnd,
+  arrowStart,
+  arrowEnd,
+  rectangleCorner,
+  ovalCorner,
+}
+
+class _HandleDragSession {
+  _HandleDragSession({
+    required this.markupId,
+    required this.handleKind,
+    required this.startPoint,
+    this.cornerIndex,
+  });
+
+  final int markupId;
+  final _HandleKind handleKind;
+  final Offset startPoint;
+  final int? cornerIndex;
   bool isDragActive = false;
 }
 

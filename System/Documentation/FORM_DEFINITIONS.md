@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1M Move/Adjust Selected Markup MVP form behavior.
+Changes: Added Phase 1N endpoint/resize handle form behavior.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -23,6 +23,7 @@ Changes: Added Phase 1M Move/Adjust Selected Markup MVP form behavior.
 - `Export / Save Dialog` (implemented for PNG)
 - `Selected Markup Erase Action` (implemented)
 - `Selected Markup Move/Adjust Action` (implemented, whole-markup move MVP)
+- `Endpoint/Resize Handle Adjust Action` (implemented for dimension/arrow/rectangle/oval)
 
 ## Field Work Forms
 ### `Shell` Forms
@@ -115,6 +116,7 @@ Changes: Added Phase 1M Move/Adjust Selected Markup MVP form behavior.
 - `Selected line visual state is highlighted`
 - `Delete/Backspace keyboard keys erase selected line`
 - `Dragging a selected line moves the line + label together`
+- `Selected dimension line shows endpoint handles; dragging a handle adjusts the selected endpoint`
 
 #### `Text Note Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -172,6 +174,7 @@ Changes: Added Phase 1M Move/Adjust Selected Markup MVP form behavior.
 - `Selected oval visual state is highlighted`
 - `Erase/Delete/Backspace remove selected oval`
 - `Dragging a selected oval moves the whole oval`
+- `Selected oval shows corner resize handles; dragging a corner resizes the oval within displayed photo bounds`
 
 #### `Rectangle Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -191,6 +194,7 @@ Changes: Added Phase 1M Move/Adjust Selected Markup MVP form behavior.
 - `Selected rectangle visual state is highlighted`
 - `Erase/Delete/Backspace remove selected rectangle`
 - `Dragging a selected rectangle moves the whole rectangle`
+- `Selected rectangle shows corner resize handles; dragging a corner resizes the rectangle within displayed photo bounds`
 
 #### `Arrow Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -210,6 +214,7 @@ Changes: Added Phase 1M Move/Adjust Selected Markup MVP form behavior.
 - `Selected arrow visual state is highlighted`
 - `Erase/Delete/Backspace remove selected arrow`
 - `Dragging a selected arrow moves the whole arrow`
+- `Selected arrow shows endpoint handles; dragging a handle adjusts the selected endpoint and arrowhead direction`
 
 #### `Dimension Label Dialog`
 - Source path: `app/lib/main.dart`

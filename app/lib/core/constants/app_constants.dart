@@ -259,6 +259,19 @@ class MarkupMoveConstants {
   static const double minimumMoveDelta = 0.5;
 }
 
+class MarkupHandleConstants {
+  const MarkupHandleConstants._();
+
+  static const double visibleRadius = 7;
+  static const double hitDistance = 20;
+  static const double dragActivationDistance = 6;
+  static const Color fillColor = Color(0xFFF4FBFF);
+  static const Color borderColor = Color(0xFF005C85);
+  static const Color activeBorderColor = AppThemeConstants.ncdBlue;
+  static const double borderWidth = 1.8;
+  static const double activeBorderWidth = 2.4;
+}
+
 class ExportConstants {
   const ExportConstants._();
 

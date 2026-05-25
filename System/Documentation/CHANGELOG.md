@@ -6,7 +6,61 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1M Move/Adjust Selected Markup MVP entry.
+Changes: Added Phase 1N export crop bugfix entry.
+
+## Unreleased - 2026-05-25 (Phase 1N Export Crop Bugfix)
+- Owner: NCD / M
+- Author: Codex
+- Type: Bugfix
+- Reason: Exported PNG included white/empty canvas outside displayed photo.
+- Scope:
+  - `app/lib/features/export/services/marked_up_image_export_service.dart`
+  - `app/lib/main.dart`
+  - `app/test/marked_up_image_export_service_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added crop-aware export path that trims captured boundary output to the actual displayed photo rect.
+  - Added pixel-ratio-aware crop math and clamp rules to prevent off-by-one white edges.
+  - Preserved existing markup alignment and adjusted-handle geometry in exported output.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Full-resolution export remains deferred (viewport export retained by design).
+
+## Unreleased - 2026-05-25 (Phase 1N Endpoint / Resize Handles MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Let field users adjust line endpoints and shape size without erase/redraw.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/lib/features/markup/utils/markup_handle_utils.dart`
+  - `app/test/markup_handle_utils_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added endpoint handle drag-adjust for selected dimension lines and arrows.
+  - Added corner resize handle drag-adjust for selected rectangles and ovals.
+  - Enforced displayed-photo bounds clamping and minimum size behavior during handle drag.
+  - Preserved whole-markup move, create/select/edit/delete/undo/export workflows.
+  - Deferred advanced handle work (freehand point editing, text-note resize, rotation, multi-select).
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Advanced handle editing remains intentionally deferred for stability and touch-UX clarity.
 
 ## Unreleased - 2026-05-25 (Phase 1M Move / Adjust Selected Markup MVP)
 - Owner: NCD / M

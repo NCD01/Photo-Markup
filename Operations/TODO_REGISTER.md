@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track planned and in-progress work items.
-Changes: Updated post-MVP backlog after Phase 1M Move/Adjust Selected Markup MVP (whole-markup move completed; advanced handles deferred).
+Changes: Updated for Phase 1N endpoint/resize handles MVP completion and advanced-handle follow-up split.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -41,7 +41,8 @@ Changes: Updated post-MVP backlog after Phase 1M Move/Adjust Selected Markup MVP
 | `TODO-024` | `Markup` | `Evaluate optional freehand path simplification/smoothing for long strokes after MVP stability` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-025` | `Markup` | `Implement Text Note Tool MVP (create/edit/select/delete/export)` | `Critical` | `NCD / M` | `Done` | `N/A` | `2026-05-25` |
 | `TODO-026` | `Markup` | `Implement Move/Adjust Selected Markup MVP (whole-markup move for all current markup types)` | `Critical` | `NCD / M` | `Done` | `N/A` | `2026-05-25` |
-| `TODO-027` | `Markup` | `Evaluate optional endpoint/resize handle editing for dimension/arrow/rectangle/oval after move MVP stabilization` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-027` | `Markup` | `Implement endpoint/resize handle editing MVP for dimension/arrow/rectangle/oval after move MVP stabilization` | `Critical` | `NCD / M` | `Done` | `N/A` | `2026-05-25` |
+| `TODO-028` | `Markup` | `Evaluate advanced handle editing beyond Phase 1N (freehand point editing, text-note resize, rotation, edge handles)` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -61,7 +62,8 @@ Changes: Updated post-MVP backlog after Phase 1M Move/Adjust Selected Markup MVP
 | `13` | `Markup` | `Circle/Oval MVP delivered; optional circle/oval-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-020` |
 | `14` | `Import` | `HEIC/HEIF conversion path implemented with package + ImageMagick fallback; continue deployment hardening` | `Open` | `Windows fallback dependency availability` | `Tracked in TODO-021/TODO-023` |
 | `15` | `Markup` | `Freehand MVP implemented; optional smoothing/path simplification tuning deferred` | `Open` | `Owner interactive validation + future tuning approval` | `Tracked in TODO-024` |
-| `16` | `Markup` | `Move/Adjust Selected Markup MVP delivered; advanced endpoint/resize handles deferred` | `Open` | `Owner approval for advanced adjust UX` | `Tracked in TODO-027` |
+| `16` | `Markup` | `Move/Adjust + endpoint/resize handle MVP delivered for dimension/arrow/rectangle/oval` | `Done` | `N/A` | `Phase 1M+1N delivered` |
+| `17` | `Markup` | `Advanced handle work (freehand points/text-note resize/rotation/edge handles)` | `Open` | `Owner approval for post-MVP advanced adjust UX` | `Tracked in TODO-028` |
 
 
 
@@ -108,9 +110,8 @@ Changes: Updated post-MVP backlog after Phase 1M Move/Adjust Selected Markup MVP
 5. Better Touch Toolbar / Active Tool UX
 - Improve touch targets, spacing, active-state clarity, and accidental-change prevention.
 6. Move / Adjust Selected Markup
-- Status: `Done` for whole-markup move in Phase 1M (dimension/arrow/rectangle/oval/freehand/text note).
-- Add move/resize/endpoint adjustment with bounds safety to reduce erase/redraw rework.
-- Endpoint/resize handles remain deferred (see TODO-027).
+- Status: `Done` for whole-markup move (Phase 1M) and endpoint/resize handles for dimension/arrow/rectangle/oval (Phase 1N).
+- Advanced handle work remains deferred (see TODO-028).
 7. Better Undo / Redo History
 - Add redo and predictable history across add/delete/move/edit/style actions.
 8. Export Naming and Save Location Workflow

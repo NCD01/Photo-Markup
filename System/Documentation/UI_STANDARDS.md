@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1M selected-markup drag-move interaction standard.
+Changes: Added Phase 1N endpoint/corner handle interaction standard.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -34,7 +34,10 @@ Changes: Added Phase 1M selected-markup drag-move interaction standard.
 - Erase interaction must be safe: no-selection click should be gentle guidance, never crash.
 - Dragging a selected markup should move the whole markup with a movement threshold to avoid accidental tap/edit conflicts.
 - Whole-markup move must remain clamped to the displayed image rectangle.
-- Advanced resize/endpoint handles are optional and should be deferred if they introduce unstable gesture conflicts.
+- Selected dimension/arrow should show endpoint handles for direct endpoint adjustment.
+- Selected rectangle/oval should show corner handles for direct resize adjustment.
+- Handle priority should be: handle drag first, then whole-markup move, then normal selection/tap behavior.
+- Advanced handle work beyond endpoint/corner MVP (freehand point editing, text-note resize, rotation) remains deferred.
 - Startup splash and app-bar icon should use app-local branding assets, not doc-folder runtime paths.
 - Startup splash should visually occupy most of the launch window while keeping full image visible (`BoxFit.contain`).
 - Import picker/file-type scope should list all currently supported image formats (`jpg/jpeg/png/webp/heic/heif`).

@@ -1742,3 +1742,125 @@ Changes: Added Phase 1M Move/Adjust Selected Markup MVP session and validation n
 - No project-folder autosave added.
 - No unrelated tools/shapes added.
 - No PDF/full-resolution export added.
+
+# SESSION_2026-05-25_0021_phase1n_commit_approval
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Re-run final validation and execute approved Phase 1N commit split, version bump to v0.18, and push.
+
+## Actions
+- Confirmed dirty files align with approved Phase 1N handles + export crop fix scope.
+- Re-ran required validation suite:
+  - `verify-version-sync.ps1`
+  - `flutter pub get`
+  - `flutter analyze`
+  - `flutter test`
+  - `flutter build windows --debug`
+  - `flutter run -d windows --debug --no-resident`
+  - `.agent_temp` ignore check
+  - tunable constants review
+- Updated validation matrix to record owner manual PASS for Phase 1N workflow and export crop fix.
+
+## Logging/Debug Notes
+- One tooling issue occurred: parallel tool call timed out while running analyze/test; rerun sequential commands completed successfully with PASS results.
+
+## Validation
+- All required pre-commit checks passed in this rerun.
+
+## Constraints Confirmed
+- No scope expansion beyond approved Phase 1N + export crop bugfix.
+
+# SESSION_2026-05-25_0020_phase1n_export_crop_bugfix
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Fix blocking export bug where PNG included extra white canvas outside displayed photo area.
+
+## Actions
+- Updated `MarkedUpImageExportService.exportBoundaryToPng` to support logical crop rect and pixel-ratio aware crop.
+- Added export crop math helper and unit tests:
+  - `app/test/marked_up_image_export_service_test.dart`
+- Updated export call in `main.dart`:
+  - compute displayed photo rect from current export boundary size
+  - pass crop rect to export service
+- Kept existing Phase 1N endpoint/resize handle behavior intact.
+
+## Logging/Debug Notes
+- Root cause: export captured entire `RepaintBoundary` (full canvas area) instead of the displayed image rect inside BoxFit contain letterboxing.
+- Fix crops captured boundary image to computed displayed image rect before PNG encode.
+- Crop math uses floor/ceil + clamp at pixel space to avoid off-by-one white edges.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.17`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS` (includes new export crop math tests)
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (no new scattered tunables introduced)
+- Owner manual export visual validation: `NOT_VALIDATED` in this environment
+
+## Constraints Confirmed
+- No commit/push/version bump performed in this step.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No unrelated tools/shapes added.
+- No PDF/full-resolution export added.
+
+# SESSION_2026-05-25_0019_phase1n_endpoint_resize_handles_mvp
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add Phase 1N endpoint/resize handle MVP for selected dimension, arrow, rectangle, and oval markups.
+
+## Actions
+- Added handle tunables in `app/lib/core/constants/app_constants.dart` (`MarkupHandleConstants`).
+- Added handle utility helpers in `app/lib/features/markup/utils/markup_handle_utils.dart`.
+- Updated `app/lib/main.dart` gesture priority and handle-drag workflow:
+  - handle drag starts before whole-markup move
+  - endpoint adjust for dimension/arrow
+  - corner resize for rectangle/oval
+  - bounds/min-size safety guards
+- Updated `app/lib/features/markup/widgets/dimension_lines_overlay.dart` to render selected handles.
+- Added tests in `app/test/markup_handle_utils_test.dart`.
+- Updated required operations/system docs and TODO tracking (`TODO-027` done, `TODO-028` opened for advanced handle follow-up).
+
+## Logging/Debug Notes
+- Gesture priority now resolves as: handle hit -> handle drag, else selected-markup body -> whole-move, else existing selection/draw flow.
+- `_didMoveSelectedMarkup` is set on handle-drag updates to suppress tap-only flows (including text-note edit pop on drag).
+- Rectangle/oval resize helper normalizes corner math with bounds clamp and minimum size enforcement.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.17`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS` (includes new handle utility tests)
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (new handle tunables centralized)
+- Owner interactive manual endpoint/resize workflow: `NOT_VALIDATED` in this environment
+
+## Constraints Confirmed
+- No commit/push/version bump performed in this step.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No unrelated tools/shapes added.
+- No PDF/full-resolution export added.
