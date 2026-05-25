@@ -963,3 +963,15 @@ Changes: Added Phase 1O markup style presets MVP entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.19 - 2026-05-25
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve Phase 1O Markup Style Presets MVP
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
