@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
+import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
@@ -84,6 +85,25 @@ void main() {
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
+  testWidgets('selecting freehand without image does not crash', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    final Finder freehandButton = find.widgetWithText(
+      OutlinedButton,
+      ToolbarConstants.freehand,
+    );
+    final Finder toolbarScrollable = find.byType(Scrollable);
+    await tester.scrollUntilVisible(
+      freehandButton,
+      240,
+      scrollable: toolbarScrollable,
+    );
+    await tester.tap(freehandButton);
+    await tester.pump();
+    expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
+  });
+
   testWidgets('export with no photo shows friendly warning', (
     WidgetTester tester,
   ) async {
@@ -149,14 +169,17 @@ void main() {
               arrows: const <ArrowMarkup>[],
               rectangles: const <RectangleMarkup>[],
               ovals: const <OvalMarkup>[],
+              freehands: const <FreehandMarkup>[],
               imageRect: const Rect.fromLTWH(20, 20, 460, 280),
               selectedDimensionId: null,
               selectedArrowId: null,
               selectedRectangleId: null,
               selectedOvalId: null,
+              selectedFreehandId: null,
               activeTool: MarkupTool.dimension,
               activeStart: const Offset(80, 220),
               activeEnd: const Offset(360, 240),
+              activeFreehandPoints: const <Offset>[],
               isEnabled: true,
               onStart: (Offset point) => startPoint = point,
               onUpdate: (Offset point) => updatePoint = point,

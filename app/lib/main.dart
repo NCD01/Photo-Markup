@@ -10,6 +10,7 @@ import 'package:ncd_photo_markup/features/export/services/marked_up_image_export
 import 'package:ncd_photo_markup/features/import/services/image_import_service.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
+import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
@@ -199,13 +200,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   final List<ArrowMarkup> _arrows = <ArrowMarkup>[];
   final List<RectangleMarkup> _rectangles = <RectangleMarkup>[];
   final List<OvalMarkup> _ovals = <OvalMarkup>[];
+  final List<FreehandMarkup> _freehands = <FreehandMarkup>[];
   int? _selectedDimensionId;
   int? _selectedArrowId;
   int? _selectedRectangleId;
   int? _selectedOvalId;
+  int? _selectedFreehandId;
   int _nextMarkupId = 1;
   Offset? _activeDimensionStart;
   Offset? _activeDimensionCurrent;
+  final List<Offset> _activeFreehandPoints = <Offset>[];
 
   @override
   void initState() {
@@ -359,6 +363,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       _arrows.clear();
       _rectangles.clear();
       _ovals.clear();
+      _freehands.clear();
+      _activeFreehandPoints.clear();
       _nextMarkupId = 1;
     });
   }
@@ -417,6 +423,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (label == ToolbarConstants.circle) {
       setState(() {
         _selectedTool = MarkupTool.oval;
+      });
+      return;
+    }
+
+    if (label == ToolbarConstants.freehand) {
+      setState(() {
+        _selectedTool = MarkupTool.freehand;
       });
       return;
     }
@@ -536,6 +549,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedArrowId = null;
     _selectedRectangleId = null;
     _selectedOvalId = null;
+    _selectedFreehandId = null;
   }
 
   void _selectDimensionById(int id) {
@@ -543,6 +557,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedArrowId = null;
     _selectedRectangleId = null;
     _selectedOvalId = null;
+    _selectedFreehandId = null;
   }
 
   void _selectArrowById(int id) {
@@ -550,6 +565,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedDimensionId = null;
     _selectedRectangleId = null;
     _selectedOvalId = null;
+    _selectedFreehandId = null;
   }
 
   void _selectRectangleById(int id) {
@@ -557,6 +573,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedDimensionId = null;
     _selectedArrowId = null;
     _selectedOvalId = null;
+    _selectedFreehandId = null;
   }
 
   void _selectOvalById(int id) {
@@ -564,6 +581,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedDimensionId = null;
     _selectedArrowId = null;
     _selectedRectangleId = null;
+    _selectedFreehandId = null;
+  }
+
+  void _selectFreehandById(int id) {
+    _selectedFreehandId = id;
+    _selectedDimensionId = null;
+    _selectedArrowId = null;
+    _selectedRectangleId = null;
+    _selectedOvalId = null;
   }
 
   void _undoMostRecentMarkup() {
@@ -595,17 +621,26 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       }
     }
 
+    int latestFreehandId = -1;
+    for (final FreehandMarkup freehand in _freehands) {
+      if (freehand.id > latestFreehandId) {
+        latestFreehandId = freehand.id;
+      }
+    }
+
     if (latestDimensionId == -1 &&
         latestArrowId == -1 &&
         latestRectangleId == -1 &&
-        latestOvalId == -1) {
+        latestOvalId == -1 &&
+        latestFreehandId == -1) {
       return;
     }
 
     setState(() {
       if (latestDimensionId >= latestArrowId &&
           latestDimensionId >= latestRectangleId &&
-          latestDimensionId >= latestOvalId) {
+          latestDimensionId >= latestOvalId &&
+          latestDimensionId >= latestFreehandId) {
         _dimensionLines.removeWhere(
           (DimensionLine line) => line.id == latestDimensionId,
         );
@@ -613,21 +648,30 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
           _clearMarkupSelection();
         }
       } else if (latestArrowId >= latestRectangleId &&
-          latestArrowId >= latestOvalId) {
+          latestArrowId >= latestOvalId &&
+          latestArrowId >= latestFreehandId) {
         _arrows.removeWhere((ArrowMarkup arrow) => arrow.id == latestArrowId);
         if (_selectedArrowId == latestArrowId) {
           _clearMarkupSelection();
         }
-      } else if (latestRectangleId >= latestOvalId) {
+      } else if (latestRectangleId >= latestOvalId &&
+          latestRectangleId >= latestFreehandId) {
         _rectangles.removeWhere(
           (RectangleMarkup rectangle) => rectangle.id == latestRectangleId,
         );
         if (_selectedRectangleId == latestRectangleId) {
           _clearMarkupSelection();
         }
-      } else {
+      } else if (latestOvalId >= latestFreehandId) {
         _ovals.removeWhere((OvalMarkup oval) => oval.id == latestOvalId);
         if (_selectedOvalId == latestOvalId) {
+          _clearMarkupSelection();
+        }
+      } else {
+        _freehands.removeWhere(
+          (FreehandMarkup freehand) => freehand.id == latestFreehandId,
+        );
+        if (_selectedFreehandId == latestFreehandId) {
           _clearMarkupSelection();
         }
       }
@@ -675,6 +719,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       return;
     }
 
+    final int? selectedFreehandId = _selectedFreehandId;
+    if (selectedFreehandId != null) {
+      setState(() {
+        _freehands.removeWhere(
+          (FreehandMarkup freehand) => freehand.id == selectedFreehandId,
+        );
+        _clearMarkupSelection();
+      });
+      return;
+    }
+
     _showSnack(UiCopyConstants.eraseNoSelectionMessage);
   }
 
@@ -686,6 +741,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     setState(() {
       _activeDimensionStart = clamped;
       _activeDimensionCurrent = clamped;
+      _activeFreehandPoints.clear();
+      if (_selectedTool == MarkupTool.freehand) {
+        _activeFreehandPoints.add(clamped);
+      }
       _clearMarkupSelection();
     });
   }
@@ -694,19 +753,29 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (_activeDimensionStart == null || !_canDrawMarkup(imageRect)) {
       return;
     }
+    final Offset clamped = DimensionLine.clampToRect(currentPoint, imageRect);
     setState(() {
-      _activeDimensionCurrent = DimensionLine.clampToRect(
-        currentPoint,
-        imageRect,
-      );
+      _activeDimensionCurrent = clamped;
+      if (_selectedTool == MarkupTool.freehand) {
+        final Offset? lastPoint = _activeFreehandPoints.isEmpty
+            ? null
+            : _activeFreehandPoints.last;
+        if (lastPoint == null ||
+            (clamped - lastPoint).distance >=
+                FreehandMarkupConstants.pointMinDistance) {
+          _activeFreehandPoints.add(clamped);
+        }
+      }
     });
   }
 
   Future<void> _onDimensionEnd(Rect imageRect) async {
     final Offset? start = _activeDimensionStart;
     final Offset? end = _activeDimensionCurrent;
+    final List<Offset> freehandPoints = List<Offset>.of(_activeFreehandPoints);
     _activeDimensionStart = null;
     _activeDimensionCurrent = null;
+    _activeFreehandPoints.clear();
 
     if (start == null || end == null || !_canDrawMarkup(imageRect)) {
       if (mounted) {
@@ -732,6 +801,27 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         setState(() {
           _arrows.add(arrow);
           _selectArrowById(arrow.id);
+        });
+      }
+      return;
+    }
+
+    if (_selectedTool == MarkupTool.freehand) {
+      if (freehandPoints.length < FreehandMarkupConstants.minimumPointCount) {
+        if (mounted) {
+          setState(() {});
+        }
+        return;
+      }
+      final FreehandMarkup freehand = FreehandMarkup.fromCanvasPoints(
+        id: _allocateMarkupId(),
+        points: freehandPoints,
+        imageRect: imageRect,
+      );
+      if (mounted) {
+        setState(() {
+          _freehands.add(freehand);
+          _selectFreehandById(freehand.id);
         });
       }
       return;
@@ -859,7 +949,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         (_dimensionLines.isEmpty &&
             _arrows.isEmpty &&
             _rectangles.isEmpty &&
-            _ovals.isEmpty)) {
+            _ovals.isEmpty &&
+            _freehands.isEmpty)) {
       return;
     }
 
@@ -871,7 +962,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       if (_selectedDimensionId != null ||
           _selectedArrowId != null ||
           _selectedRectangleId != null ||
-          _selectedOvalId != null) {
+          _selectedOvalId != null ||
+          _selectedFreehandId != null) {
         setState(() {
           _clearMarkupSelection();
         });
@@ -883,7 +975,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       if (_selectedDimensionId != nearestHit.markupId ||
           _selectedArrowId != null ||
           _selectedRectangleId != null ||
-          _selectedOvalId != null) {
+          _selectedOvalId != null ||
+          _selectedFreehandId != null) {
         setState(() {
           _selectDimensionById(nearestHit.markupId);
         });
@@ -897,7 +990,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         (_selectedArrowId != nearestHit.markupId ||
             _selectedDimensionId != null ||
             _selectedRectangleId != null ||
-            _selectedOvalId != null)) {
+            _selectedOvalId != null ||
+            _selectedFreehandId != null)) {
       setState(() {
         _selectArrowById(nearestHit.markupId);
       });
@@ -908,7 +1002,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         (_selectedRectangleId != nearestHit.markupId ||
             _selectedDimensionId != null ||
             _selectedArrowId != null ||
-            _selectedOvalId != null)) {
+            _selectedOvalId != null ||
+            _selectedFreehandId != null)) {
       setState(() {
         _selectRectangleById(nearestHit.markupId);
       });
@@ -919,9 +1014,22 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         (_selectedOvalId != nearestHit.markupId ||
             _selectedDimensionId != null ||
             _selectedArrowId != null ||
-            _selectedRectangleId != null)) {
+            _selectedRectangleId != null ||
+            _selectedFreehandId != null)) {
       setState(() {
         _selectOvalById(nearestHit.markupId);
+      });
+      return;
+    }
+
+    if (nearestHit.markupTool == MarkupTool.freehand &&
+        (_selectedFreehandId != nearestHit.markupId ||
+            _selectedDimensionId != null ||
+            _selectedArrowId != null ||
+            _selectedRectangleId != null ||
+            _selectedOvalId != null)) {
+      setState(() {
+        _selectFreehandById(nearestHit.markupId);
       });
     }
   }
@@ -967,13 +1075,27 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       }
     }
 
-    final double selectionDistanceLimit =
-        RectangleMarkupConstants.selectionHitDistance >
-            OvalMarkupConstants.selectionHitDistance
-        ? RectangleMarkupConstants.selectionHitDistance
-        : OvalMarkupConstants.selectionHitDistance;
+    for (final FreehandMarkup freehand in _freehands) {
+      final double distance = freehand.distanceToPointInRect(point, imageRect);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMarkupId = freehand.id;
+        bestTool = MarkupTool.freehand;
+      }
+    }
 
-    if (bestDistance > selectionDistanceLimit) {
+    double maxSelectionDistance = DimensionLineConstants.selectionTapDistance;
+    if (RectangleMarkupConstants.selectionHitDistance > maxSelectionDistance) {
+      maxSelectionDistance = RectangleMarkupConstants.selectionHitDistance;
+    }
+    if (OvalMarkupConstants.selectionHitDistance > maxSelectionDistance) {
+      maxSelectionDistance = OvalMarkupConstants.selectionHitDistance;
+    }
+    if (FreehandMarkupConstants.selectionHitDistance > maxSelectionDistance) {
+      maxSelectionDistance = FreehandMarkupConstants.selectionHitDistance;
+    }
+
+    if (bestDistance > maxSelectionDistance) {
       return const _NearestMarkupHit.notFound();
     }
 
@@ -996,7 +1118,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     return (_selectedTool == MarkupTool.dimension ||
             _selectedTool == MarkupTool.arrow ||
             _selectedTool == MarkupTool.rectangle ||
-            _selectedTool == MarkupTool.oval) &&
+            _selectedTool == MarkupTool.oval ||
+            _selectedTool == MarkupTool.freehand) &&
         _imagePath != null &&
         imageRect.width > 0 &&
         imageRect.height > 0;
@@ -1006,7 +1129,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     return _dimensionLines.isNotEmpty ||
         _arrows.isNotEmpty ||
         _rectangles.isNotEmpty ||
-        _ovals.isNotEmpty;
+        _ovals.isNotEmpty ||
+        _freehands.isNotEmpty;
   }
 
   String _fileExtension(String path) {
@@ -1146,7 +1270,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                               (label == ToolbarConstants.circle &&
                                   _selectedTool == MarkupTool.oval) ||
                               (label == ToolbarConstants.rectangle &&
-                                  _selectedTool == MarkupTool.rectangle),
+                                  _selectedTool == MarkupTool.rectangle) ||
+                              (label == ToolbarConstants.freehand &&
+                                  _selectedTool == MarkupTool.freehand),
                           isDisabled:
                               (label == ToolbarConstants.undo &&
                                   !_isUndoEnabled()) ||
@@ -1262,14 +1388,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                         arrows: _arrows,
                         rectangles: _rectangles,
                         ovals: _ovals,
+                        freehands: _freehands,
                         imageRect: imageRect,
                         selectedDimensionId: _selectedDimensionId,
                         selectedArrowId: _selectedArrowId,
                         selectedRectangleId: _selectedRectangleId,
                         selectedOvalId: _selectedOvalId,
+                        selectedFreehandId: _selectedFreehandId,
                         activeTool: _selectedTool,
                         activeStart: _activeDimensionStart,
                         activeEnd: _activeDimensionCurrent,
+                        activeFreehandPoints: _activeFreehandPoints,
                         isEnabled: _canDrawMarkup(imageRect),
                         onStart: (Offset point) =>
                             _onDimensionStart(point, imageRect),

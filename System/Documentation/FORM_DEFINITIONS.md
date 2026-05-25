@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1J HEIC Windows fallback conversion behavior.
+Changes: Added Phase 1K Freehand Tool MVP behavior.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -15,6 +15,7 @@ Changes: Added Phase 1J HEIC Windows fallback conversion behavior.
 - `Arrow Overlay Layer` (implemented)
 - `Rectangle Overlay Layer` (implemented)
 - `Circle/Oval Overlay Layer` (implemented)
+- `Freehand Overlay Layer` (implemented)
 - `HEIC/HEIF Import Conversion Flow` (implemented)
 - `Dimension Label Dialog` (implemented)
 - `Export / Save Dialog` (implemented for PNG)
@@ -45,6 +46,7 @@ Changes: Added Phase 1J HEIC Windows fallback conversion behavior.
 - Read/write behavior: `MIXED`
 - Notes:
 - `Open Photo + Dimension + Arrow + Rectangle + Circle + Undo are functional in this phase`
+- `Open Photo + Dimension + Arrow + Rectangle + Circle + Freehand + Undo are functional in this phase`
 - `Erase removes currently selected dimension line/arrow/rectangle/oval (+dimension label when applicable)`
 - `Open Photo supports jpg/jpeg/png/webp/heic/heif`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
@@ -109,6 +111,24 @@ Changes: Added Phase 1J HEIC Windows fallback conversion behavior.
 - `Single tap selects line; second tap on selected line re-opens label edit`
 - `Selected line visual state is highlighted`
 - `Delete/Backspace keyboard keys erase selected line`
+
+#### `Freehand Overlay Layer`
+- Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+- Purpose: `Capture drag path and render freehand strokes above the displayed photo`
+- Parent/master form: `Photo Canvas Area`
+- Child components:
+- `Active freehand path preview`
+- `Persisted freehand stroke rendering`
+- `Freehand stroke hit testing for selection`
+- Related widgets/components:
+- `DimensionLinesOverlay`
+- `FreehandMarkup` model
+- Read/write behavior: `MIXED`
+- Notes:
+- `Freehand points are clamped to displayed image bounds`
+- `Freehand uses minimum point distance threshold to reduce over-capture`
+- `Selected freehand stroke uses highlighted visual state`
+- `Erase/Delete/Backspace support freehand deletion`
 
 #### `Circle/Oval Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`

@@ -93,6 +93,7 @@ class ToolbarConstants {
   static const String arrow = 'Arrow';
   static const String circle = 'Circle';
   static const String rectangle = 'Rectangle';
+  static const String freehand = 'Freehand';
   static const String erase = 'Erase';
   static const String undo = 'Undo';
   static const String export = 'Export';
@@ -102,7 +103,7 @@ class ToolbarConstants {
     arrow,
     circle,
     rectangle,
-    'Freehand',
+    freehand,
     'Text',
     erase,
     undo,
@@ -212,6 +213,18 @@ class OvalMarkupConstants {
   static const double selectedStrokeMultiplier = 1.35;
   static const double minAxisLength = 8;
   static const double selectionHitDistance = 26;
+}
+
+class FreehandMarkupConstants {
+  const FreehandMarkupConstants._();
+
+  static const Color strokeColor = Color(0xFF5A2099);
+  static const Color selectedStrokeColor = Color(0xFF7B2FD6);
+  static const double strokeWidth = 3.2;
+  static const double selectedStrokeMultiplier = 1.35;
+  static const double pointMinDistance = 4;
+  static const double selectionHitDistance = 24;
+  static const int minimumPointCount = 2;
 }
 
 class ExportConstants {

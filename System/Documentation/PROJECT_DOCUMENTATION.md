@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1J HEIC Windows fallback conversion path notes.
+Changes: Added Phase 1K Freehand Tool MVP architecture and behavior notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -55,6 +55,9 @@ Required sections are present and updated through Phase 1J.
 | `Arrow Selection` | `Tap arrow to select; selected arrow shows highlighted visual state` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Rectangle Selection` | `Tap rectangle to select; selected rectangle shows highlighted visual state` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Circle/Oval Selection` | `Tap oval to select; selected oval shows highlighted visual state` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
+| `Freehand Tool Selection` | `Freehand button toggles active freehand drawing mode with visible selected state` | `app/lib/main.dart` | `Runtime smoke + widget tests` |
+| `Freehand Draw` | `Drag on overlay creates persistent freehand strokes above image, clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` + `app/lib/features/markup/models/freehand_markup.dart` | `Model tests + runtime smoke` |
+| `Freehand Selection` | `Tap stroke to select; selected stroke shows highlighted visual state` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Dimension Label Entry` | `After line creation, opens manual label dialog with Save/Skip options` | `app/lib/main.dart` | `Runtime smoke + formatter tests` |
 | `Dimension Label Render` | `Manual label appears near midpoint with readable background and bounds clamp` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Dimension Label Edit` | `Tap selected line again to re-open label dialog for updates` | `app/lib/main.dart` | `Runtime smoke + code review` |

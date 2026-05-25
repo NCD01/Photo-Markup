@@ -1550,3 +1550,41 @@ Changes: Added Phase 1J HEIC/HEIF import support session and validation notes.
 - No Control Center integration added.
 - No project-folder autosave added.
 - No unrelated feature/tool work added.
+
+# SESSION_2026-05-24_0014_phase1k_freehand_tool_mvp
+
+## Goal
+- Add Freehand tool MVP (draw, select, erase/delete, undo, export inclusion) without changing existing tool behavior.
+
+## Implementation Summary
+- Added `MarkupTool.freehand` and `FreehandMarkup` model.
+- Added freehand constants (stroke, selected stroke, point threshold, hit distance).
+- Added freehand rendering + active preview in overlay painter.
+- Added freehand draw path capture clamped to displayed photo bounds.
+- Added freehand selection, erase/delete, and undo integration.
+- Export flow remains unchanged and includes active markup lists (including freehand).
+
+## Validation
+- `git status --short` preflight: `PASS` (clean)
+- `verify-version-sync.ps1`: `PASS` (`v0.13`)
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Manual Validation Status
+- Manual tool interaction checks: `NOT_VALIDATED` (requires owner interactive runtime pass).
+- HEIC/HEIF + freehand combined manual pass: `NOT_VALIDATED` (owner-side check pending).
+
+## Logging/Debug Notes
+- No analyzer/test/build/runtime blocking errors after freehand changes.
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No unrelated tools/shapes added.
+- No PDF/full-resolution export changes.

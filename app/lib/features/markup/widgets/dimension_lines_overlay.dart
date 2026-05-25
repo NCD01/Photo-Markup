@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
+import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
@@ -16,14 +17,17 @@ class DimensionLinesOverlay extends StatefulWidget {
     required this.arrows,
     required this.rectangles,
     required this.ovals,
+    required this.freehands,
     required this.imageRect,
     required this.selectedDimensionId,
     required this.selectedArrowId,
     required this.selectedRectangleId,
     required this.selectedOvalId,
+    required this.selectedFreehandId,
     required this.activeTool,
     this.activeStart,
     this.activeEnd,
+    required this.activeFreehandPoints,
     required this.isEnabled,
     required this.onStart,
     required this.onUpdate,
@@ -35,14 +39,17 @@ class DimensionLinesOverlay extends StatefulWidget {
   final List<ArrowMarkup> arrows;
   final List<RectangleMarkup> rectangles;
   final List<OvalMarkup> ovals;
+  final List<FreehandMarkup> freehands;
   final Rect imageRect;
   final int? selectedDimensionId;
   final int? selectedArrowId;
   final int? selectedRectangleId;
   final int? selectedOvalId;
+  final int? selectedFreehandId;
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
+  final List<Offset> activeFreehandPoints;
   final bool isEnabled;
   final ValueChanged<Offset> onStart;
   final ValueChanged<Offset> onUpdate;
@@ -127,14 +134,17 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
           arrows: List<ArrowMarkup>.of(widget.arrows),
           rectangles: List<RectangleMarkup>.of(widget.rectangles),
           ovals: List<OvalMarkup>.of(widget.ovals),
+          freehands: List<FreehandMarkup>.of(widget.freehands),
           imageRect: widget.imageRect,
           selectedDimensionId: widget.selectedDimensionId,
           selectedArrowId: widget.selectedArrowId,
           selectedRectangleId: widget.selectedRectangleId,
           selectedOvalId: widget.selectedOvalId,
+          selectedFreehandId: widget.selectedFreehandId,
           activeTool: widget.activeTool,
           activeStart: widget.activeStart,
           activeEnd: widget.activeEnd,
+          activeFreehandPoints: List<Offset>.of(widget.activeFreehandPoints),
         ),
         child: const SizedBox.expand(),
       ),
@@ -148,28 +158,34 @@ class _DimensionLinesPainter extends CustomPainter {
     required this.arrows,
     required this.rectangles,
     required this.ovals,
+    required this.freehands,
     required this.imageRect,
     required this.selectedDimensionId,
     required this.selectedArrowId,
     required this.selectedRectangleId,
     required this.selectedOvalId,
+    required this.selectedFreehandId,
     required this.activeTool,
     required this.activeStart,
     required this.activeEnd,
+    required this.activeFreehandPoints,
   });
 
   final List<DimensionLine> lines;
   final List<ArrowMarkup> arrows;
   final List<RectangleMarkup> rectangles;
   final List<OvalMarkup> ovals;
+  final List<FreehandMarkup> freehands;
   final Rect imageRect;
   final int? selectedDimensionId;
   final int? selectedArrowId;
   final int? selectedRectangleId;
   final int? selectedOvalId;
+  final int? selectedFreehandId;
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
+  final List<Offset> activeFreehandPoints;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -255,6 +271,22 @@ class _DimensionLinesPainter extends CustomPainter {
       ..color = OvalMarkupConstants.fillColor
       ..style = PaintingStyle.fill;
 
+    final Paint freehandPaint = Paint()
+      ..color = FreehandMarkupConstants.strokeColor
+      ..strokeWidth = FreehandMarkupConstants.strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    final Paint selectedFreehandPaint = Paint()
+      ..color = FreehandMarkupConstants.selectedStrokeColor
+      ..strokeWidth =
+          FreehandMarkupConstants.strokeWidth *
+          FreehandMarkupConstants.selectedStrokeMultiplier
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
     canvas.save();
     canvas.clipRect(imageRect);
 
@@ -315,6 +347,15 @@ class _DimensionLinesPainter extends CustomPainter {
       );
     }
 
+    for (final FreehandMarkup freehand in freehands) {
+      final bool isSelected = selectedFreehandId == freehand.id;
+      _drawFreehandPath(
+        canvas,
+        freehand.pointsInRect(imageRect),
+        isSelected ? selectedFreehandPaint : freehandPaint,
+      );
+    }
+
     if (activeStart != null && activeEnd != null) {
       if (activeTool == MarkupTool.arrow) {
         _drawArrow(canvas, activeStart!, activeEnd!, arrowPaint);
@@ -343,8 +384,27 @@ class _DimensionLinesPainter extends CustomPainter {
         );
       }
     }
+    if (activeTool == MarkupTool.freehand) {
+      _drawFreehandPath(canvas, activeFreehandPoints, freehandPaint);
+    }
 
     canvas.restore();
+  }
+
+  void _drawFreehandPath(Canvas canvas, List<Offset> points, Paint paint) {
+    if (points.isEmpty) {
+      return;
+    }
+    if (points.length == 1) {
+      canvas.drawCircle(points.first, paint.strokeWidth / 2, paint);
+      return;
+    }
+
+    final Path path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
+    }
+    canvas.drawPath(path, paint);
   }
 
   void _drawOval(
@@ -537,13 +597,16 @@ class _DimensionLinesPainter extends CustomPainter {
         !listEquals(oldDelegate.arrows, arrows) ||
         !listEquals(oldDelegate.rectangles, rectangles) ||
         !listEquals(oldDelegate.ovals, ovals) ||
+        !listEquals(oldDelegate.freehands, freehands) ||
         oldDelegate.imageRect != imageRect ||
         oldDelegate.selectedDimensionId != selectedDimensionId ||
         oldDelegate.selectedArrowId != selectedArrowId ||
         oldDelegate.selectedRectangleId != selectedRectangleId ||
         oldDelegate.selectedOvalId != selectedOvalId ||
+        oldDelegate.selectedFreehandId != selectedFreehandId ||
         oldDelegate.activeTool != activeTool ||
         oldDelegate.activeStart != activeStart ||
-        oldDelegate.activeEnd != activeEnd;
+        oldDelegate.activeEnd != activeEnd ||
+        !listEquals(oldDelegate.activeFreehandPoints, activeFreehandPoints);
   }
 }

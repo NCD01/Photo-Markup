@@ -38,6 +38,7 @@ Changes: Added Phase 1J follow-up TODO for real HEIC/HEIF validation corpus on W
 | `TODO-021` | `Import` | `Add broader HEIC/HEIF sample corpus and run owner-side Windows validation matrix for conversion success/failure variants` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-022` | `Import` | `Evaluate Windows-native HEIC decode fallback (codec/alternative package/service) after current sample conversion failure` | `High` | `NCD / M` | `Done` | `N/A` | `2026-05-24` |
 | `TODO-023` | `Import` | `Package Windows HEIC fallback dependency strategy (verify ImageMagick availability or provide bundled converter guidance for deployments where magick is missing)` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-024` | `Markup` | `Evaluate optional freehand path simplification/smoothing for long strokes after MVP stability` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -56,6 +57,7 @@ Changes: Added Phase 1J follow-up TODO for real HEIC/HEIF validation corpus on W
 | `12` | `Markup` | `Rectangle MVP delivered; optional rectangle-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-019` |
 | `13` | `Markup` | `Circle/Oval MVP delivered; optional circle/oval-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-020` |
 | `14` | `Import` | `HEIC/HEIF conversion path implemented with package + ImageMagick fallback; continue deployment hardening` | `Open` | `Windows fallback dependency availability` | `Tracked in TODO-021/TODO-023` |
+| `15` | `Markup` | `Freehand MVP implemented; optional smoothing/path simplification tuning deferred` | `Open` | `Owner interactive validation + future tuning approval` | `Tracked in TODO-024` |
 
 
 

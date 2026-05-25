@@ -6,7 +6,38 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-24`
 Purpose: Canonical changelog for project changes.
-Changes: Added HEIC Windows fallback hotfix entry.
+Changes: Added Phase 1K Freehand Tool MVP entry.
+
+## Unreleased - 2026-05-24 (Phase 1K Freehand Tool MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Add quick freehand field markup workflow while preserving existing tool/import/export behavior.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/markup_tool.dart`
+  - `app/lib/features/markup/models/freehand_markup.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/test/freehand_markup_test.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added `Freehand` toolbar tool and `MarkupTool.freehand`.
+  - Added freehand stroke capture with point thresholding and image-bounds clamping.
+  - Added freehand rendering, active draw preview, and selected highlight state.
+  - Added freehand select/erase/delete/backspace/undo integration.
+  - Preserved existing dimension/label, arrow, rectangle, oval, HEIC import, and PNG export flows.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Owner interactive freehand and HEIC+freehand combined runtime checks are pending.
 
 ## Unreleased - 2026-05-24 (Phase 1J HEIC Windows Fallback Hotfix)
 - Owner: NCD / M
