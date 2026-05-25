@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/features/integration/models/photo_markup_launch_context.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
@@ -36,6 +37,25 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('shows launch context summary when provided', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const NcdPhotoMarkupApp(
+        showStartupSplash: false,
+        launchContext: PhotoMarkupLaunchContext(
+          launchedFromControlCenter: true,
+          clientName: 'Client X',
+          projectCode: 'PRJ-42',
+          sourceLabel: 'Control Center',
+        ),
+      ),
+    );
+
+    expect(find.textContaining('Client: Client X'), findsOneWidget);
+    expect(find.textContaining('Project: PRJ-42'), findsOneWidget);
   });
 
   testWidgets('selecting dimension without image does not crash', (

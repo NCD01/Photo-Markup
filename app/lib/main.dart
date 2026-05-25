@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/export/services/marked_up_image_export_service.dart';
+import 'package:ncd_photo_markup/features/integration/models/photo_markup_launch_context.dart';
+import 'package:ncd_photo_markup/features/integration/services/launch_context_service.dart';
 import 'package:ncd_photo_markup/features/import/services/image_import_service.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
@@ -30,23 +32,37 @@ typedef SaveLocationCallback =
       List<XTypeGroup> acceptedTypeGroups,
     });
 
-void main() {
+Future<void> main(List<String> args) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final LaunchContextService launchContextService = LaunchContextService();
   const String startupImagePath = String.fromEnvironment(
     AppConstants.startupImageEnvKey,
   );
-  runApp(NcdPhotoMarkupApp(initialImagePath: startupImagePath));
+  final LaunchContextBootstrap launchBootstrap = await launchContextService
+      .resolveBootstrap(args: args, startupImagePathFromEnv: startupImagePath);
+  runApp(
+    NcdPhotoMarkupApp(
+      initialImagePath: launchBootstrap.initialImagePath,
+      launchContext: launchBootstrap.launchContext,
+      launchErrorMessage: launchBootstrap.launchErrorMessage,
+    ),
+  );
 }
 
 class NcdPhotoMarkupApp extends StatelessWidget {
   const NcdPhotoMarkupApp({
     super.key,
     this.initialImagePath,
+    this.launchContext,
+    this.launchErrorMessage,
     this.openFileOverride,
     this.saveLocationOverride,
     this.showStartupSplash = true,
   });
 
   final String? initialImagePath;
+  final PhotoMarkupLaunchContext? launchContext;
+  final String? launchErrorMessage;
   final OpenFileCallback? openFileOverride;
   final SaveLocationCallback? saveLocationOverride;
   final bool showStartupSplash;
@@ -55,6 +71,8 @@ class NcdPhotoMarkupApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final Widget shell = PhotoMarkupShellScreen(
       initialImagePath: initialImagePath,
+      launchContext: launchContext,
+      launchErrorMessage: launchErrorMessage,
       openFileOverride: openFileOverride,
       saveLocationOverride: saveLocationOverride,
     );
@@ -177,11 +195,15 @@ class PhotoMarkupShellScreen extends StatefulWidget {
   const PhotoMarkupShellScreen({
     super.key,
     this.initialImagePath,
+    this.launchContext,
+    this.launchErrorMessage,
     this.openFileOverride,
     this.saveLocationOverride,
   });
 
   final String? initialImagePath;
+  final PhotoMarkupLaunchContext? launchContext;
+  final String? launchErrorMessage;
   final OpenFileCallback? openFileOverride;
   final SaveLocationCallback? saveLocationOverride;
 
@@ -191,6 +213,7 @@ class PhotoMarkupShellScreen extends StatefulWidget {
 
 class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   final ImageImportService _imageImportService = ImageImportService();
+  PhotoMarkupLaunchContext? _launchContext;
   String? _imagePath;
   String? _temporaryConvertedImagePath;
   String? _loadedFileName;
@@ -226,9 +249,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   @override
   void initState() {
     super.initState();
+    _launchContext = widget.launchContext;
+    _errorMessage = widget.launchErrorMessage;
     final String? initialPath = widget.initialImagePath;
     if (initialPath != null && initialPath.isNotEmpty) {
-      _loadImageFromPath(initialPath, showErrorForFailure: false);
+      _loadImageFromPath(initialPath, showErrorForFailure: true);
     }
   }
 
@@ -579,6 +604,38 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  bool get _showLaunchContextBanner =>
+      _launchContext != null && _launchContext!.hasAnyContext;
+
+  String _buildLaunchContextSummary() {
+    final PhotoMarkupLaunchContext? context = _launchContext;
+    if (context == null) {
+      return '';
+    }
+    final List<String> parts = <String>[];
+    if (context.sourceLabel != null && context.sourceLabel!.isNotEmpty) {
+      parts.add(
+        '${UiCopyConstants.launchContextSourceLabelPrefix}: ${context.sourceLabel}',
+      );
+    } else if (context.launchedFromControlCenter) {
+      parts.add(UiCopyConstants.launchContextLabelPrefix);
+    }
+    if (context.clientName != null && context.clientName!.isNotEmpty) {
+      parts.add(
+        '${UiCopyConstants.launchContextClientLabelPrefix}: ${context.clientName}',
+      );
+    }
+    if (context.projectCode != null && context.projectCode!.isNotEmpty) {
+      parts.add(
+        '${UiCopyConstants.launchContextProjectLabelPrefix}: ${context.projectCode}',
+      );
+    }
+    if (parts.isEmpty) {
+      return UiCopyConstants.launchContextLabelPrefix;
+    }
+    return parts.join(' • ');
   }
 
   MarkupStylePreset get _selectedStylePreset =>
@@ -2414,6 +2471,41 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         ),
         body: Column(
           children: [
+            if (_showLaunchContextBanner)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal:
+                      UiLayoutConstants.launchContextBannerHorizontalPadding,
+                  vertical:
+                      UiLayoutConstants.launchContextBannerVerticalPadding,
+                ),
+                color: AppThemeConstants.toolbarBackground,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.link,
+                      size: UiLayoutConstants.launchContextBannerFontSize + 2,
+                      color: AppThemeConstants.ncdBlue,
+                    ),
+                    const SizedBox(
+                      width: UiLayoutConstants.launchContextBannerGap,
+                    ),
+                    Expanded(
+                      child: Text(
+                        _buildLaunchContextSummary(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize:
+                              UiLayoutConstants.launchContextBannerFontSize,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(

@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\DECISION_LOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-23`
+Last Updated: `2026-05-25`
 Purpose: Record material architecture/process decisions.
-Changes: Added Phase 1D decision for safe dialog-owned label controller lifecycle to prevent disposed-controller crashes.
+Changes: Added Phase 1P adapter-first launch contract decision for future Control Center integration.
 
 ## DECISION-001
 - Date: 2026-05-22
@@ -141,5 +141,20 @@ Changes: Added Phase 1D decision for safe dialog-owned label controller lifecycl
 - Impact: Runtime icon remains `app/assets/branding/icon_v1_5.png` + `app/windows/runner/resources/app_icon.ico`; redesign backlog tracked as `TODO-014`.
 - Rollback or Reversal: Reopen icon redesign effort only under a future approved phase.
 - Related Changes: Phase 1D closeout commit preparation (uncommitted workspace)
+- Review Date: N/A
+
+## DECISION-010
+- Date: 2026-05-25
+- Status: Accepted
+- Owner: NCD / M
+- Area: Integration Architecture
+- Decision: Implement Control Center integration as a launch-context adapter contract in Photo Markup, with no direct Control Center code dependency and no autosave/auto-export behavior.
+- Alternatives Considered:
+- Directly coupling to Control Center internals.
+- Writing straight into project folders during launch.
+- Rationale: Keeps Photo Markup standalone and testable while enabling future context-driven launch.
+- Impact: Added isolated launch context model/service, optional startup context display, optional source image open path, and safe fallback behavior when context is absent/invalid.
+- Rollback or Reversal: Remove adapter files and startup wiring; keep standalone startup path only.
+- Related Changes: Phase 1P Control Center Integration Adapter / Launch Contract (uncommitted workspace)
 - Review Date: N/A
 

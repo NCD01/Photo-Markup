@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1O style preset selector and preset-based markup styling standard.
+Changes: Added Phase 1P launch-context summary banner pattern for optional integration context display.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -45,6 +45,7 @@ Changes: Added Phase 1O style preset selector and preset-based markup styling st
 - Startup splash should visually occupy most of the launch window while keeping full image visible (`BoxFit.contain`).
 - Import picker/file-type scope should list all currently supported image formats (`jpg/jpeg/png/webp/heic/heif`).
 - HEIC/HEIF conversion failures should use field-safe, non-technical guidance copy.
+- Optional launch context should render as a compact non-intrusive summary banner (client/project/source) and must not block normal standalone workflow.
 
 ## Accessibility/Usability
 - Large tap targets for tablet use.

@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track concise session history and handoff state.
-Changes: Added Phase 1M Move/Adjust Selected Markup MVP session and validation notes.
+Changes: Added Phase 1P Control Center launch-context adapter session notes.
 
 # SESSION_2026-05-22_0001_bootstrap_phase0
 
@@ -1826,6 +1826,56 @@ Changes: Added Phase 1M Move/Adjust Selected Markup MVP session and validation n
 - No unrelated tools/shapes added.
 - No PDF/full-resolution export added.
 - No redo/history overhaul added.
+
+# SESSION_2026-05-25_0023_phase1p_control_center_launch_context_adapter
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add Phase 1P adapter-only launch contract for future Control Center launch context while preserving standalone behavior.
+
+## Actions
+- Added integration model/service:
+  - `app/lib/features/integration/models/photo_markup_launch_context.dart`
+  - `app/lib/features/integration/services/launch_context_service.dart`
+- Updated startup wiring in `app/lib/main.dart`:
+  - Parse optional command-line/context-file launch fields via service.
+  - Keep standalone startup behavior when no launch context is provided.
+  - Show non-intrusive context summary banner when context is present.
+  - Keep manual Open Photo workflow unchanged.
+- Added launch-contract constants/copy in `app/lib/core/constants/app_constants.dart`.
+- Added tests:
+  - `app/test/launch_context_service_test.dart`
+  - `app/test/widget_test.dart` launch context banner coverage.
+- Updated required operations/system docs for Phase 1P architecture and deferrals.
+
+## Logging/Debug Notes
+- Adapter validates launch source path extension + existence before auto-open and returns friendly failure copy without crashing.
+- Unknown launch fields are ignored by parser.
+- No direct Control Center code/imports were added.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.19`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `flutter run` with `--dart-entrypoint-args` valid source image context: `PASS`
+- `flutter run` with `--dart-entrypoint-args` invalid source image context: `PASS` (startup safe, no crash)
+- `flutter run` with `--dart-entrypoint-args` unsupported `returnMode` + unknown field: `PASS` (safe fallback)
+- `flutter run` with JSON `--launchContextPath`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate (launch keys/copy centralized): `PASS`
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center app code was modified.
+- No project-folder autosave or auto-export added.
 
 # SESSION_2026-05-25_0020_phase1n_export_crop_bugfix
 

@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track required validation activities and outcomes.
-Changes: Added Phase 1M Move/Adjust Selected Markup MVP validation gates and evidence status.
+Changes: Added Phase 1P launch-context adapter validation gates and evidence status.
 
 ## Validation Matrix
 | ID | Validation | Command/Method | Trigger | Pass Criteria | Owner | Status | Evidence Path |
@@ -160,3 +160,7 @@ Changes: Added Phase 1M Move/Adjust Selected Markup MVP validation gates and evi
 | `VAL-145` | Phase 1O Preset Registry Gate | `flutter test` (`markup_style_preset_test.dart`) | New preset model/registry | Required preset set and default preset mapping are validated | `NCD / M` | `PASS` | `markup_style_preset_test.dart results` |
 | `VAL-146` | Phase 1O Manual Preset Workflow | Manual interactive workflow (preset switch + draw/select/move/resize/delete/export) | Style preset MVP behavior changes | End-to-end preset styling behavior verified interactively | `NCD / M` | `NOT_VALIDATED` | `Owner manual validation pending` |
 | `VAL-147` | Phase 1O Export Crop Regression Gate | Manual export visual check after style updates | Style changes near render/export pipeline | Export remains cropped to displayed photo area only and preserves style colors | `NCD / M` | `NOT_VALIDATED` | `Owner manual validation pending` |
+| `VAL-148` | Phase 1P Launch Context Parse Gate | `flutter test` (`launch_context_service_test.dart`) | Launch contract adapter added | No-args, direct args, JSON context path, unknown fields, invalid path, and invalid JSON are safely handled | `NCD / M` | `PASS` | `launch_context_service_test.dart results` |
+| `VAL-149` | Phase 1P Standalone Regression Gate | `flutter analyze` + `flutter test` + `flutter run --no-resident` without launch args | Launch adapter startup wiring changed | App still starts/operates standalone with unchanged manual Open Photo flow | `NCD / M` | `PASS` | `Terminal output 2026-05-25 (Phase 1P)` |
+| `VAL-150` | Phase 1P Context UI Indicator Gate | `flutter test` (`widget_test.dart`) + runtime smoke | Optional context summary UI added | Context banner appears only when launch context exists and does not block normal workflow | `NCD / M` | `PASS` | `widget_test.dart launch context summary test + runtime smoke` |
+| `VAL-151` | Phase 1P Safety Boundary Gate | Code review + manual/runtime launch probes | Integration adapter introduced | No autosave, no auto-export, no project-folder writes, no direct Control Center code dependency | `NCD / M` | `PASS` | `main.dart + launch_context_service.dart + docs review` |

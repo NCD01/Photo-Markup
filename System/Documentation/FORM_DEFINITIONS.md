@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1O markup style preset selector and per-markup style behavior.
+Changes: Added Phase 1P launch-context adapter form/field contract and context banner behavior.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -22,6 +22,7 @@ Changes: Added Phase 1O markup style preset selector and per-markup style behavi
 - `Text Note Dialog` (implemented)
 - `Export / Save Dialog` (implemented for PNG)
 - `Style Preset Selector` (implemented)
+- `Launch Context Adapter` (implemented, optional)
 - `Selected Markup Erase Action` (implemented)
 - `Selected Markup Move/Adjust Action` (implemented, whole-markup move MVP)
 - `Endpoint/Resize Handle Adjust Action` (implemented for dimension/arrow/rectangle/oval)
@@ -56,6 +57,7 @@ Changes: Added Phase 1O markup style preset selector and per-markup style behavi
 - `Dragging a selected markup moves the whole markup while clamped to displayed photo bounds`
 - `Preset selection updates new-markup style and can apply style to selected markup`
 - `Open Photo supports jpg/jpeg/png/webp/heic/heif`
+- `Optional launch context is parsed at startup and can show a non-intrusive context banner`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
 - `Startup splash image is scaled to fill most of startup screen`
 - `Startup splash version text uses AppConstants.appVersion (shared with app bar version)`
@@ -95,6 +97,26 @@ Changes: Added Phase 1O markup style preset selector and per-markup style behavi
 - `Temporary converted file is internal working copy only`
 - `Conversion attempts package path first, then external fallback`
 - `Conversion failure returns friendly field-safe HEIC message if both paths fail`
+
+#### `Launch Context Adapter`
+- Source path: `app/lib/features/integration/services/launch_context_service.dart`
+- Purpose: `Parse optional Control Center launch contract fields while keeping standalone startup behavior intact`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Command-line arg parser for approved fields`
+- `Optional JSON launch-context loader`
+- `Source image path validation gate`
+- `Context summary banner wiring`
+- Related widgets/components:
+- `NcdPhotoMarkupApp` bootstrap
+- `PhotoMarkupShellScreen` context banner and startup image load
+- `PhotoMarkupLaunchContext` model
+- Read/write behavior: `READ_ONLY` (context intake only in Phase 1P)
+- Notes:
+- `No direct Control Center app dependency`
+- `No project-folder autosave`
+- `No auto-export`
+- `Unknown context fields are ignored safely`
 
 #### `Dimension Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`

@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1O markup style preset behavior and architecture notes.
+Changes: Added Phase 1P launch-context adapter contract and standalone-safe startup behavior notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -36,6 +36,7 @@ Required sections are present and updated through Phase 1O.
 | Handle Utility | `Endpoint/corner handle hit-testing and resize math helpers` | `app/lib/features/markup/utils/markup_handle_utils.dart` | `NCD / M` |
 | Import Service | `Converts HEIC/HEIF source files into temporary PNG working copies for canvas display` | `app/lib/features/import/services/image_import_service.dart` | `NCD / M` |
 | Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
+| Launch Context Adapter | `Parses optional launch context args/file for client/project/source image bootstrap while preserving standalone fallback` | `app/lib/features/integration/models/ + app/lib/features/integration/services/launch_context_service.dart` | `NCD / M` |
 | API | `Not implemented` | `app/lib (planned)` | `NCD / M` |
 | Engine | `Not implemented` | `app/lib (planned)` | `NCD / M` |
 | Data | `No persistence yet; runtime-only selected file path` | `app/lib/main.dart` | `NCD / M` |
@@ -66,6 +67,8 @@ Required sections are present and updated through Phase 1O.
 | `Text Note Selection` | `Tap note to select; tap selected note again to edit text` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Style Preset Selection` | `Style toolbar action opens touch-friendly preset list (NCD Blue/Red/Yellow/White/Black)` | `app/lib/main.dart` + `app/lib/features/markup/models/markup_style_preset.dart` | `Widget tests + runtime smoke` |
 | `Style Preset Application` | `New markups use active style preset and selected markup can be restyled to current preset` | `app/lib/main.dart` + `app/lib/features/markup/models/*` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Model/widget tests + runtime smoke` |
+| `Launch Context Bootstrap (Optional)` | `Accepts optional command-line args or launch context JSON path for Control Center-origin sessions; standalone startup remains default when absent` | `app/lib/main.dart` + `app/lib/features/integration/services/launch_context_service.dart` | `Launch-context service tests + runtime smoke` |
+| `Launch Source Image Open (Optional)` | `If context includes a valid supported sourceImagePath, app opens it at startup; invalid paths show friendly message and keep app usable` | `app/lib/main.dart` + `app/lib/features/integration/services/launch_context_service.dart` | `Service tests + runtime smoke` |
 | `Move Selected Markup` | `Drag already-selected markup to reposition it while clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/utils/markup_move_utils.dart` | `Utility tests + runtime smoke` |
 | `Dimension Endpoint Handles` | `Selected dimension renders endpoint handles and supports drag-adjust on each endpoint` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` + `app/lib/features/markup/utils/markup_handle_utils.dart` | `Handle utility tests + runtime smoke` |
 | `Arrow Endpoint Handles` | `Selected arrow renders endpoint handles and supports drag-adjust on each endpoint` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` + `app/lib/features/markup/utils/markup_handle_utils.dart` | `Handle utility tests + runtime smoke` |
@@ -86,9 +89,32 @@ Required sections are present and updated through Phase 1O.
 ## Data and Persistence Boundaries
 - Canonical data source: `User-selected local image file path at runtime`
 - HEIC/HEIF working-copy policy: `Converted PNG is temporary/internal only and original source file remains unchanged`
+- Launch-context policy: `Client/project/source context can be passed in, but app remains standalone and has no direct Control Center code dependency`
 - Local cache policy: `None in Phase 1B`
 - Migration policy: `N/A`
 - Backup/recovery policy: `N/A`
+
+## Control Center Launch Contract (Phase 1P Adapter Foundation)
+- Supported launch inputs:
+  - Direct args (examples): `--launchedFromControlCenter true`, `--sourceImagePath "C:\path\photo.jpg"`, `--clientName "Client Name"`, `--projectCode "PRJ-01"`.
+  - JSON context file path: `--launchContextPath "C:\path\photo_markup_launch_context.json"`.
+- Accepted fields:
+  - `launchedFromControlCenter`
+  - `clientId`
+  - `clientName`
+  - `projectId`
+  - `projectCode`
+  - `sourceImagePath`
+  - `suggestedExportFolder`
+  - `suggestedEditableMarkupFolder`
+  - `returnMode`
+  - `sourceLabel`
+- Safety rules:
+  - Unknown fields are ignored.
+  - Invalid/missing JSON context file is handled with friendly error copy.
+  - Invalid/unsupported launch source image path is rejected with friendly error copy.
+  - No autosave, no auto-export, and no direct writes to suggested folders in this phase.
+  - No direct dependency on Control Center app internals.
 
 ## Logging and Error Controls
 - Log schema: `Governance/LOGGING_AND_ERROR_POLICY.md`
@@ -136,9 +162,10 @@ Required sections are present and updated through Phase 1O.
 | `RISK-010` | `Desktop HEIC conversion now uses package-first plus external converter fallback; deployment environments must still provide fallback converter availability` | `NCD / M` | `Near-term validation cycle` | `Provided sample IMG_2434.HEIC now converts successfully; deployment hardening tracked in TODO-021/TODO-023` |
 | `RISK-011` | `Advanced handle editing (freehand point editing, text-note resize, rotation, edge handles) remains deferred after endpoint/resize handle MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-028` |
 | `RISK-012` | `Advanced style controls (custom picker, per-tool style editor, saved defaults) remain deferred after style preset MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-029` |
+| `RISK-013` | `Control Center-side launcher and return/save handoff remain deferred; Phase 1P only adds adapter contract inside Photo Markup` | `NCD / M` | `Future integration phase` | `Tracked in TODO-030/TODO-031/TODO-032/TODO-033` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.18`.
+- App bar shows `NCD Photo Markup` and `v0.19`.
 - Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
@@ -153,6 +180,9 @@ Required sections are present and updated through Phase 1O.
   - splash asset/behavior remains unchanged.
 - If no image loaded, canvas shows: `Open or import a photo to start marking it up.`
 - Open Photo launches picker for `jpg`, `jpeg`, `png`, `webp`, `heic`, and `heif`.
+- App accepts optional launch context (`--sourceImagePath`, client/project fields, or `--launchContextPath`) and still runs standalone when absent.
+- Launch context can display a non-intrusive client/project/source banner when provided.
+- Invalid or unsupported launch source image paths show a friendly message and do not block normal app usage.
 - HEIC/HEIF files are converted to temporary PNG working copies for display/markup.
 - Original HEIC/HEIF source files are not modified, moved, overwritten, or deleted.
 - Loaded photo is displayed in-canvas with preserved aspect ratio and contain fit.

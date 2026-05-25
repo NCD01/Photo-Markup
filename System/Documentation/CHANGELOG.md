@@ -6,7 +6,37 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1O markup style presets MVP entry.
+Changes: Added Phase 1P Control Center launch-context adapter entry.
+
+## Unreleased - 2026-05-25 (Phase 1P Control Center Integration Adapter / Launch Contract)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Establish a safe adapter contract for future Control Center launch context while keeping Photo Markup standalone.
+- Scope:
+  - `app/lib/features/integration/models/photo_markup_launch_context.dart`
+  - `app/lib/features/integration/services/launch_context_service.dart`
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/test/launch_context_service_test.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added centralized launch contract fields and parsing service for command-line args and optional JSON context file.
+  - Added safe startup bootstrap flow with standalone fallback when launch context is absent.
+  - Added optional context summary banner (client/project/source indicator) for context-launched sessions.
+  - Added source image validation for launch context paths with friendly failure handling.
+  - Preserved manual Open Photo and manual Export workflows; no autosave/auto-export behavior added.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Control Center-side launcher and save/return workflow remain deferred (tracked in TODO-030 through TODO-033).
 
 ## Unreleased - 2026-05-25 (Phase 1O Markup Color / Stroke Presets MVP)
 - Owner: NCD / M

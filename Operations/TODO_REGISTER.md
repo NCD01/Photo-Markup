@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track planned and in-progress work items.
-Changes: Updated for Phase 1O markup color/stroke presets MVP completion and advanced style follow-up split.
+Changes: Updated for Phase 1P launch-context adapter completion and Control Center follow-up split.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -44,6 +44,10 @@ Changes: Updated for Phase 1O markup color/stroke presets MVP completion and adv
 | `TODO-027` | `Markup` | `Implement endpoint/resize handle editing MVP for dimension/arrow/rectangle/oval after move MVP stabilization` | `Critical` | `NCD / M` | `Done` | `N/A` | `2026-05-25` |
 | `TODO-028` | `Markup` | `Evaluate advanced handle editing beyond Phase 1N (freehand point editing, text-note resize, rotation, edge handles)` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-029` | `Markup` | `Evaluate advanced style controls beyond Phase 1O (custom color picker, per-tool style editor, optional saved user defaults)` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-030` | `Integration` | `Implement Control Center-side launcher to pass Phase 1P launch contract fields to Photo Markup` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-031` | `Integration` | `Define return workflow contract after manual export (returnMode behavior and handoff status)` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-032` | `Data` | `Define editable markup save format contract tied to launch context (placeholder only in Phase 1P)` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-033` | `Integration` | `Evaluate safe project-folder autosave workflow only after explicit approval` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -66,6 +70,7 @@ Changes: Updated for Phase 1O markup color/stroke presets MVP completion and adv
 | `16` | `Markup` | `Move/Adjust + endpoint/resize handle MVP delivered for dimension/arrow/rectangle/oval` | `Done` | `N/A` | `Phase 1M+1N delivered` |
 | `17` | `Markup` | `Advanced handle work (freehand points/text-note resize/rotation/edge handles)` | `Open` | `Owner approval for post-MVP advanced adjust UX` | `Tracked in TODO-028` |
 | `18` | `Markup` | `Markup style preset MVP delivered for new markups + selected-markup restyle; advanced style controls deferred` | `Open` | `Owner approval for post-MVP style UX expansion` | `Tracked in TODO-029` |
+| `19` | `Integration` | `Control Center launch-context adapter delivered with standalone-safe fallback; Control Center launcher/save-return flow remains deferred` | `Open` | `Owner approval for adapter consumption and save-return workflow` | `Tracked in TODO-030/TODO-031/TODO-032/TODO-033` |
 
 
 
@@ -124,11 +129,13 @@ Changes: Updated for Phase 1O markup color/stroke presets MVP completion and adv
 9. Field Reliability / Large Image Performance
 - Harden performance for large jobsite photos; protect responsiveness and original-file integrity.
 
-### High (Open)
+### High
 10. Multiple-Photo Markup Sets
 - Group multiple photos with sequencing/thumbnails/per-photo markup state.
 11. Control Center Integration Adapter
-- Future adapter-only integration; preserve standalone MVP and separate asset outputs.
+- Status: `Done` (Phase 1P adapter/launch contract foundation complete).
+- Photo Markup now supports optional launch-context intake while remaining standalone.
+- Follow-up implementation remains open in TODO-030/TODO-031/TODO-032/TODO-033.
 12. Samsung Tablet / Android Validation
 - Validate touch/pen, picker, HEIC/JPG/PNG import, export, and toolbar sizing on Samsung tablet.
 13. Apple Platform Compatibility Review

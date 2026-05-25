@@ -9,6 +9,63 @@ class AppConstants {
   static const String startupImageEnvKey = 'NCD_STARTUP_IMAGE_PATH';
 }
 
+class LaunchContextConstants {
+  const LaunchContextConstants._();
+
+  static const String argPrefix = '--';
+  static const String argKeyValueSeparator = '=';
+  static const String boolTrueString = 'true';
+
+  static const String argLaunchContextPath = 'launchContextPath';
+  static const String argLaunchedFromControlCenter =
+      'launchedFromControlCenter';
+  static const String argClientId = 'clientId';
+  static const String argClientName = 'clientName';
+  static const String argProjectId = 'projectId';
+  static const String argProjectCode = 'projectCode';
+  static const String argSourceImagePath = 'sourceImagePath';
+  static const String argSuggestedExportFolder = 'suggestedExportFolder';
+  static const String argSuggestedEditableMarkupFolder =
+      'suggestedEditableMarkupFolder';
+  static const String argReturnMode = 'returnMode';
+  static const String argSourceLabel = 'sourceLabel';
+
+  static const Set<String> supportedArgKeys = <String>{
+    argLaunchContextPath,
+    argLaunchedFromControlCenter,
+    argClientId,
+    argClientName,
+    argProjectId,
+    argProjectCode,
+    argSourceImagePath,
+    argSuggestedExportFolder,
+    argSuggestedEditableMarkupFolder,
+    argReturnMode,
+    argSourceLabel,
+  };
+
+  static const List<String> contractFieldKeys = <String>[
+    argLaunchedFromControlCenter,
+    argClientId,
+    argClientName,
+    argProjectId,
+    argProjectCode,
+    argSourceImagePath,
+    argSuggestedExportFolder,
+    argSuggestedEditableMarkupFolder,
+    argReturnMode,
+    argSourceLabel,
+  ];
+
+  static const String defaultReturnMode = 'manual';
+  static const Set<String> allowedReturnModes = <String>{
+    'manual',
+    'return_to_control_center',
+    'none',
+  };
+  static const Set<String> trueValues = <String>{'1', 'true', 'yes', 'y', 'on'};
+}
+
 class BrandingAssetConstants {
   const BrandingAssetConstants._();
 
@@ -90,6 +147,16 @@ class UiCopyConstants {
   static const String exportFailureMessage =
       'Could not export this image. Please try again.';
   static const String eraseNoSelectionMessage = 'Select a markup to erase.';
+  static const String launchContextFileNotFoundMessage =
+      'Launch context file was not found. You can still open a photo manually.';
+  static const String launchContextInvalidJsonMessage =
+      'Launch context could not be read. You can still open a photo manually.';
+  static const String launchSourceImageInvalidMessage =
+      'Launch photo path is invalid or unsupported. Use Open Photo to continue.';
+  static const String launchContextLabelPrefix = 'Control Center Context';
+  static const String launchContextSourceLabelPrefix = 'Source';
+  static const String launchContextClientLabelPrefix = 'Client';
+  static const String launchContextProjectLabelPrefix = 'Project';
 }
 
 class ToolbarConstants {
@@ -135,6 +202,10 @@ class UiLayoutConstants {
   static const double loadedNameMaxWidth = 260;
   static const double appBarLoadedNameRightPadding = 10;
   static const double appBarVersionRightPadding = 16;
+  static const double launchContextBannerHorizontalPadding = 12;
+  static const double launchContextBannerVerticalPadding = 8;
+  static const double launchContextBannerFontSize = 12;
+  static const double launchContextBannerGap = 6;
   static const double canvasOuterPadding = 20;
   static const double canvasBorderRadius = 12;
   static const double canvasBorderWidth = 2;
