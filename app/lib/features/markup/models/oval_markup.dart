@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 class OvalMarkup {
   const OvalMarkup({
     required this.id,
     required this.startNormalized,
     required this.endNormalized,
+    this.stylePresetId = MarkupStylePresets.defaultPresetId,
   });
 
   final int id;
   final Offset startNormalized;
   final Offset endNormalized;
+  final MarkupStylePresetId stylePresetId;
 
   factory OvalMarkup.fromCanvasPoints({
     required int id,
     required Offset startPoint,
     required Offset endPoint,
     required Rect imageRect,
+    MarkupStylePresetId stylePresetId = MarkupStylePresets.defaultPresetId,
   }) {
     return OvalMarkup(
       id: id,
@@ -27,6 +31,21 @@ class OvalMarkup {
         _clampPoint(endPoint, imageRect),
         imageRect,
       ),
+      stylePresetId: stylePresetId,
+    );
+  }
+
+  OvalMarkup copyWith({
+    int? id,
+    Offset? startNormalized,
+    Offset? endNormalized,
+    MarkupStylePresetId? stylePresetId,
+  }) {
+    return OvalMarkup(
+      id: id ?? this.id,
+      startNormalized: startNormalized ?? this.startNormalized,
+      endNormalized: endNormalized ?? this.endNormalized,
+      stylePresetId: stylePresetId ?? this.stylePresetId,
     );
   }
 
@@ -97,9 +116,11 @@ class OvalMarkup {
     return other is OvalMarkup &&
         other.id == id &&
         other.startNormalized == startNormalized &&
-        other.endNormalized == endNormalized;
+        other.endNormalized == endNormalized &&
+        other.stylePresetId == stylePresetId;
   }
 
   @override
-  int get hashCode => Object.hash(id, startNormalized, endNormalized);
+  int get hashCode =>
+      Object.hash(id, startNormalized, endNormalized, stylePresetId);
 }

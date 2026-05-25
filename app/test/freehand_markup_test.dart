@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 void main() {
   group('FreehandMarkup', () {
@@ -22,6 +23,7 @@ void main() {
       expect(denormalized.first.dy, imageRect.top);
       expect(denormalized.last.dx, imageRect.right);
       expect(denormalized.last.dy, imageRect.bottom);
+      expect(markup.stylePresetId, MarkupStylePresets.defaultPresetId);
     });
 
     test('distance is small for point near stroke and larger when far', () {

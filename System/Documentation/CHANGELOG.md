@@ -6,7 +6,39 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1N export crop bugfix entry.
+Changes: Added Phase 1O markup style presets MVP entry.
+
+## Unreleased - 2026-05-25 (Phase 1O Markup Color / Stroke Presets MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Improve field visibility by letting users quickly switch markup style presets.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/markup_style_preset.dart`
+  - `app/lib/features/markup/models/*` (style preset id storage updates)
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/test/markup_style_preset_test.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added centralized style preset model with five presets: `NCD Blue`, `Red`, `Yellow`, `White`, `Black`.
+  - Added touch-friendly `Style` selector workflow from toolbar.
+  - Applied preset style to new markups (dimension/arrow/rectangle/oval/freehand/text note).
+  - Enabled applying current preset to currently selected markup.
+  - Persisted style by markup entity via stored preset id so changing active preset does not recolor existing markups unexpectedly.
+  - Preserved move/resize/erase/delete/undo and export-crop behavior.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Full custom color picker, per-tool style editor, and saved style preferences remain deferred.
 
 ## Unreleased - 2026-05-25 (Phase 1N Export Crop Bugfix)
 - Owner: NCD / M

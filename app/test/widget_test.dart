@@ -5,6 +5,7 @@ import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
@@ -124,6 +125,30 @@ void main() {
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
+  testWidgets('style preset dialog opens and applies selection safely', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    final Finder styleButton = find.widgetWithText(
+      OutlinedButton,
+      'Style: Blue',
+    );
+    final Finder toolbarScrollable = find.byType(Scrollable);
+    await tester.scrollUntilVisible(
+      styleButton,
+      240,
+      scrollable: toolbarScrollable,
+    );
+    await tester.tap(styleButton);
+    await tester.pumpAndSettle();
+    expect(find.text(UiCopyConstants.styleDialogTitle), findsOneWidget);
+
+    await tester.tap(find.text('Red'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(OutlinedButton, 'Style: Red'), findsOneWidget);
+    expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
+  });
+
   testWidgets('export with no photo shows friendly warning', (
     WidgetTester tester,
   ) async {
@@ -198,6 +223,7 @@ void main() {
               selectedOvalId: null,
               selectedFreehandId: null,
               selectedTextNoteId: null,
+              activeStylePresetId: MarkupStylePresets.defaultPresetId,
               activeTool: MarkupTool.dimension,
               activeStart: const Offset(80, 220),
               activeEnd: const Offset(360, 240),

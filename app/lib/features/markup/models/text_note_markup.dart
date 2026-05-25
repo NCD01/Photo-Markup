@@ -1,27 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 class TextNoteMarkup {
   const TextNoteMarkup({
     required this.id,
     required this.anchorNormalized,
     required this.text,
+    this.stylePresetId = MarkupStylePresets.defaultPresetId,
   });
 
   final int id;
   final Offset anchorNormalized;
   final String text;
+  final MarkupStylePresetId stylePresetId;
 
   factory TextNoteMarkup.fromCanvasPoint({
     required int id,
     required Offset anchorPoint,
     required String text,
     required Rect imageRect,
+    MarkupStylePresetId stylePresetId = MarkupStylePresets.defaultPresetId,
   }) {
     final Offset clamped = _clampPoint(anchorPoint, imageRect);
     return TextNoteMarkup(
       id: id,
       anchorNormalized: _normalizePoint(clamped, imageRect),
       text: text,
+      stylePresetId: stylePresetId,
     );
   }
 
@@ -29,11 +34,17 @@ class TextNoteMarkup {
     return _denormalizePoint(anchorNormalized, imageRect);
   }
 
-  TextNoteMarkup copyWith({int? id, Offset? anchorNormalized, String? text}) {
+  TextNoteMarkup copyWith({
+    int? id,
+    Offset? anchorNormalized,
+    String? text,
+    MarkupStylePresetId? stylePresetId,
+  }) {
     return TextNoteMarkup(
       id: id ?? this.id,
       anchorNormalized: anchorNormalized ?? this.anchorNormalized,
       text: text ?? this.text,
+      stylePresetId: stylePresetId ?? this.stylePresetId,
     );
   }
 
@@ -69,9 +80,10 @@ class TextNoteMarkup {
     return other is TextNoteMarkup &&
         other.id == id &&
         other.anchorNormalized == anchorNormalized &&
-        other.text == text;
+        other.text == text &&
+        other.stylePresetId == stylePresetId;
   }
 
   @override
-  int get hashCode => Object.hash(id, anchorNormalized, text);
+  int get hashCode => Object.hash(id, anchorNormalized, text, stylePresetId);
 }

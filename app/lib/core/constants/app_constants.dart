@@ -82,6 +82,9 @@ class UiCopyConstants {
   static const String textNoteHint = 'Example: Replace drywall here';
   static const String textNoteSaveButton = 'Save';
   static const String textNoteSkipButton = 'Skip';
+  static const String styleDialogTitle = 'Markup Style Preset';
+  static const String styleApplyToSelectedMessage =
+      'Style applied to selection.';
   static const String exportNoPhotoMessage = 'Load a photo before exporting.';
   static const String exportSuccessMessage = 'Export complete.';
   static const String exportFailureMessage =
@@ -99,6 +102,7 @@ class ToolbarConstants {
   static const String rectangle = 'Rectangle';
   static const String freehand = 'Freehand';
   static const String textNote = 'Text Note';
+  static const String style = 'Style';
   static const String erase = 'Erase';
   static const String undo = 'Undo';
   static const String export = 'Export';
@@ -110,9 +114,9 @@ class ToolbarConstants {
     rectangle,
     freehand,
     textNote,
+    style,
     erase,
     undo,
-    'Save',
     export,
   ];
 }

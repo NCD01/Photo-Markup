@@ -1776,6 +1776,57 @@ Changes: Added Phase 1M Move/Adjust Selected Markup MVP session and validation n
 ## Constraints Confirmed
 - No scope expansion beyond approved Phase 1N + export crop bugfix.
 
+# SESSION_2026-05-25_0022_phase1o_markup_style_presets_mvp
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add Phase 1O markup color/stroke preset MVP with centralized definitions and safe export compatibility.
+
+## Actions
+- Added preset model/registry:
+  - `app/lib/features/markup/models/markup_style_preset.dart`
+- Updated toolbar flow in `main.dart`:
+  - Added `Style` action and touch-friendly preset dialog.
+  - Active preset applies to new markups.
+  - If markup is selected, chosen preset can restyle selected markup.
+- Updated markup models to store `stylePresetId`:
+  - dimension, arrow, rectangle, oval, freehand, text note.
+- Updated overlay painter to render per-markup style from stored preset ids.
+- Preserved existing handle/move/resize/delete/export crop behavior.
+- Added/updated tests:
+  - `app/test/markup_style_preset_test.dart`
+  - `widget_test.dart` style dialog safety flow
+  - style-preset assertions in existing model tests
+
+## Logging/Debug Notes
+- Style is stored per markup via preset id to prevent unexpected recolor of existing markups when active preset changes.
+- Export remains capture+crop pipeline; style rendering naturally carries into exported PNG.
+- Stroke widths remain centralized constants; preset palette handles color/fill/chip contrast.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.18`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (preset labels/copy/constants centralized)
+- Owner manual preset workflow: `NOT_VALIDATED` in this environment
+
+## Constraints Confirmed
+- No commit/push/version bump performed in this step.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No unrelated tools/shapes added.
+- No PDF/full-resolution export added.
+- No redo/history overhaul added.
+
 # SESSION_2026-05-25_0020_phase1n_export_crop_bugfix
 
 ## Context

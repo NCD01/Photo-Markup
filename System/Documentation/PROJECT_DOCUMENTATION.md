@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1N export crop bugfix behavior notes.
+Changes: Added Phase 1O markup style preset behavior and architecture notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -15,7 +15,7 @@ Changes: Added Phase 1N export crop bugfix behavior notes.
 - Structure/governance cleanup must not change runtime behavior.
 
 ## Required Contract
-Required sections are present and updated through Phase 1M.
+Required sections are present and updated through Phase 1O.
 
 ## Overview
 - App Name: `NCD Photo Markup`
@@ -29,6 +29,7 @@ Required sections are present and updated through Phase 1M.
 | UI | `Shell screen, image import/open flow, canvas display, toolbar, and dimension overlay behavior` | `app/lib/main.dart` | `NCD / M` |
 | UI Config | `Centralized tunable constants for app copy/layout/theme/import labels/extensions/markup line styling` | `app/lib/core/constants/app_constants.dart` | `NCD / M` |
 | Markup Model | `Dimension line + arrow + rectangle + oval + freehand + text note entities and tool enum` | `app/lib/features/markup/models/` | `NCD / M` |
+| Style Model | `Markup style preset definitions and preset-id based style registry` | `app/lib/features/markup/models/markup_style_preset.dart` | `NCD / M` |
 | Markup Widget | `Dimension lines overlay input capture, selection hit-testing, and custom rendering` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `NCD / M` |
 | Markup Utility | `Lightweight normalization for common measurement label formats` | `app/lib/features/markup/utils/dimension_label_formatter.dart` | `NCD / M` |
 | Move Utility | `Whole-markup move translation/clamp helpers used by drag-selected move workflow` | `app/lib/features/markup/utils/markup_move_utils.dart` | `NCD / M` |
@@ -63,6 +64,8 @@ Required sections are present and updated through Phase 1M.
 | `Text Note Tool Selection` | `Text Note button toggles active note placement mode with visible selected state` | `app/lib/main.dart` | `Runtime smoke + widget tests` |
 | `Text Note Create/Edit` | `Tap photo opens note dialog; Save creates/updates note at tapped anchor` | `app/lib/main.dart` + `app/lib/features/markup/models/text_note_markup.dart` | `Runtime smoke + model tests` |
 | `Text Note Selection` | `Tap note to select; tap selected note again to edit text` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
+| `Style Preset Selection` | `Style toolbar action opens touch-friendly preset list (NCD Blue/Red/Yellow/White/Black)` | `app/lib/main.dart` + `app/lib/features/markup/models/markup_style_preset.dart` | `Widget tests + runtime smoke` |
+| `Style Preset Application` | `New markups use active style preset and selected markup can be restyled to current preset` | `app/lib/main.dart` + `app/lib/features/markup/models/*` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Model/widget tests + runtime smoke` |
 | `Move Selected Markup` | `Drag already-selected markup to reposition it while clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/utils/markup_move_utils.dart` | `Utility tests + runtime smoke` |
 | `Dimension Endpoint Handles` | `Selected dimension renders endpoint handles and supports drag-adjust on each endpoint` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` + `app/lib/features/markup/utils/markup_handle_utils.dart` | `Handle utility tests + runtime smoke` |
 | `Arrow Endpoint Handles` | `Selected arrow renders endpoint handles and supports drag-adjust on each endpoint` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` + `app/lib/features/markup/utils/markup_handle_utils.dart` | `Handle utility tests + runtime smoke` |
@@ -76,7 +79,7 @@ Required sections are present and updated through Phase 1M.
 | `Undo Latest Markup` | `Undo removes latest remaining markup regardless of type (dimension, arrow, rectangle, oval, freehand, or text note)` | `app/lib/main.dart` | `Runtime smoke + code review` |
 | `Export PNG` | `Prompts user for save location and exports displayed photo area + markups as PNG (no outer letterbox/canvas whitespace)` | `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart` | `Analyze/test/build/run + pending owner manual E2E` |
 | `Cancel Handling` | `Picker cancel leaves state stable and no crash` | `app/lib/main.dart` | `Runtime automation attempt + no runtime errors` |
-| `Other Toolbar Buttons` | `Remain placeholders with no markup behavior` | `app/lib/main.dart` | `Code review + widget/runtime observation` |
+| `Non-Approved Future Toolbar Actions` | `Any future actions outside approved scope remain placeholders until explicitly approved` | `app/lib/main.dart` | `Code review + widget/runtime observation` |
 | `Branding Assets` | `Startup splash and app bar icon load from app-local branding assets` | `app/assets/branding/` + `app/lib/main.dart` + `app/pubspec.yaml` | `Runtime smoke + asset registration review` |
 | `Windows App Icon` | `Executable/runner icon uses approved v1.5 branding source` | `app/windows/runner/resources/app_icon.ico` | `Windows build + resource replacement review` |
 
@@ -132,9 +135,10 @@ Required sections are present and updated through Phase 1M.
 | `RISK-009` | `Circle/Oval labels/annotations are intentionally deferred in Circle/Oval MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-020` |
 | `RISK-010` | `Desktop HEIC conversion now uses package-first plus external converter fallback; deployment environments must still provide fallback converter availability` | `NCD / M` | `Near-term validation cycle` | `Provided sample IMG_2434.HEIC now converts successfully; deployment hardening tracked in TODO-021/TODO-023` |
 | `RISK-011` | `Advanced handle editing (freehand point editing, text-note resize, rotation, edge handles) remains deferred after endpoint/resize handle MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-028` |
+| `RISK-012` | `Advanced style controls (custom picker, per-tool style editor, saved defaults) remain deferred after style preset MVP` | `NCD / M` | `Future markup enhancement` | `Tracked in TODO-029` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.16`.
+- App bar shows `NCD Photo Markup` and `v0.18`.
 - Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
@@ -158,6 +162,8 @@ Required sections are present and updated through Phase 1M.
 - When a photo is loaded and Rectangle is selected, pointer drag creates a rectangle overlay with visible outline and transparent fill.
 - When a photo is loaded and Circle is selected, pointer drag creates an oval overlay with visible outline and transparent fill.
 - When a photo is loaded and Text Note is selected, tapping the image opens a note dialog and saves note chips anchored to the photo.
+- Style toolbar action opens a preset selector and updates active style for subsequent markups.
+- New markups store a style preset id at creation, so changing active preset does not recolor existing markups unexpectedly.
 - Dimension drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Arrow drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Rectangle drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
@@ -187,6 +193,7 @@ Required sections are present and updated through Phase 1M.
   - cancel save dialog: no-op, no crash
   - selected path: writes PNG cropped to displayed photo rect containing photo + markups
   - original source image is not modified
+- Exported markups preserve style colors/strokes/fills from each markup's stored style preset.
 - Quick-entry measurement normalization currently outputs inches:
   - `72` -> `72"`
   - `6 6` -> `78"`
@@ -217,6 +224,7 @@ Required sections are present and updated through Phase 1M.
   - text note dialog copy and note chip style/selection tunables
   - markup move threshold/hit-distance/fine-delta/bounds-padding tunables
   - endpoint/resize handle radius, hit-distance, drag-threshold, and handle visual style tunables
+  - style selector labels/copy and preset definitions (names/colors/fill/text-note chip colors)
 - Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages and are tracked in validation notes.
 - Splash duration remains tunable through `BrandingAssetConstants.startupSplashDurationMs`.
 - Splash footprint remains tunable through:
@@ -235,7 +243,7 @@ Required sections are present and updated through Phase 1M.
 - Future Phase: Extended Apple compatibility beyond MVP HEIC/HEIF import (see Operations/TODO_REGISTER.md).
 - Future Phase: NCD Control Center Integration via isolated adapter/service boundaries (see Operations/TODO_REGISTER.md).
 - Post-MVP priorities are now grouped as Critical/High/Medium in `Operations/TODO_REGISTER.md`:
-  - Critical: Editable Save/Reopen, Full-Resolution Export, Presets, Touch UX, Undo/Redo, Export Naming, Large-Image Performance.
+  - Critical: Editable Save/Reopen, Full-Resolution Export, Touch UX, Undo/Redo, Export Naming, Large-Image Performance.
   - High: Multi-photo sets, Control Center adapter, Samsung/Android validation, Apple review, HEIC fallback hardening, export-quality review.
   - Medium: Icon standard redesign, optional PDF, voice-to-text notes, styling panel, editable schema, error polish, onboarding, touch feedback, z-order, governance icon standard follow-up, advanced handle editing beyond Phase 1N.
 

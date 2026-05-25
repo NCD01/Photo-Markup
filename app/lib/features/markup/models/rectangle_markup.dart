@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 class RectangleMarkup {
   const RectangleMarkup({
     required this.id,
     required this.startNormalized,
     required this.endNormalized,
+    this.stylePresetId = MarkupStylePresets.defaultPresetId,
   });
 
   final int id;
   final Offset startNormalized;
   final Offset endNormalized;
+  final MarkupStylePresetId stylePresetId;
 
   factory RectangleMarkup.fromCanvasPoints({
     required int id,
     required Offset startPoint,
     required Offset endPoint,
     required Rect imageRect,
+    MarkupStylePresetId stylePresetId = MarkupStylePresets.defaultPresetId,
   }) {
     return RectangleMarkup(
       id: id,
@@ -27,6 +31,21 @@ class RectangleMarkup {
         _clampPoint(endPoint, imageRect),
         imageRect,
       ),
+      stylePresetId: stylePresetId,
+    );
+  }
+
+  RectangleMarkup copyWith({
+    int? id,
+    Offset? startNormalized,
+    Offset? endNormalized,
+    MarkupStylePresetId? stylePresetId,
+  }) {
+    return RectangleMarkup(
+      id: id ?? this.id,
+      startNormalized: startNormalized ?? this.startNormalized,
+      endNormalized: endNormalized ?? this.endNormalized,
+      stylePresetId: stylePresetId ?? this.stylePresetId,
     );
   }
 
@@ -84,9 +103,11 @@ class RectangleMarkup {
     return other is RectangleMarkup &&
         other.id == id &&
         other.startNormalized == startNormalized &&
-        other.endNormalized == endNormalized;
+        other.endNormalized == endNormalized &&
+        other.stylePresetId == stylePresetId;
   }
 
   @override
-  int get hashCode => Object.hash(id, startNormalized, endNormalized);
+  int get hashCode =>
+      Object.hash(id, startNormalized, endNormalized, stylePresetId);
 }

@@ -7,6 +7,7 @@ import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
@@ -27,6 +28,7 @@ class DimensionLinesOverlay extends StatefulWidget {
     required this.selectedOvalId,
     required this.selectedFreehandId,
     required this.selectedTextNoteId,
+    required this.activeStylePresetId,
     required this.activeTool,
     this.activeStart,
     this.activeEnd,
@@ -51,6 +53,7 @@ class DimensionLinesOverlay extends StatefulWidget {
   final int? selectedOvalId;
   final int? selectedFreehandId;
   final int? selectedTextNoteId;
+  final MarkupStylePresetId activeStylePresetId;
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
@@ -148,6 +151,7 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
           selectedOvalId: widget.selectedOvalId,
           selectedFreehandId: widget.selectedFreehandId,
           selectedTextNoteId: widget.selectedTextNoteId,
+          activeStylePresetId: widget.activeStylePresetId,
           activeTool: widget.activeTool,
           activeStart: widget.activeStart,
           activeEnd: widget.activeEnd,
@@ -174,6 +178,7 @@ class _DimensionLinesPainter extends CustomPainter {
     required this.selectedOvalId,
     required this.selectedFreehandId,
     required this.selectedTextNoteId,
+    required this.activeStylePresetId,
     required this.activeTool,
     required this.activeStart,
     required this.activeEnd,
@@ -193,6 +198,7 @@ class _DimensionLinesPainter extends CustomPainter {
   final int? selectedOvalId;
   final int? selectedFreehandId;
   final int? selectedTextNoteId;
+  final MarkupStylePresetId activeStylePresetId;
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
@@ -204,99 +210,13 @@ class _DimensionLinesPainter extends CustomPainter {
       return;
     }
 
-    final Paint linePaint = Paint()
-      ..color = DimensionLineConstants.lineColor
-      ..strokeWidth = DimensionLineConstants.strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final Paint selectedLinePaint = Paint()
-      ..color = DimensionLineConstants.selectedLineColor
-      ..strokeWidth =
-          DimensionLineConstants.strokeWidth *
-          DimensionLineConstants.selectedStrokeMultiplier
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
     final Paint endpointFillPaint = Paint()
       ..color = DimensionLineConstants.endpointFillColor
       ..style = PaintingStyle.fill;
 
-    final Paint endpointStrokePaint = Paint()
-      ..color = DimensionLineConstants.lineColor
-      ..strokeWidth = DimensionLineConstants.endpointStrokeWidth
-      ..style = PaintingStyle.stroke;
-
     final Paint labelBackgroundPaint = Paint()
       ..color = DimensionLineConstants.labelBackgroundColor
       ..style = PaintingStyle.fill;
-
-    final Paint labelBorderPaint = Paint()
-      ..color = DimensionLineConstants.labelBorderColor
-      ..strokeWidth = DimensionLineConstants.labelBorderWidth
-      ..style = PaintingStyle.stroke;
-
-    final Paint arrowPaint = Paint()
-      ..color = ArrowMarkupConstants.lineColor
-      ..strokeWidth = ArrowMarkupConstants.strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final Paint selectedArrowPaint = Paint()
-      ..color = ArrowMarkupConstants.selectedLineColor
-      ..strokeWidth =
-          ArrowMarkupConstants.strokeWidth *
-          ArrowMarkupConstants.selectedStrokeMultiplier
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final Paint rectangleOutlinePaint = Paint()
-      ..color = RectangleMarkupConstants.outlineColor
-      ..strokeWidth = RectangleMarkupConstants.strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    final Paint selectedRectangleOutlinePaint = Paint()
-      ..color = RectangleMarkupConstants.selectedOutlineColor
-      ..strokeWidth =
-          RectangleMarkupConstants.strokeWidth *
-          RectangleMarkupConstants.selectedStrokeMultiplier
-      ..style = PaintingStyle.stroke;
-
-    final Paint rectangleFillPaint = Paint()
-      ..color = RectangleMarkupConstants.fillColor
-      ..style = PaintingStyle.fill;
-
-    final Paint ovalOutlinePaint = Paint()
-      ..color = OvalMarkupConstants.outlineColor
-      ..strokeWidth = OvalMarkupConstants.strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    final Paint selectedOvalOutlinePaint = Paint()
-      ..color = OvalMarkupConstants.selectedOutlineColor
-      ..strokeWidth =
-          OvalMarkupConstants.strokeWidth *
-          OvalMarkupConstants.selectedStrokeMultiplier
-      ..style = PaintingStyle.stroke;
-
-    final Paint ovalFillPaint = Paint()
-      ..color = OvalMarkupConstants.fillColor
-      ..style = PaintingStyle.fill;
-
-    final Paint freehandPaint = Paint()
-      ..color = FreehandMarkupConstants.strokeColor
-      ..strokeWidth = FreehandMarkupConstants.strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-
-    final Paint selectedFreehandPaint = Paint()
-      ..color = FreehandMarkupConstants.selectedStrokeColor
-      ..strokeWidth =
-          FreehandMarkupConstants.strokeWidth *
-          FreehandMarkupConstants.selectedStrokeMultiplier
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
 
     final Paint handleFillPaint = Paint()
       ..color = MarkupHandleConstants.fillColor
@@ -312,6 +232,9 @@ class _DimensionLinesPainter extends CustomPainter {
 
     for (int i = 0; i < lines.length; i++) {
       final DimensionLine line = lines[i];
+      final MarkupStylePreset preset = MarkupStylePresets.byId(
+        line.stylePresetId,
+      );
       final bool isSelected = selectedDimensionId == line.id;
       final Offset start = line.startInRect(imageRect);
       final Offset end = line.endInRect(imageRect);
@@ -319,9 +242,9 @@ class _DimensionLinesPainter extends CustomPainter {
         canvas,
         start,
         end,
-        isSelected ? selectedLinePaint : linePaint,
+        _dimensionLinePaint(preset, isSelected: isSelected),
         endpointFillPaint,
-        isSelected ? selectedLinePaint : endpointStrokePaint,
+        _dimensionEndpointStrokePaint(preset, isSelected: isSelected),
       );
       _drawLabelIfPresent(
         canvas: canvas,
@@ -329,11 +252,14 @@ class _DimensionLinesPainter extends CustomPainter {
         start: start,
         end: end,
         labelBackgroundPaint: labelBackgroundPaint,
-        labelBorderPaint: labelBorderPaint,
+        labelBorderPaint: _dimensionLabelBorderPaint(preset),
       );
     }
 
     for (final ArrowMarkup arrow in arrows) {
+      final MarkupStylePreset preset = MarkupStylePresets.byId(
+        arrow.stylePresetId,
+      );
       final bool isSelected = selectedArrowId == arrow.id;
       final Offset start = arrow.startInRect(imageRect);
       final Offset end = arrow.endInRect(imageRect);
@@ -341,44 +267,58 @@ class _DimensionLinesPainter extends CustomPainter {
         canvas,
         start,
         end,
-        isSelected ? selectedArrowPaint : arrowPaint,
+        _arrowPaint(preset, isSelected: isSelected),
       );
     }
 
     for (final RectangleMarkup rectangle in rectangles) {
+      final MarkupStylePreset preset = MarkupStylePresets.byId(
+        rectangle.stylePresetId,
+      );
       final bool isSelected = selectedRectangleId == rectangle.id;
       final Rect rect = rectangle.rectInRect(imageRect);
       _drawRectangle(
         canvas,
         rect,
-        rectangleFillPaint,
-        isSelected ? selectedRectangleOutlinePaint : rectangleOutlinePaint,
+        _rectangleFillPaint(preset),
+        _rectangleOutlinePaint(preset, isSelected: isSelected),
       );
     }
 
     for (final OvalMarkup oval in ovals) {
+      final MarkupStylePreset preset = MarkupStylePresets.byId(
+        oval.stylePresetId,
+      );
       final bool isSelected = selectedOvalId == oval.id;
       final Rect rect = oval.rectInRect(imageRect);
       _drawOval(
         canvas,
         rect,
-        ovalFillPaint,
-        isSelected ? selectedOvalOutlinePaint : ovalOutlinePaint,
+        _ovalFillPaint(preset),
+        _ovalOutlinePaint(preset, isSelected: isSelected),
       );
     }
 
     for (final FreehandMarkup freehand in freehands) {
+      final MarkupStylePreset preset = MarkupStylePresets.byId(
+        freehand.stylePresetId,
+      );
       final bool isSelected = selectedFreehandId == freehand.id;
       _drawFreehandPath(
         canvas,
         freehand.pointsInRect(imageRect),
-        isSelected ? selectedFreehandPaint : freehandPaint,
+        _freehandPaint(preset, isSelected: isSelected),
       );
     }
 
     for (final TextNoteMarkup note in textNotes) {
       final bool isSelected = selectedTextNoteId == note.id;
-      _drawTextNote(canvas, note, isSelected: isSelected);
+      _drawTextNote(
+        canvas,
+        note,
+        isSelected: isSelected,
+        stylePreset: MarkupStylePresets.byId(note.stylePresetId),
+      );
     }
 
     if (selectedDimensionId != null) {
@@ -478,38 +418,152 @@ class _DimensionLinesPainter extends CustomPainter {
     }
 
     if (activeStart != null && activeEnd != null) {
+      final MarkupStylePreset activePreset = MarkupStylePresets.byId(
+        activeStylePresetId,
+      );
       if (activeTool == MarkupTool.arrow) {
-        _drawArrow(canvas, activeStart!, activeEnd!, arrowPaint);
+        _drawArrow(
+          canvas,
+          activeStart!,
+          activeEnd!,
+          _arrowPaint(activePreset, isSelected: false),
+        );
       } else if (activeTool == MarkupTool.rectangle) {
         _drawRectangle(
           canvas,
           Rect.fromPoints(activeStart!, activeEnd!),
-          rectangleFillPaint,
-          rectangleOutlinePaint,
+          _rectangleFillPaint(activePreset),
+          _rectangleOutlinePaint(activePreset, isSelected: false),
         );
       } else if (activeTool == MarkupTool.oval) {
         _drawOval(
           canvas,
           Rect.fromPoints(activeStart!, activeEnd!),
-          ovalFillPaint,
-          ovalOutlinePaint,
+          _ovalFillPaint(activePreset),
+          _ovalOutlinePaint(activePreset, isSelected: false),
         );
       } else if (activeTool == MarkupTool.dimension) {
         _drawLine(
           canvas,
           activeStart!,
           activeEnd!,
-          linePaint,
+          _dimensionLinePaint(activePreset, isSelected: false),
           endpointFillPaint,
-          endpointStrokePaint,
+          _dimensionEndpointStrokePaint(activePreset, isSelected: false),
         );
       }
     }
     if (activeTool == MarkupTool.freehand) {
-      _drawFreehandPath(canvas, activeFreehandPoints, freehandPaint);
+      _drawFreehandPath(
+        canvas,
+        activeFreehandPoints,
+        _freehandPaint(
+          MarkupStylePresets.byId(activeStylePresetId),
+          isSelected: false,
+        ),
+      );
     }
 
     canvas.restore();
+  }
+
+  Paint _dimensionLinePaint(
+    MarkupStylePreset preset, {
+    required bool isSelected,
+  }) {
+    return Paint()
+      ..color = isSelected
+          ? preset.dimensionSelectedLineColor
+          : preset.dimensionLineColor
+      ..strokeWidth =
+          DimensionLineConstants.strokeWidth *
+          (isSelected ? DimensionLineConstants.selectedStrokeMultiplier : 1.0)
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _dimensionEndpointStrokePaint(
+    MarkupStylePreset preset, {
+    required bool isSelected,
+  }) {
+    return Paint()
+      ..color = isSelected
+          ? preset.dimensionSelectedLineColor
+          : preset.dimensionLineColor
+      ..strokeWidth = DimensionLineConstants.endpointStrokeWidth
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _dimensionLabelBorderPaint(MarkupStylePreset preset) {
+    return Paint()
+      ..color = preset.dimensionLineColor
+      ..strokeWidth = DimensionLineConstants.labelBorderWidth
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _arrowPaint(MarkupStylePreset preset, {required bool isSelected}) {
+    return Paint()
+      ..color = isSelected
+          ? preset.arrowSelectedLineColor
+          : preset.arrowLineColor
+      ..strokeWidth =
+          ArrowMarkupConstants.strokeWidth *
+          (isSelected ? ArrowMarkupConstants.selectedStrokeMultiplier : 1.0)
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _rectangleOutlinePaint(
+    MarkupStylePreset preset, {
+    required bool isSelected,
+  }) {
+    return Paint()
+      ..color = isSelected
+          ? preset.rectangleSelectedOutlineColor
+          : preset.rectangleOutlineColor
+      ..strokeWidth =
+          RectangleMarkupConstants.strokeWidth *
+          (isSelected ? RectangleMarkupConstants.selectedStrokeMultiplier : 1.0)
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _rectangleFillPaint(MarkupStylePreset preset) {
+    return Paint()
+      ..color = preset.rectangleFillColor
+      ..style = PaintingStyle.fill;
+  }
+
+  Paint _ovalOutlinePaint(
+    MarkupStylePreset preset, {
+    required bool isSelected,
+  }) {
+    return Paint()
+      ..color = isSelected
+          ? preset.ovalSelectedOutlineColor
+          : preset.ovalOutlineColor
+      ..strokeWidth =
+          OvalMarkupConstants.strokeWidth *
+          (isSelected ? OvalMarkupConstants.selectedStrokeMultiplier : 1.0)
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _ovalFillPaint(MarkupStylePreset preset) {
+    return Paint()
+      ..color = preset.ovalFillColor
+      ..style = PaintingStyle.fill;
+  }
+
+  Paint _freehandPaint(MarkupStylePreset preset, {required bool isSelected}) {
+    return Paint()
+      ..color = isSelected
+          ? preset.freehandSelectedStrokeColor
+          : preset.freehandStrokeColor
+      ..strokeWidth =
+          FreehandMarkupConstants.strokeWidth *
+          (isSelected ? FreehandMarkupConstants.selectedStrokeMultiplier : 1.0)
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
   }
 
   void _drawFreehandPath(Canvas canvas, List<Offset> points, Paint paint) {
@@ -542,6 +596,7 @@ class _DimensionLinesPainter extends CustomPainter {
     Canvas canvas,
     TextNoteMarkup note, {
     required bool isSelected,
+    required MarkupStylePreset stylePreset,
   }) {
     final String text = note.text.trim();
     if (text.isEmpty) {
@@ -552,8 +607,8 @@ class _DimensionLinesPainter extends CustomPainter {
         TextPainter(
           text: TextSpan(
             text: text,
-            style: const TextStyle(
-              color: TextNoteMarkupConstants.textColor,
+            style: TextStyle(
+              color: stylePreset.textNoteTextColor,
               fontSize: TextNoteMarkupConstants.fontSize,
               fontWeight: FontWeight.w600,
             ),
@@ -573,12 +628,12 @@ class _DimensionLinesPainter extends CustomPainter {
     );
 
     final Paint fillPaint = Paint()
-      ..color = TextNoteMarkupConstants.backgroundColor
+      ..color = stylePreset.textNoteBackgroundColor
       ..style = PaintingStyle.fill;
     final Paint borderPaint = Paint()
       ..color = isSelected
-          ? TextNoteMarkupConstants.selectedBorderColor
-          : TextNoteMarkupConstants.borderColor
+          ? stylePreset.textNoteSelectedBorderColor
+          : stylePreset.textNoteBorderColor
       ..strokeWidth = isSelected
           ? TextNoteMarkupConstants.selectedBorderWidth
           : TextNoteMarkupConstants.borderWidth
@@ -818,6 +873,7 @@ class _DimensionLinesPainter extends CustomPainter {
         oldDelegate.selectedFreehandId != selectedFreehandId ||
         oldDelegate.selectedTextNoteId != selectedTextNoteId ||
         oldDelegate.activeTool != activeTool ||
+        oldDelegate.activeStylePresetId != activeStylePresetId ||
         oldDelegate.activeStart != activeStart ||
         oldDelegate.activeEnd != activeEnd ||
         !listEquals(oldDelegate.activeFreehandPoints, activeFreehandPoints);

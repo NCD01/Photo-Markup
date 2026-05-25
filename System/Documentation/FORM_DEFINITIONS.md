@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1N endpoint/resize handle form behavior.
+Changes: Added Phase 1O markup style preset selector and per-markup style behavior.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -21,6 +21,7 @@ Changes: Added Phase 1N endpoint/resize handle form behavior.
 - `Dimension Label Dialog` (implemented)
 - `Text Note Dialog` (implemented)
 - `Export / Save Dialog` (implemented for PNG)
+- `Style Preset Selector` (implemented)
 - `Selected Markup Erase Action` (implemented)
 - `Selected Markup Move/Adjust Action` (implemented, whole-markup move MVP)
 - `Endpoint/Resize Handle Adjust Action` (implemented for dimension/arrow/rectangle/oval)
@@ -50,8 +51,10 @@ Changes: Added Phase 1N endpoint/resize handle form behavior.
 - Read/write behavior: `MIXED`
 - Notes:
 - `Open Photo + Dimension + Arrow + Rectangle + Circle + Freehand + Text Note + Undo are functional in this phase`
+- `Style selector supports NCD Blue / Red / Yellow / White / Black presets`
 - `Erase removes currently selected dimension/arrow/rectangle/oval/freehand/text note (+dimension label when applicable)`
 - `Dragging a selected markup moves the whole markup while clamped to displayed photo bounds`
+- `Preset selection updates new-markup style and can apply style to selected markup`
 - `Open Photo supports jpg/jpeg/png/webp/heic/heif`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
 - `Startup splash image is scaled to fill most of startup screen`
@@ -117,6 +120,7 @@ Changes: Added Phase 1N endpoint/resize handle form behavior.
 - `Delete/Backspace keyboard keys erase selected line`
 - `Dragging a selected line moves the line + label together`
 - `Selected dimension line shows endpoint handles; dragging a handle adjusts the selected endpoint`
+- `Dimension line style follows stored markup preset`
 
 #### `Text Note Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -136,6 +140,7 @@ Changes: Added Phase 1N endpoint/resize handle form behavior.
 - `Tap selected note again re-opens edit dialog`
 - `Erase/Delete/Backspace support text note deletion`
 - `Dragging a selected note moves note position instead of opening edit`
+- `Text-note chip colors follow stored markup preset with readability-first contrast`
 
 #### `Freehand Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -155,6 +160,7 @@ Changes: Added Phase 1N endpoint/resize handle form behavior.
 - `Selected freehand stroke uses highlighted visual state`
 - `Erase/Delete/Backspace support freehand deletion`
 - `Dragging a selected freehand stroke moves the whole stroke`
+- `Freehand stroke style follows stored markup preset`
 
 #### `Circle/Oval Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -175,6 +181,7 @@ Changes: Added Phase 1N endpoint/resize handle form behavior.
 - `Erase/Delete/Backspace remove selected oval`
 - `Dragging a selected oval moves the whole oval`
 - `Selected oval shows corner resize handles; dragging a corner resizes the oval within displayed photo bounds`
+- `Oval outline/fill style follows stored markup preset`
 
 #### `Rectangle Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -195,6 +202,7 @@ Changes: Added Phase 1N endpoint/resize handle form behavior.
 - `Erase/Delete/Backspace remove selected rectangle`
 - `Dragging a selected rectangle moves the whole rectangle`
 - `Selected rectangle shows corner resize handles; dragging a corner resizes the rectangle within displayed photo bounds`
+- `Rectangle outline/fill style follows stored markup preset`
 
 #### `Arrow Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -215,6 +223,7 @@ Changes: Added Phase 1N endpoint/resize handle form behavior.
 - `Erase/Delete/Backspace remove selected arrow`
 - `Dragging a selected arrow moves the whole arrow`
 - `Selected arrow shows endpoint handles; dragging a handle adjusts the selected endpoint and arrowhead direction`
+- `Arrow style follows stored markup preset`
 
 #### `Dimension Label Dialog`
 - Source path: `app/lib/main.dart`
@@ -254,6 +263,23 @@ Changes: Added Phase 1N endpoint/resize handle form behavior.
 - `Skip/Cancel closes dialog without creating/updating a note`
 - `Enter/Done key submits note as Save`
 - `Dialog owns/disposes its own TextEditingController to avoid disposed-controller crashes`
+
+#### `Style Preset Selector`
+- Source path: `app/lib/main.dart` + `app/lib/features/markup/models/markup_style_preset.dart`
+- Purpose: `Allow touch-friendly selection of centralized markup style presets`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Style toolbar button`
+- `Preset picker dialog/list`
+- `Optional apply-to-selected behavior`
+- Related widgets/components:
+- `_ToolbarActionButton`
+- `MarkupStylePresets`
+- Read/write behavior: `MIXED`
+- Notes:
+- `Preset updates style for new markups`
+- `If markup is selected, preset can restyle the selected markup`
+- `Advanced custom picker/user-default persistence remains deferred`
 
 #### `Export / Save Dialog`
 - Source path: `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart`

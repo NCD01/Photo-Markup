@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 class DimensionLine {
   const DimensionLine({
@@ -6,18 +7,21 @@ class DimensionLine {
     required this.startNormalized,
     required this.endNormalized,
     this.label,
+    this.stylePresetId = MarkupStylePresets.defaultPresetId,
   });
 
   final int id;
   final Offset startNormalized;
   final Offset endNormalized;
   final String? label;
+  final MarkupStylePresetId stylePresetId;
 
   factory DimensionLine.fromCanvasPoints({
     required int id,
     required Offset startPoint,
     required Offset endPoint,
     required Rect imageRect,
+    MarkupStylePresetId stylePresetId = MarkupStylePresets.defaultPresetId,
   }) {
     return DimensionLine(
       id: id,
@@ -29,6 +33,7 @@ class DimensionLine {
         _clampPoint(endPoint, imageRect),
         imageRect,
       ),
+      stylePresetId: stylePresetId,
     );
   }
 
@@ -37,6 +42,7 @@ class DimensionLine {
     Offset? startNormalized,
     Offset? endNormalized,
     String? label,
+    MarkupStylePresetId? stylePresetId,
     bool clearLabel = false,
   }) {
     return DimensionLine(
@@ -44,6 +50,7 @@ class DimensionLine {
       startNormalized: startNormalized ?? this.startNormalized,
       endNormalized: endNormalized ?? this.endNormalized,
       label: clearLabel ? null : (label ?? this.label),
+      stylePresetId: stylePresetId ?? this.stylePresetId,
     );
   }
 
@@ -125,9 +132,11 @@ class DimensionLine {
         other.id == id &&
         other.startNormalized == startNormalized &&
         other.endNormalized == endNormalized &&
-        other.label == label;
+        other.label == label &&
+        other.stylePresetId == stylePresetId;
   }
 
   @override
-  int get hashCode => Object.hash(id, startNormalized, endNormalized, label);
+  int get hashCode =>
+      Object.hash(id, startNormalized, endNormalized, label, stylePresetId);
 }

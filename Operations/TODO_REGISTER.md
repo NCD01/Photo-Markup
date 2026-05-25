@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track planned and in-progress work items.
-Changes: Updated for Phase 1N endpoint/resize handles MVP completion and advanced-handle follow-up split.
+Changes: Updated for Phase 1O markup color/stroke presets MVP completion and advanced style follow-up split.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -43,6 +43,7 @@ Changes: Updated for Phase 1N endpoint/resize handles MVP completion and advance
 | `TODO-026` | `Markup` | `Implement Move/Adjust Selected Markup MVP (whole-markup move for all current markup types)` | `Critical` | `NCD / M` | `Done` | `N/A` | `2026-05-25` |
 | `TODO-027` | `Markup` | `Implement endpoint/resize handle editing MVP for dimension/arrow/rectangle/oval after move MVP stabilization` | `Critical` | `NCD / M` | `Done` | `N/A` | `2026-05-25` |
 | `TODO-028` | `Markup` | `Evaluate advanced handle editing beyond Phase 1N (freehand point editing, text-note resize, rotation, edge handles)` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-029` | `Markup` | `Evaluate advanced style controls beyond Phase 1O (custom color picker, per-tool style editor, optional saved user defaults)` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -64,6 +65,7 @@ Changes: Updated for Phase 1N endpoint/resize handles MVP completion and advance
 | `15` | `Markup` | `Freehand MVP implemented; optional smoothing/path simplification tuning deferred` | `Open` | `Owner interactive validation + future tuning approval` | `Tracked in TODO-024` |
 | `16` | `Markup` | `Move/Adjust + endpoint/resize handle MVP delivered for dimension/arrow/rectangle/oval` | `Done` | `N/A` | `Phase 1M+1N delivered` |
 | `17` | `Markup` | `Advanced handle work (freehand points/text-note resize/rotation/edge handles)` | `Open` | `Owner approval for post-MVP advanced adjust UX` | `Tracked in TODO-028` |
+| `18` | `Markup` | `Markup style preset MVP delivered for new markups + selected-markup restyle; advanced style controls deferred` | `Open` | `Owner approval for post-MVP style UX expansion` | `Tracked in TODO-029` |
 
 
 
@@ -106,7 +108,10 @@ Changes: Updated for Phase 1N endpoint/resize handles MVP completion and advance
 - Add export using original image dimensions with correct markup scaling/placement.
 - Keep PNG first; PDF remains separate.
 4. Markup Color / Stroke Presets
-- Add field presets for color/stroke/fill/selected-state styling with centralized config.
+- Status: `Done` in Phase 1O MVP.
+- Presets delivered: NCD Blue, Red, Yellow, White, Black.
+- Presets apply to new markups and can be applied to selected markup.
+- Advanced style controls remain deferred (see TODO-029).
 5. Better Touch Toolbar / Active Tool UX
 - Improve touch targets, spacing, active-state clarity, and accidental-change prevention.
 6. Move / Adjust Selected Markup

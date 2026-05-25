@@ -1,23 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 class FreehandMarkup {
-  FreehandMarkup({required this.id, required List<Offset> normalizedPoints})
-    : normalizedPoints = List<Offset>.unmodifiable(normalizedPoints);
+  FreehandMarkup({
+    required this.id,
+    required List<Offset> normalizedPoints,
+    this.stylePresetId = MarkupStylePresets.defaultPresetId,
+  }) : normalizedPoints = List<Offset>.unmodifiable(normalizedPoints);
 
   final int id;
   final List<Offset> normalizedPoints;
+  final MarkupStylePresetId stylePresetId;
 
   factory FreehandMarkup.fromCanvasPoints({
     required int id,
     required List<Offset> points,
     required Rect imageRect,
+    MarkupStylePresetId stylePresetId = MarkupStylePresets.defaultPresetId,
   }) {
     final List<Offset> normalized = <Offset>[];
     for (final Offset point in points) {
       final Offset clamped = _clampPoint(point, imageRect);
       normalized.add(_normalizePoint(clamped, imageRect));
     }
-    return FreehandMarkup(id: id, normalizedPoints: normalized);
+    return FreehandMarkup(
+      id: id,
+      normalizedPoints: normalized,
+      stylePresetId: stylePresetId,
+    );
+  }
+
+  FreehandMarkup copyWith({
+    int? id,
+    List<Offset>? normalizedPoints,
+    MarkupStylePresetId? stylePresetId,
+  }) {
+    return FreehandMarkup(
+      id: id ?? this.id,
+      normalizedPoints: normalizedPoints ?? this.normalizedPoints,
+      stylePresetId: stylePresetId ?? this.stylePresetId,
+    );
   }
 
   List<Offset> pointsInRect(Rect imageRect) {
@@ -100,7 +122,8 @@ class FreehandMarkup {
       return false;
     }
     if (other.id != id ||
-        other.normalizedPoints.length != normalizedPoints.length) {
+        other.normalizedPoints.length != normalizedPoints.length ||
+        other.stylePresetId != stylePresetId) {
       return false;
     }
     for (int i = 0; i < normalizedPoints.length; i++) {
@@ -112,5 +135,6 @@ class FreehandMarkup {
   }
 
   @override
-  int get hashCode => Object.hash(id, Object.hashAll(normalizedPoints));
+  int get hashCode =>
+      Object.hash(id, Object.hashAll(normalizedPoints), stylePresetId);
 }

@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1N endpoint/corner handle interaction standard.
+Changes: Added Phase 1O style preset selector and preset-based markup styling standard.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -27,6 +27,9 @@ Changes: Added Phase 1N endpoint/corner handle interaction standard.
 - Rectangle stroke baseline: `3px` with selected-state stroke multiplier
 - Circle/Oval outline baseline: `#8B1E00` with transparent fill
 - Circle/Oval stroke baseline: `3px` with selected-state stroke multiplier
+- Style presets must be centralized and touch-selectable.
+- Minimum MVP preset set: `NCD Blue`, `Red`, `Yellow`, `White`, `Black`.
+- Preset changes should apply to new markups without recoloring existing markups unexpectedly.
 - Dimension label chips: high-contrast text with semi-opaque light background and border
 - Dimension label entry: touch-friendly dialog with explicit Save/Skip actions
 - Dimension label entry should also support Enter/Done keyboard submit for fast field entry on desktop tablets.
@@ -48,9 +51,11 @@ Changes: Added Phase 1N endpoint/corner handle interaction standard.
 - High contrast between action color and content surfaces.
 - Keep the empty state explicit and safe.
 - Selected tool state must remain visually distinguishable for field use.
+- Text-note chip style should prioritize readability/contrast on varied photos.
 
 ## Governance Notes
 - Do not hard-code business label presets; use configurable presets/favorites later.
+- Keep advanced styling (custom picker/per-tool editor/saved defaults) deferred until explicitly approved.
 - Keep future Control Center integration behind a separate adapter/service.
 
 ## Phase 1C Review Note

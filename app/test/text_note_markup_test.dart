@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 
 void main() {
@@ -30,6 +31,20 @@ void main() {
       expect(updated.id, original.id);
       expect(updated.anchorNormalized, original.anchorNormalized);
       expect(updated.text, 'New');
+      expect(updated.stylePresetId, MarkupStylePresets.defaultPresetId);
+    });
+
+    test('copyWith can update style preset id', () {
+      const TextNoteMarkup original = TextNoteMarkup(
+        id: 3,
+        anchorNormalized: Offset(0.3, 0.4),
+        text: 'Style',
+      );
+      final TextNoteMarkup updated = original.copyWith(
+        stylePresetId: MarkupStylePresetId.red,
+      );
+
+      expect(updated.stylePresetId, MarkupStylePresetId.red);
     });
   });
 }

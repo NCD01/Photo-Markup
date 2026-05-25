@@ -13,6 +13,7 @@ import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
@@ -200,6 +201,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   final GlobalKey _canvasExportKey = GlobalKey();
 
   MarkupTool _selectedTool = MarkupTool.none;
+  MarkupStylePresetId _selectedStylePresetId =
+      MarkupStylePresets.defaultPresetId;
   final List<DimensionLine> _dimensionLines = <DimensionLine>[];
   final List<ArrowMarkup> _arrows = <ArrowMarkup>[];
   final List<RectangleMarkup> _rectangles = <RectangleMarkup>[];
@@ -454,6 +457,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       return;
     }
 
+    if (label == ToolbarConstants.style) {
+      _showStylePresetDialog();
+      return;
+    }
+
     if (label == ToolbarConstants.undo) {
       _undoMostRecentMarkup();
       return;
@@ -571,6 +579,137 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  MarkupStylePreset get _selectedStylePreset =>
+      MarkupStylePresets.byId(_selectedStylePresetId);
+
+  bool get _hasSelectedMarkup =>
+      _selectedDimensionId != null ||
+      _selectedArrowId != null ||
+      _selectedRectangleId != null ||
+      _selectedOvalId != null ||
+      _selectedFreehandId != null ||
+      _selectedTextNoteId != null;
+
+  Future<void> _showStylePresetDialog() async {
+    final MarkupStylePresetId? selected = await showDialog<MarkupStylePresetId>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(UiCopyConstants.styleDialogTitle),
+          content: SizedBox(
+            width: 320,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final MarkupStylePreset preset in MarkupStylePresets.all)
+                  ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      radius: 12,
+                      backgroundColor: preset.dimensionLineColor,
+                    ),
+                    title: Text(preset.label),
+                    trailing: preset.id == _selectedStylePresetId
+                        ? const Icon(Icons.check, size: 18)
+                        : null,
+                    onTap: () => Navigator.of(context).pop(preset.id),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selected == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedStylePresetId = selected;
+      _applyStylePresetToSelectedMarkup(selected);
+    });
+    if (_hasSelectedMarkup) {
+      _showSnack(UiCopyConstants.styleApplyToSelectedMessage);
+    }
+  }
+
+  void _applyStylePresetToSelectedMarkup(MarkupStylePresetId stylePresetId) {
+    final int? selectedDimensionId = _selectedDimensionId;
+    if (selectedDimensionId != null) {
+      final int index = _dimensionLines.indexWhere(
+        (DimensionLine line) => line.id == selectedDimensionId,
+      );
+      if (index != -1) {
+        _dimensionLines[index] = _dimensionLines[index].copyWith(
+          stylePresetId: stylePresetId,
+        );
+      }
+      return;
+    }
+
+    final int? selectedArrowId = _selectedArrowId;
+    if (selectedArrowId != null) {
+      final int index = _arrows.indexWhere(
+        (ArrowMarkup arrow) => arrow.id == selectedArrowId,
+      );
+      if (index != -1) {
+        _arrows[index] = _arrows[index].copyWith(stylePresetId: stylePresetId);
+      }
+      return;
+    }
+
+    final int? selectedRectangleId = _selectedRectangleId;
+    if (selectedRectangleId != null) {
+      final int index = _rectangles.indexWhere(
+        (RectangleMarkup rectangle) => rectangle.id == selectedRectangleId,
+      );
+      if (index != -1) {
+        _rectangles[index] = _rectangles[index].copyWith(
+          stylePresetId: stylePresetId,
+        );
+      }
+      return;
+    }
+
+    final int? selectedOvalId = _selectedOvalId;
+    if (selectedOvalId != null) {
+      final int index = _ovals.indexWhere(
+        (OvalMarkup oval) => oval.id == selectedOvalId,
+      );
+      if (index != -1) {
+        _ovals[index] = _ovals[index].copyWith(stylePresetId: stylePresetId);
+      }
+      return;
+    }
+
+    final int? selectedFreehandId = _selectedFreehandId;
+    if (selectedFreehandId != null) {
+      final int index = _freehands.indexWhere(
+        (FreehandMarkup freehand) => freehand.id == selectedFreehandId,
+      );
+      if (index != -1) {
+        _freehands[index] = _freehands[index].copyWith(
+          stylePresetId: stylePresetId,
+        );
+      }
+      return;
+    }
+
+    final int? selectedTextNoteId = _selectedTextNoteId;
+    if (selectedTextNoteId != null) {
+      final int index = _textNotes.indexWhere(
+        (TextNoteMarkup note) => note.id == selectedTextNoteId,
+      );
+      if (index != -1) {
+        _textNotes[index] = _textNotes[index].copyWith(
+          stylePresetId: stylePresetId,
+        );
+      }
+    }
   }
 
   int _allocateMarkupId() {
@@ -898,6 +1037,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         startPoint: start,
         endPoint: end,
         imageRect: imageRect,
+        stylePresetId: _selectedStylePresetId,
       );
       if (arrow.lengthInRect(imageRect) < ArrowMarkupConstants.minLength) {
         if (mounted) {
@@ -925,6 +1065,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         id: _allocateMarkupId(),
         points: freehandPoints,
         imageRect: imageRect,
+        stylePresetId: _selectedStylePresetId,
       );
       if (mounted) {
         setState(() {
@@ -941,6 +1082,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         startPoint: start,
         endPoint: end,
         imageRect: imageRect,
+        stylePresetId: _selectedStylePresetId,
       );
       if (rectangle.widthInRect(imageRect) <
               RectangleMarkupConstants.minSideLength ||
@@ -966,6 +1108,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         startPoint: start,
         endPoint: end,
         imageRect: imageRect,
+        stylePresetId: _selectedStylePresetId,
       );
       if (oval.widthInRect(imageRect) < OvalMarkupConstants.minAxisLength ||
           oval.heightInRect(imageRect) < OvalMarkupConstants.minAxisLength) {
@@ -989,6 +1132,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         startPoint: start,
         endPoint: end,
         imageRect: imageRect,
+        stylePresetId: _selectedStylePresetId,
       );
 
       int? newLineId;
@@ -1068,6 +1212,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       anchorPoint: point,
       text: trimmed,
       imageRect: imageRect,
+      stylePresetId: _selectedStylePresetId,
     );
     setState(() {
       _textNotes.add(note);
@@ -1324,6 +1469,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       startPoint: start,
       endPoint: end,
       imageRect: imageRect,
+      stylePresetId: line.stylePresetId,
     ).copyWith(label: line.label);
     if (updated == line) {
       return false;
@@ -1354,6 +1500,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       startPoint: start,
       endPoint: end,
       imageRect: imageRect,
+      stylePresetId: arrow.stylePresetId,
     );
     if (updated == arrow) {
       return false;
@@ -1390,6 +1537,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       startPoint: resized.topLeft,
       endPoint: resized.bottomRight,
       imageRect: imageRect,
+      stylePresetId: rectangle.stylePresetId,
     );
     if (updated == rectangle) {
       return false;
@@ -1426,6 +1574,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       startPoint: resized.topLeft,
       endPoint: resized.bottomRight,
       imageRect: imageRect,
+      stylePresetId: oval.stylePresetId,
     );
     if (updated == oval) {
       return false;
@@ -1681,6 +1830,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       startPoint: moved.first,
       endPoint: moved.last,
       imageRect: imageRect,
+      stylePresetId: line.stylePresetId,
     ).copyWith(label: line.label);
     setState(() {
       _dimensionLines[index] = movedLine;
@@ -1718,6 +1868,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       startPoint: moved.first,
       endPoint: moved.last,
       imageRect: imageRect,
+      stylePresetId: arrow.stylePresetId,
     );
     setState(() {
       _arrows[index] = movedArrow;
@@ -1753,6 +1904,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       startPoint: moved.first,
       endPoint: moved.last,
       imageRect: imageRect,
+      stylePresetId: rectangle.stylePresetId,
     );
     setState(() {
       _rectangles[index] = movedRectangle;
@@ -1788,6 +1940,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       startPoint: moved.first,
       endPoint: moved.last,
       imageRect: imageRect,
+      stylePresetId: oval.stylePresetId,
     );
     setState(() {
       _ovals[index] = movedOval;
@@ -1821,6 +1974,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       id: freehand.id,
       points: moved,
       imageRect: imageRect,
+      stylePresetId: freehand.stylePresetId,
     );
     setState(() {
       _freehands[index] = movedFreehand;
@@ -1852,6 +2006,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       anchorPoint: moved,
       text: note.text,
       imageRect: imageRect,
+      stylePresetId: note.stylePresetId,
     );
     setState(() {
       _textNotes[index] = movedNote;
@@ -2295,27 +2450,35 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                         padding: const EdgeInsets.symmetric(
                           horizontal: UiLayoutConstants.toolbarButtonGap,
                         ),
-                        child: _ToolbarActionButton(
-                          label: label,
-                          isSelected:
-                              (label == ToolbarConstants.dimension &&
-                                  _selectedTool == MarkupTool.dimension) ||
-                              (label == ToolbarConstants.arrow &&
-                                  _selectedTool == MarkupTool.arrow) ||
-                              (label == ToolbarConstants.circle &&
-                                  _selectedTool == MarkupTool.oval) ||
-                              (label == ToolbarConstants.rectangle &&
-                                  _selectedTool == MarkupTool.rectangle) ||
-                              (label == ToolbarConstants.freehand &&
-                                  _selectedTool == MarkupTool.freehand) ||
-                              (label == ToolbarConstants.textNote &&
-                                  _selectedTool == MarkupTool.textNote),
-                          isDisabled:
-                              (label == ToolbarConstants.undo &&
-                                  !_isUndoEnabled()) ||
-                              (label == ToolbarConstants.export &&
-                                  _isExporting),
-                          onPressed: () => _onToolbarPressed(label),
+                        child: Builder(
+                          builder: (BuildContext context) {
+                            final String displayLabel =
+                                label == ToolbarConstants.style
+                                ? '${ToolbarConstants.style}: ${_selectedStylePreset.shortLabel}'
+                                : label;
+                            return _ToolbarActionButton(
+                              label: displayLabel,
+                              isSelected:
+                                  (label == ToolbarConstants.dimension &&
+                                      _selectedTool == MarkupTool.dimension) ||
+                                  (label == ToolbarConstants.arrow &&
+                                      _selectedTool == MarkupTool.arrow) ||
+                                  (label == ToolbarConstants.circle &&
+                                      _selectedTool == MarkupTool.oval) ||
+                                  (label == ToolbarConstants.rectangle &&
+                                      _selectedTool == MarkupTool.rectangle) ||
+                                  (label == ToolbarConstants.freehand &&
+                                      _selectedTool == MarkupTool.freehand) ||
+                                  (label == ToolbarConstants.textNote &&
+                                      _selectedTool == MarkupTool.textNote),
+                              isDisabled:
+                                  (label == ToolbarConstants.undo &&
+                                      !_isUndoEnabled()) ||
+                                  (label == ToolbarConstants.export &&
+                                      _isExporting),
+                              onPressed: () => _onToolbarPressed(label),
+                            );
+                          },
                         ),
                       ),
                   ],
@@ -2434,6 +2597,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                         selectedOvalId: _selectedOvalId,
                         selectedFreehandId: _selectedFreehandId,
                         selectedTextNoteId: _selectedTextNoteId,
+                        activeStylePresetId: _selectedStylePresetId,
                         activeTool: _selectedTool,
                         activeStart: _activeDimensionStart,
                         activeEnd: _activeDimensionCurrent,
