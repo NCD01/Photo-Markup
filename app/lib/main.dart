@@ -14,6 +14,7 @@ import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 
@@ -201,11 +202,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   final List<RectangleMarkup> _rectangles = <RectangleMarkup>[];
   final List<OvalMarkup> _ovals = <OvalMarkup>[];
   final List<FreehandMarkup> _freehands = <FreehandMarkup>[];
+  final List<TextNoteMarkup> _textNotes = <TextNoteMarkup>[];
   int? _selectedDimensionId;
   int? _selectedArrowId;
   int? _selectedRectangleId;
   int? _selectedOvalId;
   int? _selectedFreehandId;
+  int? _selectedTextNoteId;
   int _nextMarkupId = 1;
   Offset? _activeDimensionStart;
   Offset? _activeDimensionCurrent;
@@ -364,6 +367,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       _rectangles.clear();
       _ovals.clear();
       _freehands.clear();
+      _textNotes.clear();
       _activeFreehandPoints.clear();
       _nextMarkupId = 1;
     });
@@ -430,6 +434,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (label == ToolbarConstants.freehand) {
       setState(() {
         _selectedTool = MarkupTool.freehand;
+      });
+      return;
+    }
+
+    if (label == ToolbarConstants.textNote) {
+      setState(() {
+        _selectedTool = MarkupTool.textNote;
       });
       return;
     }
@@ -550,6 +561,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedRectangleId = null;
     _selectedOvalId = null;
     _selectedFreehandId = null;
+    _selectedTextNoteId = null;
   }
 
   void _selectDimensionById(int id) {
@@ -558,6 +570,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedRectangleId = null;
     _selectedOvalId = null;
     _selectedFreehandId = null;
+    _selectedTextNoteId = null;
   }
 
   void _selectArrowById(int id) {
@@ -566,6 +579,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedRectangleId = null;
     _selectedOvalId = null;
     _selectedFreehandId = null;
+    _selectedTextNoteId = null;
   }
 
   void _selectRectangleById(int id) {
@@ -574,6 +588,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedArrowId = null;
     _selectedOvalId = null;
     _selectedFreehandId = null;
+    _selectedTextNoteId = null;
   }
 
   void _selectOvalById(int id) {
@@ -582,6 +597,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedArrowId = null;
     _selectedRectangleId = null;
     _selectedFreehandId = null;
+    _selectedTextNoteId = null;
   }
 
   void _selectFreehandById(int id) {
@@ -590,6 +606,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     _selectedArrowId = null;
     _selectedRectangleId = null;
     _selectedOvalId = null;
+    _selectedTextNoteId = null;
+  }
+
+  void _selectTextNoteById(int id) {
+    _selectedTextNoteId = id;
+    _selectedDimensionId = null;
+    _selectedArrowId = null;
+    _selectedRectangleId = null;
+    _selectedOvalId = null;
+    _selectedFreehandId = null;
   }
 
   void _undoMostRecentMarkup() {
@@ -628,11 +654,19 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       }
     }
 
+    int latestTextNoteId = -1;
+    for (final TextNoteMarkup textNote in _textNotes) {
+      if (textNote.id > latestTextNoteId) {
+        latestTextNoteId = textNote.id;
+      }
+    }
+
     if (latestDimensionId == -1 &&
         latestArrowId == -1 &&
         latestRectangleId == -1 &&
         latestOvalId == -1 &&
-        latestFreehandId == -1) {
+        latestFreehandId == -1 &&
+        latestTextNoteId == -1) {
       return;
     }
 
@@ -640,7 +674,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       if (latestDimensionId >= latestArrowId &&
           latestDimensionId >= latestRectangleId &&
           latestDimensionId >= latestOvalId &&
-          latestDimensionId >= latestFreehandId) {
+          latestDimensionId >= latestFreehandId &&
+          latestDimensionId >= latestTextNoteId) {
         _dimensionLines.removeWhere(
           (DimensionLine line) => line.id == latestDimensionId,
         );
@@ -649,29 +684,39 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         }
       } else if (latestArrowId >= latestRectangleId &&
           latestArrowId >= latestOvalId &&
-          latestArrowId >= latestFreehandId) {
+          latestArrowId >= latestFreehandId &&
+          latestArrowId >= latestTextNoteId) {
         _arrows.removeWhere((ArrowMarkup arrow) => arrow.id == latestArrowId);
         if (_selectedArrowId == latestArrowId) {
           _clearMarkupSelection();
         }
       } else if (latestRectangleId >= latestOvalId &&
-          latestRectangleId >= latestFreehandId) {
+          latestRectangleId >= latestFreehandId &&
+          latestRectangleId >= latestTextNoteId) {
         _rectangles.removeWhere(
           (RectangleMarkup rectangle) => rectangle.id == latestRectangleId,
         );
         if (_selectedRectangleId == latestRectangleId) {
           _clearMarkupSelection();
         }
-      } else if (latestOvalId >= latestFreehandId) {
+      } else if (latestOvalId >= latestFreehandId &&
+          latestOvalId >= latestTextNoteId) {
         _ovals.removeWhere((OvalMarkup oval) => oval.id == latestOvalId);
         if (_selectedOvalId == latestOvalId) {
           _clearMarkupSelection();
         }
-      } else {
+      } else if (latestFreehandId >= latestTextNoteId) {
         _freehands.removeWhere(
           (FreehandMarkup freehand) => freehand.id == latestFreehandId,
         );
         if (_selectedFreehandId == latestFreehandId) {
+          _clearMarkupSelection();
+        }
+      } else {
+        _textNotes.removeWhere(
+          (TextNoteMarkup textNote) => textNote.id == latestTextNoteId,
+        );
+        if (_selectedTextNoteId == latestTextNoteId) {
           _clearMarkupSelection();
         }
       }
@@ -724,6 +769,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       setState(() {
         _freehands.removeWhere(
           (FreehandMarkup freehand) => freehand.id == selectedFreehandId,
+        );
+        _clearMarkupSelection();
+      });
+      return;
+    }
+
+    final int? selectedTextNoteId = _selectedTextNoteId;
+    if (selectedTextNoteId != null) {
+      setState(() {
+        _textNotes.removeWhere(
+          (TextNoteMarkup textNote) => textNote.id == selectedTextNoteId,
         );
         _clearMarkupSelection();
       });
@@ -944,13 +1000,88 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     );
   }
 
+  Future<void> _createTextNoteAt(Offset point, Rect imageRect) async {
+    final String? noteText = await _showTextNoteDialog(initialValue: '');
+    if (!mounted || noteText == null) {
+      return;
+    }
+
+    final String trimmed = noteText.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+
+    final TextNoteMarkup note = TextNoteMarkup.fromCanvasPoint(
+      id: _allocateMarkupId(),
+      anchorPoint: point,
+      text: trimmed,
+      imageRect: imageRect,
+    );
+    setState(() {
+      _textNotes.add(note);
+      _selectTextNoteById(note.id);
+    });
+  }
+
+  Future<void> _editTextNoteById(int noteId) async {
+    final int index = _textNotes.indexWhere(
+      (TextNoteMarkup note) => note.id == noteId,
+    );
+    if (index == -1) {
+      return;
+    }
+
+    final String? updatedText = await _showTextNoteDialog(
+      initialValue: _textNotes[index].text,
+    );
+    if (!mounted || updatedText == null) {
+      return;
+    }
+
+    final int refreshIndex = _textNotes.indexWhere(
+      (TextNoteMarkup note) => note.id == noteId,
+    );
+    if (refreshIndex == -1) {
+      return;
+    }
+
+    final String trimmed = updatedText.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _textNotes.removeAt(refreshIndex);
+        _clearMarkupSelection();
+      });
+      return;
+    }
+
+    setState(() {
+      _textNotes[refreshIndex] = _textNotes[refreshIndex].copyWith(
+        text: trimmed,
+      );
+      _selectTextNoteById(noteId);
+    });
+  }
+
+  Future<String?> _showTextNoteDialog({required String initialValue}) async {
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return _TextNoteDialog(initialValue: initialValue);
+      },
+    );
+  }
+
   Future<void> _onDimensionTap(Offset point, Rect imageRect) async {
-    if (_imagePath == null ||
-        (_dimensionLines.isEmpty &&
-            _arrows.isEmpty &&
-            _rectangles.isEmpty &&
-            _ovals.isEmpty &&
-            _freehands.isEmpty)) {
+    if (_imagePath == null) {
+      return;
+    }
+    if (_selectedTool != MarkupTool.textNote &&
+        _dimensionLines.isEmpty &&
+        _arrows.isEmpty &&
+        _rectangles.isEmpty &&
+        _ovals.isEmpty &&
+        _freehands.isEmpty &&
+        _textNotes.isEmpty) {
       return;
     }
 
@@ -959,11 +1090,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       imageRect,
     );
     if (!nearestHit.found) {
+      if (_selectedTool == MarkupTool.textNote) {
+        await _createTextNoteAt(point, imageRect);
+        return;
+      }
       if (_selectedDimensionId != null ||
           _selectedArrowId != null ||
           _selectedRectangleId != null ||
           _selectedOvalId != null ||
-          _selectedFreehandId != null) {
+          _selectedFreehandId != null ||
+          _selectedTextNoteId != null) {
         setState(() {
           _clearMarkupSelection();
         });
@@ -976,7 +1112,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
           _selectedArrowId != null ||
           _selectedRectangleId != null ||
           _selectedOvalId != null ||
-          _selectedFreehandId != null) {
+          _selectedFreehandId != null ||
+          _selectedTextNoteId != null) {
         setState(() {
           _selectDimensionById(nearestHit.markupId);
         });
@@ -991,7 +1128,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
             _selectedDimensionId != null ||
             _selectedRectangleId != null ||
             _selectedOvalId != null ||
-            _selectedFreehandId != null)) {
+            _selectedFreehandId != null ||
+            _selectedTextNoteId != null)) {
       setState(() {
         _selectArrowById(nearestHit.markupId);
       });
@@ -1003,7 +1141,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
             _selectedDimensionId != null ||
             _selectedArrowId != null ||
             _selectedOvalId != null ||
-            _selectedFreehandId != null)) {
+            _selectedFreehandId != null ||
+            _selectedTextNoteId != null)) {
       setState(() {
         _selectRectangleById(nearestHit.markupId);
       });
@@ -1015,7 +1154,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
             _selectedDimensionId != null ||
             _selectedArrowId != null ||
             _selectedRectangleId != null ||
-            _selectedFreehandId != null)) {
+            _selectedFreehandId != null ||
+            _selectedTextNoteId != null)) {
       setState(() {
         _selectOvalById(nearestHit.markupId);
       });
@@ -1027,10 +1167,27 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
             _selectedDimensionId != null ||
             _selectedArrowId != null ||
             _selectedRectangleId != null ||
-            _selectedOvalId != null)) {
+            _selectedOvalId != null ||
+            _selectedTextNoteId != null)) {
       setState(() {
         _selectFreehandById(nearestHit.markupId);
       });
+      return;
+    }
+
+    if (nearestHit.markupTool == MarkupTool.textNote) {
+      if (_selectedTextNoteId != nearestHit.markupId ||
+          _selectedDimensionId != null ||
+          _selectedArrowId != null ||
+          _selectedRectangleId != null ||
+          _selectedOvalId != null ||
+          _selectedFreehandId != null) {
+        setState(() {
+          _selectTextNoteById(nearestHit.markupId);
+        });
+        return;
+      }
+      await _editTextNoteById(nearestHit.markupId);
     }
   }
 
@@ -1084,6 +1241,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       }
     }
 
+    for (final TextNoteMarkup note in _textNotes) {
+      final double distance = _distanceToTextNote(note, point, imageRect);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMarkupId = note.id;
+        bestTool = MarkupTool.textNote;
+      }
+    }
+
     double maxSelectionDistance = DimensionLineConstants.selectionTapDistance;
     if (RectangleMarkupConstants.selectionHitDistance > maxSelectionDistance) {
       maxSelectionDistance = RectangleMarkupConstants.selectionHitDistance;
@@ -1094,12 +1260,84 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (FreehandMarkupConstants.selectionHitDistance > maxSelectionDistance) {
       maxSelectionDistance = FreehandMarkupConstants.selectionHitDistance;
     }
+    if (TextNoteMarkupConstants.selectionHitDistance > maxSelectionDistance) {
+      maxSelectionDistance = TextNoteMarkupConstants.selectionHitDistance;
+    }
 
     if (bestDistance > maxSelectionDistance) {
       return const _NearestMarkupHit.notFound();
     }
 
     return _NearestMarkupHit(markupId: bestMarkupId, markupTool: bestTool);
+  }
+
+  double _distanceToTextNote(
+    TextNoteMarkup note,
+    Offset point,
+    Rect imageRect,
+  ) {
+    final String text = note.text.trim();
+    if (text.isEmpty) {
+      return double.infinity;
+    }
+
+    final TextPainter textPainter =
+        TextPainter(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(
+              color: TextNoteMarkupConstants.textColor,
+              fontSize: TextNoteMarkupConstants.fontSize,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+          maxLines: 4,
+          ellipsis: '...',
+        )..layout(
+          maxWidth: imageRect.width * TextNoteMarkupConstants.maxWidthFactor,
+        );
+
+    final Rect chipRect = _layoutTextNoteRect(
+      note.anchorInRect(imageRect),
+      textPainter,
+      imageRect,
+    );
+    if (chipRect.contains(point)) {
+      return 0;
+    }
+    final Offset nearest = Offset(
+      point.dx.clamp(chipRect.left, chipRect.right),
+      point.dy.clamp(chipRect.top, chipRect.bottom),
+    );
+    return (point - nearest).distance;
+  }
+
+  Rect _layoutTextNoteRect(
+    Offset anchor,
+    TextPainter textPainter,
+    Rect imageRect,
+  ) {
+    final double width =
+        textPainter.width + (TextNoteMarkupConstants.horizontalPadding * 2);
+    final double height =
+        textPainter.height + (TextNoteMarkupConstants.verticalPadding * 2);
+
+    double left = anchor.dx;
+    double top = anchor.dy;
+
+    final double minLeft =
+        imageRect.left + TextNoteMarkupConstants.clampPadding;
+    final double maxLeft =
+        imageRect.right - width - TextNoteMarkupConstants.clampPadding;
+    final double minTop = imageRect.top + TextNoteMarkupConstants.clampPadding;
+    final double maxTop =
+        imageRect.bottom - height - TextNoteMarkupConstants.clampPadding;
+
+    left = left.clamp(minLeft, maxLeft >= minLeft ? maxLeft : minLeft);
+    top = top.clamp(minTop, maxTop >= minTop ? maxTop : minTop);
+
+    return Rect.fromLTWH(left, top, width, height);
   }
 
   KeyEventResult _onShellKeyEvent(FocusNode node, KeyEvent event) {
@@ -1130,7 +1368,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         _arrows.isNotEmpty ||
         _rectangles.isNotEmpty ||
         _ovals.isNotEmpty ||
-        _freehands.isNotEmpty;
+        _freehands.isNotEmpty ||
+        _textNotes.isNotEmpty;
   }
 
   String _fileExtension(String path) {
@@ -1272,7 +1511,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                               (label == ToolbarConstants.rectangle &&
                                   _selectedTool == MarkupTool.rectangle) ||
                               (label == ToolbarConstants.freehand &&
-                                  _selectedTool == MarkupTool.freehand),
+                                  _selectedTool == MarkupTool.freehand) ||
+                              (label == ToolbarConstants.textNote &&
+                                  _selectedTool == MarkupTool.textNote),
                           isDisabled:
                               (label == ToolbarConstants.undo &&
                                   !_isUndoEnabled()) ||
@@ -1389,12 +1630,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                         rectangles: _rectangles,
                         ovals: _ovals,
                         freehands: _freehands,
+                        textNotes: _textNotes,
                         imageRect: imageRect,
                         selectedDimensionId: _selectedDimensionId,
                         selectedArrowId: _selectedArrowId,
                         selectedRectangleId: _selectedRectangleId,
                         selectedOvalId: _selectedOvalId,
                         selectedFreehandId: _selectedFreehandId,
+                        selectedTextNoteId: _selectedTextNoteId,
                         activeTool: _selectedTool,
                         activeStart: _activeDimensionStart,
                         activeEnd: _activeDimensionCurrent,
@@ -1568,6 +1811,82 @@ class _DimensionLabelDialogState extends State<_DimensionLabelDialog> {
         FilledButton(
           onPressed: _submitLabel,
           child: const Text(UiCopyConstants.dimensionLabelSaveButton),
+        ),
+      ],
+    );
+  }
+}
+
+class _TextNoteDialog extends StatefulWidget {
+  const _TextNoteDialog({required this.initialValue});
+
+  final String initialValue;
+
+  @override
+  State<_TextNoteDialog> createState() => _TextNoteDialogState();
+}
+
+class _TextNoteDialogState extends State<_TextNoteDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submitNote() {
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).pop(_controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(UiCopyConstants.textNoteDialogTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: TextField(
+              controller: _controller,
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submitNote(),
+              style: const TextStyle(
+                fontSize: TextNoteMarkupConstants.fontSize,
+              ),
+              decoration: const InputDecoration(
+                hintText: UiCopyConstants.textNoteHint,
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.all(
+                  UiLayoutConstants.dimensionLabelDialogFieldPadding,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: UiLayoutConstants.dimensionLabelDialogButtonTopGap,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text(UiCopyConstants.textNoteSkipButton),
+        ),
+        FilledButton(
+          onPressed: _submitNote,
+          child: const Text(UiCopyConstants.textNoteSaveButton),
         ),
       ],
     );

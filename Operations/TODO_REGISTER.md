@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\TODO_REGISTER.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-24`
+Last Updated: `2026-05-25`
 Purpose: Track planned and in-progress work items.
-Changes: Added post-MVP prioritized Critical/High/Medium backlog list (Phase 1K follow-up planning).
+Changes: Updated post-MVP backlog after Phase 1L Text Note Tool MVP (Text Note completed, voice-to-text deferred).
 
 ## Quick Rules
 - Keep IDs stable.
@@ -39,13 +39,14 @@ Changes: Added post-MVP prioritized Critical/High/Medium backlog list (Phase 1K 
 | `TODO-022` | `Import` | `Evaluate Windows-native HEIC decode fallback (codec/alternative package/service) after current sample conversion failure` | `High` | `NCD / M` | `Done` | `N/A` | `2026-05-24` |
 | `TODO-023` | `Import` | `Package Windows HEIC fallback dependency strategy (verify ImageMagick availability or provide bundled converter guidance for deployments where magick is missing)` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-024` | `Markup` | `Evaluate optional freehand path simplification/smoothing for long strokes after MVP stability` | `Low` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-025` | `Markup` | `Implement Text Note Tool MVP (create/edit/select/delete/export)` | `Critical` | `NCD / M` | `Done` | `N/A` | `2026-05-25` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
 |---|---|---|---|---|---|
 | `1` | `Runtime` | `Phase 1B image import` | `Done` | `Validation run complete` | `Changelog v0.3 entry + phase1b screenshot` |
 | `2` | `Manual QA` | `Interactive picker cancel/select validation` | `Open` | `Owner interactive pass` | `Pending` |
-| `3` | `MVP Tools` | `Dimension/Arrow/Rectangle/Circle-Oval delivered; remaining tools (freehand/text note/etc.) pending` | `In Progress` | `Owner validation and next-phase approval` | `Phase 1I code + tests complete` |
+| `3` | `MVP Tools` | `Dimension/Arrow/Rectangle/Circle-Oval/Freehand/Text Note delivered; remaining advanced workflow items tracked in roadmap` | `In Progress` | `Owner validation and next-phase approval` | `Phase 1L code + tests complete` |
 | `4` | `Structure` | `Lean-root + governance sync completion` | `Done` | `M-approved dirty-state continuation` | `Session + validation evidence` |
 | `5` | `Governance` | `Tunable constants standard adoption` | `Done` | `Governance v1.7 effective update` | `Constants file + policy/addendum sync` |
 | `6` | `Manual QA` | `Dimension line interactive field validation` | `Done` | `Owner Windows interactive run` | `Owner reported manual items 1-6 PASS + bounds fix PASS` |
@@ -90,8 +91,9 @@ Changes: Added post-MVP prioritized Critical/High/Medium backlog list (Phase 1K 
 ## Post-MVP Priority Backlog
 ### Critical (Open)
 1. Text Note Tool
-- Add independent text notes (not tied to dimension lines), touch-friendly entry, render/export support, and select/edit/delete parity.
-- Voice-to-text remains separate unless approved.
+- Status: `Done` (Phase 1L MVP complete).
+- Added independent text notes (not tied to dimension lines), touch-friendly entry, render/export support, and select/edit/delete parity.
+- Voice-to-text remains separate and deferred (see item 18).
 2. Editable Markup Save / Reopen
 - Save editable markup separately from exported PNG and reopen later with original image unchanged.
 - Keep standalone; no Control Center integration/autosave yet.

@@ -7,6 +7,7 @@ import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/main.dart';
 
@@ -104,6 +105,25 @@ void main() {
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
+  testWidgets('selecting text note without image does not crash', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    final Finder textNoteButton = find.widgetWithText(
+      OutlinedButton,
+      ToolbarConstants.textNote,
+    );
+    final Finder toolbarScrollable = find.byType(Scrollable);
+    await tester.scrollUntilVisible(
+      textNoteButton,
+      240,
+      scrollable: toolbarScrollable,
+    );
+    await tester.tap(textNoteButton);
+    await tester.pump();
+    expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
+  });
+
   testWidgets('export with no photo shows friendly warning', (
     WidgetTester tester,
   ) async {
@@ -170,12 +190,14 @@ void main() {
               rectangles: const <RectangleMarkup>[],
               ovals: const <OvalMarkup>[],
               freehands: const <FreehandMarkup>[],
+              textNotes: const <TextNoteMarkup>[],
               imageRect: const Rect.fromLTWH(20, 20, 460, 280),
               selectedDimensionId: null,
               selectedArrowId: null,
               selectedRectangleId: null,
               selectedOvalId: null,
               selectedFreehandId: null,
+              selectedTextNoteId: null,
               activeTool: MarkupTool.dimension,
               activeStart: const Offset(80, 220),
               activeEnd: const Offset(360, 240),

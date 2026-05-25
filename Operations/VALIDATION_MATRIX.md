@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\VALIDATION_MATRIX.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-23`
+Last Updated: `2026-05-25`
 Purpose: Track required validation activities and outcomes.
-Changes: Added Phase 1J HEIC/HEIF import validation gates and evidence status.
+Changes: Added Phase 1L Text Note Tool MVP validation gates and evidence status.
 
 ## Validation Matrix
 | ID | Validation | Command/Method | Trigger | Pass Criteria | Owner | Status | Evidence Path |
@@ -136,3 +136,9 @@ Changes: Added Phase 1J HEIC/HEIF import validation gates and evidence status.
 | `VAL-121` | Phase 1K Toolbar Safety Test | `flutter test` (`widget_test.dart`) | Freehand toolbar added | Selecting Freehand without photo remains safe (no crash) | `NCD / M` | `PASS` | `widget_test.dart selecting freehand without image does not crash` |
 | `VAL-122` | Phase 1K Manual Freehand Workflow | Manual interactive workflow (draw/select/erase/undo/export-after-delete) | Freehand MVP behavior changes | End-to-end freehand behavior verified interactively | `NCD / M` | `NOT_VALIDATED` | `Owner manual validation pending` |
 | `VAL-123` | Phase 1K HEIC+Freehand Combined Manual Check | Manual workflow with HEIC/HEIF import then freehand draw | Freehand + converted-image compatibility | Freehand drawing works on converted HEIC/HEIF image | `NCD / M` | `NOT_VALIDATED` | `Owner manual validation pending` |
+| `VAL-124` | Phase 1L Text Note Static/Unit Gate | `flutter analyze` + `flutter test` | Text Note MVP code changes | Analyzer/tests pass with text note integration and no regressions | `NCD / M` | `PASS` | `Terminal output 2026-05-25 (Phase 1L)` |
+| `VAL-125` | Phase 1L Text Note Build/Run Gate | `flutter build windows --debug` + `flutter run -d windows --debug --no-resident` | Text Note MVP runtime changes | Windows build/startup smoke pass with text note changes | `NCD / M` | `PASS` | `Terminal output 2026-05-25 (Phase 1L)` |
+| `VAL-126` | Phase 1L Text Note Model Tests | `flutter test` (`text_note_markup_test.dart`) | Text note model added | Anchor clamping/copy behavior validated | `NCD / M` | `PASS` | `text_note_markup_test.dart results` |
+| `VAL-127` | Phase 1L Text Note Toolbar Safety Test | `flutter test` (`widget_test.dart`) | Text note toolbar added | Selecting Text Note without photo remains safe (no crash) | `NCD / M` | `PASS` | `widget_test.dart selecting text note without image does not crash` |
+| `VAL-128` | Phase 1L Manual Text Note Workflow | Manual interactive workflow (create/edit/select/erase/delete/undo/export) | Text Note MVP behavior changes | End-to-end text note workflow verified interactively | `NCD / M` | `PASS` | `Owner reported manual Phase 1L required behavior PASS (2026-05-25)` |
+| `VAL-129` | Phase 1L HEIC+Text Note Combined Manual Check | Manual workflow with HEIC/HEIF import then text note placement | Text note + converted-image compatibility | Text note creation/edit works on converted HEIC/HEIF image | `NCD / M` | `NOT_VALIDATED` | `Owner manual validation pending` |

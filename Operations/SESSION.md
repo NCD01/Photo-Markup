@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\SESSION.md`
 Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-22`
+Last Updated: `2026-05-25`
 Purpose: Track concise session history and handoff state.
-Changes: Added Phase 1J HEIC/HEIF import support session and validation notes.
+Changes: Added Phase 1L Text Note Tool MVP session and validation notes.
 
 # SESSION_2026-05-22_0001_bootstrap_phase0
 
@@ -1610,3 +1610,86 @@ Changes: Added Phase 1J HEIC/HEIF import support session and validation notes.
 - No app code changed.
 - No app behavior changed.
 - No commit/push/version bump performed.
+
+# SESSION_2026-05-25_0016_phase1l_text_note_tool_mvp
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add Phase 1L Text Note Tool MVP for standalone field notes not tied to dimension lines.
+
+## Actions
+- Added text note model:
+  - `app/lib/features/markup/models/text_note_markup.dart`
+- Added new tool enum value:
+  - `MarkupTool.textNote`
+- Added centralized text note copy/style tunables:
+  - `UiCopyConstants` text note dialog/tool labels
+  - `TextNoteMarkupConstants` chip/selection/rendering thresholds
+- Updated `main.dart` to support:
+  - Text Note tool selection
+  - tap-to-create note flow
+  - tap-to-select + second-tap edit flow
+  - lifecycle-safe note dialog with owned controller
+  - erase/delete/backspace/undo integration for text notes
+- Updated overlay painter to render/select text note chips:
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+- Added tests:
+  - `app/test/text_note_markup_test.dart`
+  - `app/test/widget_test.dart` text-note safety coverage
+- Updated required docs for Phase 1L scope.
+
+## Logging/Debug Notes
+- Text note dialog uses state-owned `TextEditingController` and disposes only in widget `dispose`.
+- Selection hit-testing for text notes uses rendered chip bounds and centralized hit-distance thresholds.
+
+## Validation
+- `powershell -ExecutionPolicy Bypass -File scripts/verify-version-sync.ps1`: `PASS`
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+- Owner interactive manual text-note workflow: `NOT_VALIDATED` in this environment
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center integration added.
+- No project-folder autosave added.
+- No unrelated tools/shapes added.
+- No PDF/full-resolution export added.
+
+# SESSION_2026-05-25_0017_phase1l_commit_approval_rerun
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Re-run final validation and execute approved Phase 1L commit split to v0.16 with push.
+
+## Actions
+- Confirmed dirty files match approved Phase 1L scope only.
+- Re-ran required validation:
+  - `verify-version-sync.ps1`
+  - `flutter pub get`
+  - `flutter analyze`
+  - `flutter test`
+  - `flutter build windows --debug`
+  - `flutter run -d windows --debug --no-resident`
+  - `.agent_temp` ignore check
+  - tunable constants gate scan
+
+## Validation
+- All required checks passed for commit approval rerun.
+
+## Constraints Confirmed
+- No scope expansion beyond approved Phase 1L work.

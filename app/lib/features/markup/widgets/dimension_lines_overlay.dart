@@ -9,6 +9,7 @@ import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 
 class DimensionLinesOverlay extends StatefulWidget {
   const DimensionLinesOverlay({
@@ -18,12 +19,14 @@ class DimensionLinesOverlay extends StatefulWidget {
     required this.rectangles,
     required this.ovals,
     required this.freehands,
+    required this.textNotes,
     required this.imageRect,
     required this.selectedDimensionId,
     required this.selectedArrowId,
     required this.selectedRectangleId,
     required this.selectedOvalId,
     required this.selectedFreehandId,
+    required this.selectedTextNoteId,
     required this.activeTool,
     this.activeStart,
     this.activeEnd,
@@ -40,12 +43,14 @@ class DimensionLinesOverlay extends StatefulWidget {
   final List<RectangleMarkup> rectangles;
   final List<OvalMarkup> ovals;
   final List<FreehandMarkup> freehands;
+  final List<TextNoteMarkup> textNotes;
   final Rect imageRect;
   final int? selectedDimensionId;
   final int? selectedArrowId;
   final int? selectedRectangleId;
   final int? selectedOvalId;
   final int? selectedFreehandId;
+  final int? selectedTextNoteId;
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
@@ -135,12 +140,14 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
           rectangles: List<RectangleMarkup>.of(widget.rectangles),
           ovals: List<OvalMarkup>.of(widget.ovals),
           freehands: List<FreehandMarkup>.of(widget.freehands),
+          textNotes: List<TextNoteMarkup>.of(widget.textNotes),
           imageRect: widget.imageRect,
           selectedDimensionId: widget.selectedDimensionId,
           selectedArrowId: widget.selectedArrowId,
           selectedRectangleId: widget.selectedRectangleId,
           selectedOvalId: widget.selectedOvalId,
           selectedFreehandId: widget.selectedFreehandId,
+          selectedTextNoteId: widget.selectedTextNoteId,
           activeTool: widget.activeTool,
           activeStart: widget.activeStart,
           activeEnd: widget.activeEnd,
@@ -159,12 +166,14 @@ class _DimensionLinesPainter extends CustomPainter {
     required this.rectangles,
     required this.ovals,
     required this.freehands,
+    required this.textNotes,
     required this.imageRect,
     required this.selectedDimensionId,
     required this.selectedArrowId,
     required this.selectedRectangleId,
     required this.selectedOvalId,
     required this.selectedFreehandId,
+    required this.selectedTextNoteId,
     required this.activeTool,
     required this.activeStart,
     required this.activeEnd,
@@ -176,12 +185,14 @@ class _DimensionLinesPainter extends CustomPainter {
   final List<RectangleMarkup> rectangles;
   final List<OvalMarkup> ovals;
   final List<FreehandMarkup> freehands;
+  final List<TextNoteMarkup> textNotes;
   final Rect imageRect;
   final int? selectedDimensionId;
   final int? selectedArrowId;
   final int? selectedRectangleId;
   final int? selectedOvalId;
   final int? selectedFreehandId;
+  final int? selectedTextNoteId;
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
@@ -356,6 +367,11 @@ class _DimensionLinesPainter extends CustomPainter {
       );
     }
 
+    for (final TextNoteMarkup note in textNotes) {
+      final bool isSelected = selectedTextNoteId == note.id;
+      _drawTextNote(canvas, note, isSelected: isSelected);
+    }
+
     if (activeStart != null && activeEnd != null) {
       if (activeTool == MarkupTool.arrow) {
         _drawArrow(canvas, activeStart!, activeEnd!, arrowPaint);
@@ -405,6 +421,86 @@ class _DimensionLinesPainter extends CustomPainter {
       path.lineTo(points[i].dx, points[i].dy);
     }
     canvas.drawPath(path, paint);
+  }
+
+  void _drawTextNote(
+    Canvas canvas,
+    TextNoteMarkup note, {
+    required bool isSelected,
+  }) {
+    final String text = note.text.trim();
+    if (text.isEmpty) {
+      return;
+    }
+
+    final TextPainter textPainter =
+        TextPainter(
+          text: TextSpan(
+            text: text,
+            style: const TextStyle(
+              color: TextNoteMarkupConstants.textColor,
+              fontSize: TextNoteMarkupConstants.fontSize,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+          maxLines: 4,
+          ellipsis: '...',
+        )..layout(
+          maxWidth: imageRect.width * TextNoteMarkupConstants.maxWidthFactor,
+        );
+
+    final Offset anchor = note.anchorInRect(imageRect);
+    final Rect chipRect = _layoutNoteRect(anchor, textPainter);
+    final RRect chip = RRect.fromRectAndRadius(
+      chipRect,
+      const Radius.circular(TextNoteMarkupConstants.borderRadius),
+    );
+
+    final Paint fillPaint = Paint()
+      ..color = TextNoteMarkupConstants.backgroundColor
+      ..style = PaintingStyle.fill;
+    final Paint borderPaint = Paint()
+      ..color = isSelected
+          ? TextNoteMarkupConstants.selectedBorderColor
+          : TextNoteMarkupConstants.borderColor
+      ..strokeWidth = isSelected
+          ? TextNoteMarkupConstants.selectedBorderWidth
+          : TextNoteMarkupConstants.borderWidth
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawRRect(chip, fillPaint);
+    canvas.drawRRect(chip, borderPaint);
+    textPainter.paint(
+      canvas,
+      Offset(
+        chipRect.left + TextNoteMarkupConstants.horizontalPadding,
+        chipRect.top + TextNoteMarkupConstants.verticalPadding,
+      ),
+    );
+  }
+
+  Rect _layoutNoteRect(Offset anchor, TextPainter textPainter) {
+    final double width =
+        textPainter.width + (TextNoteMarkupConstants.horizontalPadding * 2);
+    final double height =
+        textPainter.height + (TextNoteMarkupConstants.verticalPadding * 2);
+
+    double left = anchor.dx;
+    double top = anchor.dy;
+
+    final double minLeft =
+        imageRect.left + TextNoteMarkupConstants.clampPadding;
+    final double maxLeft =
+        imageRect.right - width - TextNoteMarkupConstants.clampPadding;
+    final double minTop = imageRect.top + TextNoteMarkupConstants.clampPadding;
+    final double maxTop =
+        imageRect.bottom - height - TextNoteMarkupConstants.clampPadding;
+
+    left = left.clamp(minLeft, maxLeft >= minLeft ? maxLeft : minLeft);
+    top = top.clamp(minTop, maxTop >= minTop ? maxTop : minTop);
+
+    return Rect.fromLTWH(left, top, width, height);
   }
 
   void _drawOval(
@@ -598,12 +694,14 @@ class _DimensionLinesPainter extends CustomPainter {
         !listEquals(oldDelegate.rectangles, rectangles) ||
         !listEquals(oldDelegate.ovals, ovals) ||
         !listEquals(oldDelegate.freehands, freehands) ||
+        !listEquals(oldDelegate.textNotes, textNotes) ||
         oldDelegate.imageRect != imageRect ||
         oldDelegate.selectedDimensionId != selectedDimensionId ||
         oldDelegate.selectedArrowId != selectedArrowId ||
         oldDelegate.selectedRectangleId != selectedRectangleId ||
         oldDelegate.selectedOvalId != selectedOvalId ||
         oldDelegate.selectedFreehandId != selectedFreehandId ||
+        oldDelegate.selectedTextNoteId != selectedTextNoteId ||
         oldDelegate.activeTool != activeTool ||
         oldDelegate.activeStart != activeStart ||
         oldDelegate.activeEnd != activeEnd ||

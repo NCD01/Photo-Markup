@@ -4,9 +4,41 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-24`
+Last Updated: `2026-05-25`
 Purpose: Canonical changelog for project changes.
-Changes: Added post-MVP roadmap TODO documentation entry.
+Changes: Added Phase 1L Text Note Tool MVP entry.
+
+## Unreleased - 2026-05-25 (Phase 1L Text Note Tool MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Add standalone field text notes not tied to dimension lines.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/markup_tool.dart`
+  - `app/lib/features/markup/models/text_note_markup.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/test/text_note_markup_test.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added `Text Note` toolbar tool and `MarkupTool.textNote`.
+  - Added tap-to-create/tap-to-select/tap-again-to-edit note workflow.
+  - Added lifecycle-safe text note dialog (`TextEditingController` owned by dialog state).
+  - Added text note rendering with readable chip styling and selected highlight.
+  - Added erase/delete/backspace/undo integration for text notes.
+  - Preserved dimension/arrow/rectangle/oval/freehand/import/export behavior.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Voice-to-text remains deferred (tracked in TODO backlog).
 
 ## Unreleased - 2026-05-24 (Post-MVP Roadmap TODO Prioritization)
 - Owner: NCD / M

@@ -5,9 +5,9 @@ Version: `v0.5`
 Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-24`
+Last Updated: `2026-05-25`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1K Freehand Tool MVP architecture and behavior notes.
+Changes: Added Phase 1L Text Note Tool MVP architecture and behavior notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -15,7 +15,7 @@ Changes: Added Phase 1K Freehand Tool MVP architecture and behavior notes.
 - Structure/governance cleanup must not change runtime behavior.
 
 ## Required Contract
-Required sections are present and updated through Phase 1J.
+Required sections are present and updated through Phase 1L.
 
 ## Overview
 - App Name: `NCD Photo Markup`
@@ -28,7 +28,7 @@ Required sections are present and updated through Phase 1J.
 |---|---|---|---|
 | UI | `Shell screen, image import/open flow, canvas display, toolbar, and dimension overlay behavior` | `app/lib/main.dart` | `NCD / M` |
 | UI Config | `Centralized tunable constants for app copy/layout/theme/import labels/extensions/markup line styling` | `app/lib/core/constants/app_constants.dart` | `NCD / M` |
-| Markup Model | `Dimension line + arrow + rectangle + oval entities and tool enum` | `app/lib/features/markup/models/` | `NCD / M` |
+| Markup Model | `Dimension line + arrow + rectangle + oval + freehand + text note entities and tool enum` | `app/lib/features/markup/models/` | `NCD / M` |
 | Markup Widget | `Dimension lines overlay input capture, selection hit-testing, and custom rendering` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `NCD / M` |
 | Markup Utility | `Lightweight normalization for common measurement label formats` | `app/lib/features/markup/utils/dimension_label_formatter.dart` | `NCD / M` |
 | Import Service | `Converts HEIC/HEIF source files into temporary PNG working copies for canvas display` | `app/lib/features/import/services/image_import_service.dart` | `NCD / M` |
@@ -58,12 +58,15 @@ Required sections are present and updated through Phase 1J.
 | `Freehand Tool Selection` | `Freehand button toggles active freehand drawing mode with visible selected state` | `app/lib/main.dart` | `Runtime smoke + widget tests` |
 | `Freehand Draw` | `Drag on overlay creates persistent freehand strokes above image, clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` + `app/lib/features/markup/models/freehand_markup.dart` | `Model tests + runtime smoke` |
 | `Freehand Selection` | `Tap stroke to select; selected stroke shows highlighted visual state` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
+| `Text Note Tool Selection` | `Text Note button toggles active note placement mode with visible selected state` | `app/lib/main.dart` | `Runtime smoke + widget tests` |
+| `Text Note Create/Edit` | `Tap photo opens note dialog; Save creates/updates note at tapped anchor` | `app/lib/main.dart` + `app/lib/features/markup/models/text_note_markup.dart` | `Runtime smoke + model tests` |
+| `Text Note Selection` | `Tap note to select; tap selected note again to edit text` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Dimension Label Entry` | `After line creation, opens manual label dialog with Save/Skip options` | `app/lib/main.dart` | `Runtime smoke + formatter tests` |
 | `Dimension Label Render` | `Manual label appears near midpoint with readable background and bounds clamp` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Runtime smoke + code review` |
 | `Dimension Label Edit` | `Tap selected line again to re-open label dialog for updates` | `app/lib/main.dart` | `Runtime smoke + code review` |
-| `Erase Selected Markup` | `Erase button and Delete/Backspace remove selected dimension, arrow, rectangle, or oval immediately` | `app/lib/main.dart` | `Widget test (no-selection safety) + runtime smoke` |
+| `Erase Selected Markup` | `Erase button and Delete/Backspace remove selected dimension, arrow, rectangle, oval, freehand, or text note immediately` | `app/lib/main.dart` | `Widget test (no-selection safety) + runtime smoke` |
 | `Undo Dimension` | `Undo removes most recently added dimension line` | `app/lib/main.dart` | `Widget tests` |
-| `Undo Latest Markup` | `Undo removes latest remaining markup regardless of type (dimension, arrow, rectangle, or oval)` | `app/lib/main.dart` | `Runtime smoke + code review` |
+| `Undo Latest Markup` | `Undo removes latest remaining markup regardless of type (dimension, arrow, rectangle, oval, freehand, or text note)` | `app/lib/main.dart` | `Runtime smoke + code review` |
 | `Export PNG` | `Prompts user for save location and exports visible marked canvas as PNG` | `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart` | `Analyze/test/build/run + pending owner manual E2E` |
 | `Cancel Handling` | `Picker cancel leaves state stable and no crash` | `app/lib/main.dart` | `Runtime automation attempt + no runtime errors` |
 | `Other Toolbar Buttons` | `Remain placeholders with no markup behavior` | `app/lib/main.dart` | `Code review + widget/runtime observation` |
@@ -111,7 +114,7 @@ Required sections are present and updated through Phase 1J.
 ## Known Risks and Deferred Items
 | ID | Risk/Item | Owner | Target Date | Notes |
 |---|---|---|---|---|
-| `RISK-001` | `Dimension + Arrow + Rectangle + Circle/Oval tools exist; remaining tools are still placeholders` | `NCD / M` | `Phase 1I+` | `Intentional` |
+| `RISK-001` | `Core markup tools (dimension/arrow/rectangle/oval/freehand/text note) exist; advanced editing/persistence workflows are still deferred` | `NCD / M` | `Post-MVP phases` | `Intentional` |
 | `RISK-002` | `Android runtime behavior not validated` | `NCD / M` | `Later phase` | `Intentional` |
 | `RISK-003` | `Manual picker cancel/select steps not fully automatable in this environment` | `Codex` | `Next interactive validation` | `OS SendKeys blocked` |
 | `RISK-004` | `Interactive Windows manual drawing + label entry/edit validation still needed` | `NCD / M` | `Next owner interactive run` | `Automated tests cover logic but not full operator flow` |
@@ -123,7 +126,7 @@ Required sections are present and updated through Phase 1J.
 | `RISK-010` | `Desktop HEIC conversion now uses package-first plus external converter fallback; deployment environments must still provide fallback converter availability` | `NCD / M` | `Near-term validation cycle` | `Provided sample IMG_2434.HEIC now converts successfully; deployment hardening tracked in TODO-021/TODO-023` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.12`.
+- App bar shows `NCD Photo Markup` and `v0.15`.
 - Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
@@ -146,6 +149,7 @@ Required sections are present and updated through Phase 1J.
 - When a photo is loaded and Arrow is selected, pointer drag creates an arrow overlay with a visible arrowhead.
 - When a photo is loaded and Rectangle is selected, pointer drag creates a rectangle overlay with visible outline and transparent fill.
 - When a photo is loaded and Circle is selected, pointer drag creates an oval overlay with visible outline and transparent fill.
+- When a photo is loaded and Text Note is selected, tapping the image opens a note dialog and saves note chips anchored to the photo.
 - Dimension drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Arrow drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Rectangle drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
@@ -155,9 +159,10 @@ Required sections are present and updated through Phase 1J.
 - Tapping an arrow selects it for erase actions.
 - Tapping a rectangle selects it for erase actions.
 - Tapping an oval selects it for erase actions.
+- Tapping a text note selects it for erase/edit actions.
 - Selected lines render with highlighted stroke styling for clear visual feedback.
 - Erase removes the selected dimension/arrow (and dimension label); if nothing is selected, app shows a safe guidance message.
-- Erase removes the selected dimension/arrow/rectangle/oval (and dimension label); if nothing is selected, app shows a safe guidance message.
+- Erase removes the selected dimension/arrow/rectangle/oval/freehand/text note; if nothing is selected, app shows a safe guidance message.
 - Keyboard `Delete` and `Backspace` trigger the same selected-line erase path.
 - After line creation, label dialog allows manual text input or skip.
 - Pressing Enter/Done in the label input submits the same save path as tapping Save.
@@ -175,7 +180,7 @@ Required sections are present and updated through Phase 1J.
   - `6 6` -> `78"`
   - `5 10` -> `70"`
 - Non-measurement free text remains unchanged.
-- Undo removes the most recently created dimension line.
+- Undo removes the most recently created markup regardless of type.
 - Loaded-photo indicator shows selected file name.
 - Unsupported/unreadable image shows field-safe error message.
 - If HEIC/HEIF conversion fails, app shows HEIC-specific friendly field-safe message.
@@ -196,6 +201,8 @@ Required sections are present and updated through Phase 1J.
   - arrow style/arrowhead/selection tunables
   - rectangle outline/fill/selection tunables
   - oval outline/fill/selection tunables
+  - freehand stroke/selection/point-threshold tunables
+  - text note dialog copy and note chip style/selection tunables
 - Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages and are tracked in validation notes.
 - Splash duration remains tunable through `BrandingAssetConstants.startupSplashDurationMs`.
 - Splash footprint remains tunable through:

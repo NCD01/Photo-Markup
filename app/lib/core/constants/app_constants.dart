@@ -78,6 +78,10 @@ class UiCopyConstants {
   static const String dimensionLabelHint = 'Example: 72" or 6\'-0"';
   static const String dimensionLabelSaveButton = 'Save';
   static const String dimensionLabelSkipButton = 'Skip';
+  static const String textNoteDialogTitle = 'Text Note';
+  static const String textNoteHint = 'Example: Replace drywall here';
+  static const String textNoteSaveButton = 'Save';
+  static const String textNoteSkipButton = 'Skip';
   static const String exportNoPhotoMessage = 'Load a photo before exporting.';
   static const String exportSuccessMessage = 'Export complete.';
   static const String exportFailureMessage =
@@ -94,6 +98,7 @@ class ToolbarConstants {
   static const String circle = 'Circle';
   static const String rectangle = 'Rectangle';
   static const String freehand = 'Freehand';
+  static const String textNote = 'Text Note';
   static const String erase = 'Erase';
   static const String undo = 'Undo';
   static const String export = 'Export';
@@ -104,7 +109,7 @@ class ToolbarConstants {
     circle,
     rectangle,
     freehand,
-    'Text',
+    textNote,
     erase,
     undo,
     'Save',
@@ -225,6 +230,24 @@ class FreehandMarkupConstants {
   static const double pointMinDistance = 4;
   static const double selectionHitDistance = 24;
   static const int minimumPointCount = 2;
+}
+
+class TextNoteMarkupConstants {
+  const TextNoteMarkupConstants._();
+
+  static const Color textColor = Colors.black87;
+  static const Color backgroundColor = Color(0xD9FFFDE7);
+  static const Color borderColor = Color(0xFF5A4A00);
+  static const Color selectedBorderColor = AppThemeConstants.ncdBlue;
+  static const double borderWidth = 1.2;
+  static const double selectedBorderWidth = 2.2;
+  static const double fontSize = 15;
+  static const double horizontalPadding = 10;
+  static const double verticalPadding = 6;
+  static const double borderRadius = 8;
+  static const double clampPadding = 4;
+  static const double maxWidthFactor = 0.7;
+  static const double selectionHitDistance = 26;
 }
 
 class ExportConstants {

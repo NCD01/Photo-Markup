@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\FORM_DEFINITIONS.m
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-24`
+Last Updated: `2026-05-25`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1K Freehand Tool MVP behavior.
+Changes: Added Phase 1L Text Note Tool MVP form behavior.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -16,10 +16,12 @@ Changes: Added Phase 1K Freehand Tool MVP behavior.
 - `Rectangle Overlay Layer` (implemented)
 - `Circle/Oval Overlay Layer` (implemented)
 - `Freehand Overlay Layer` (implemented)
+- `Text Note Overlay Layer` (implemented)
 - `HEIC/HEIF Import Conversion Flow` (implemented)
 - `Dimension Label Dialog` (implemented)
+- `Text Note Dialog` (implemented)
 - `Export / Save Dialog` (implemented for PNG)
-- `Selected Dimension Erase Action` (implemented)
+- `Selected Markup Erase Action` (implemented)
 
 ## Field Work Forms
 ### `Shell` Forms
@@ -45,9 +47,8 @@ Changes: Added Phase 1K Freehand Tool MVP behavior.
 - `home`
 - Read/write behavior: `MIXED`
 - Notes:
-- `Open Photo + Dimension + Arrow + Rectangle + Circle + Undo are functional in this phase`
-- `Open Photo + Dimension + Arrow + Rectangle + Circle + Freehand + Undo are functional in this phase`
-- `Erase removes currently selected dimension line/arrow/rectangle/oval (+dimension label when applicable)`
+- `Open Photo + Dimension + Arrow + Rectangle + Circle + Freehand + Text Note + Undo are functional in this phase`
+- `Erase removes currently selected dimension/arrow/rectangle/oval/freehand/text note (+dimension label when applicable)`
 - `Open Photo supports jpg/jpeg/png/webp/heic/heif`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
 - `Startup splash image is scaled to fill most of startup screen`
@@ -111,6 +112,24 @@ Changes: Added Phase 1K Freehand Tool MVP behavior.
 - `Single tap selects line; second tap on selected line re-opens label edit`
 - `Selected line visual state is highlighted`
 - `Delete/Backspace keyboard keys erase selected line`
+
+#### `Text Note Overlay Layer`
+- Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+- Purpose: `Render text-note chips anchored to image-space points and support tap hit-testing/selection`
+- Parent/master form: `Photo Canvas Area`
+- Child components:
+- `Text chip painter`
+- `Selected note highlight state`
+- `Tap hit-distance logic tied to rendered chip rect`
+- Related widgets/components:
+- `DimensionLinesOverlay`
+- `TextNoteMarkup` model
+- Read/write behavior: `MIXED`
+- Notes:
+- `Text notes are clamped to displayed image bounds`
+- `Text notes render with readable font and contrast chip styling`
+- `Tap selected note again re-opens edit dialog`
+- `Erase/Delete/Backspace support text note deletion`
 
 #### `Freehand Overlay Layer`
 - Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
@@ -204,6 +223,25 @@ Changes: Added Phase 1K Freehand Tool MVP behavior.
 - `Dialog owns/disposes its own TextEditingController to avoid disposed-controller crashes during close/rebuild`
 - `Saved label repaint is immediate (no next-action refresh required)`
 
+#### `Text Note Dialog`
+- Source path: `app/lib/main.dart`
+- Purpose: `Create/edit standalone text notes not tied to dimension lines`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Large text entry field`
+- `Save action`
+- `Skip action`
+- Related widgets/components:
+- `AlertDialog` + `TextField`
+- `_TextNoteDialog` stateful widget
+- Read/write behavior: `MIXED`
+- Notes:
+- `Shown after tapping the image while Text Note tool is active`
+- `Tap selected text note again opens edit flow`
+- `Skip/Cancel closes dialog without creating/updating a note`
+- `Enter/Done key submits note as Save`
+- `Dialog owns/disposes its own TextEditingController to avoid disposed-controller crashes`
+
 #### `Export / Save Dialog`
 - Source path: `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart`
 - Purpose: `Prompt for output file location and export visible marked canvas PNG`
@@ -230,6 +268,8 @@ Changes: Added Phase 1K Freehand Tool MVP behavior.
 | `Touch Toolbar` | `Photo Markup Shell` | `Expose tool actions with selected/disabled state` | `app/lib/main.dart` |
 | `Dimension Overlay` | `Dimension Overlay Layer` | `Render and capture dimension line interactions` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` |
 | `Dimension Model` | `Dimension Overlay Layer` | `Store start/end coordinates for each line` | `app/lib/features/markup/models/dimension_line.dart` |
+| `Text Note Model` | `Text Note Overlay Layer` | `Store normalized anchor + text for each note` | `app/lib/features/markup/models/text_note_markup.dart` |
+| `Text Note Dialog` | `Text Note Dialog` | `Collect standalone note text with Save/Skip` | `app/lib/main.dart` |
 | `Oval Model` | `Circle/Oval Overlay Layer` | `Store start/end coordinates for each oval` | `app/lib/features/markup/models/oval_markup.dart` |
 | `Dimension Label Dialog` | `Dimension Label Dialog` | `Collect manual label text with Save/Skip` | `app/lib/main.dart` |
 | `Dimension Label Formatter` | `Dimension Label Dialog` | `Normalize common feet/inches inputs` | `app/lib/features/markup/utils/dimension_label_formatter.dart` |
