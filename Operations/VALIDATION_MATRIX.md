@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track required validation activities and outcomes.
-Changes: Added Phase 1P launch-context adapter validation gates and evidence status.
+Changes: Added Phase 1Q export-default and unsaved-guard validation gates and evidence status.
 
 ## Validation Matrix
 | ID | Validation | Command/Method | Trigger | Pass Criteria | Owner | Status | Evidence Path |
@@ -164,3 +164,7 @@ Changes: Added Phase 1P launch-context adapter validation gates and evidence sta
 | `VAL-149` | Phase 1P Standalone Regression Gate | `flutter analyze` + `flutter test` + `flutter run --no-resident` without launch args | Launch adapter startup wiring changed | App still starts/operates standalone with unchanged manual Open Photo flow | `NCD / M` | `PASS` | `Terminal output 2026-05-25 (Phase 1P)` |
 | `VAL-150` | Phase 1P Context UI Indicator Gate | `flutter test` (`widget_test.dart`) + runtime smoke | Optional context summary UI added | Context banner appears only when launch context exists and does not block normal workflow | `NCD / M` | `PASS` | `widget_test.dart launch context summary test + runtime smoke` |
 | `VAL-151` | Phase 1P Safety Boundary Gate | Code review + manual/runtime launch probes | Integration adapter introduced | No autosave, no auto-export, no project-folder writes, no direct Control Center code dependency | `NCD / M` | `PASS` | `main.dart + launch_context_service.dart + docs review` |
+| `VAL-152` | Phase 1Q Export Defaults Static/Unit Gate | `flutter analyze` + `flutter test` | Export default naming/location + unsaved guard changes | Analyzer/tests pass with no regressions; new export-path and unsaved-state tests pass | `NCD / M` | `PASS` | `Terminal output 2026-05-25 (Phase 1Q)` |
+| `VAL-153` | Phase 1Q Build/Run Gate | `flutter build windows --debug` + `flutter run -d windows --debug --no-resident` | Export workflow and guard logic changed | Windows build/startup smoke pass after Phase 1Q changes | `NCD / M` | `PASS` | `Terminal output 2026-05-25 (Phase 1Q)` |
+| `VAL-154` | Phase 1Q Launch-Context Default Folder Gate | `flutter run --dart-entrypoint-args=--launchContextPath=...` (valid + invalid source paths) | Source/suggested export default logic added | App starts with valid context image and fails safely with invalid source path without crash | `NCD / M` | `PASS` | `.agent_temp/diagnostics/phase1q_launch_context_valid.json + phase1q_launch_context_invalid.json` |
+| `VAL-155` | Phase 1Q Manual Export-Default/Unsaved Guard Workflow | Manual interactive export/open/close workflow | User-facing save defaults and unsaved warning behavior changed | Default filename/location and unsaved warnings verified interactively (Export/Discard/Cancel paths) | `NCD / M` | `NOT_VALIDATED` | `Owner manual validation pending` |

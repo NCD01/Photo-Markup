@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1P launch-context adapter form/field contract and context banner behavior.
+Changes: Added Phase 1Q export-default and unsaved-guard dialog definitions.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -304,7 +304,7 @@ Changes: Added Phase 1P launch-context adapter form/field contract and context b
 - `Advanced custom picker/user-default persistence remains deferred`
 
 #### `Export / Save Dialog`
-- Source path: `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart`
+- Source path: `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart` + `app/lib/features/export/services/markup_export_path_service.dart`
 - Purpose: `Prompt for output file location and export visible marked canvas PNG`
 - Parent/master form: `Photo Markup Shell`
 - Child components:
@@ -315,7 +315,26 @@ Changes: Added Phase 1P launch-context adapter form/field contract and context b
 - `Export is user-selected only; no automatic project-folder save`
 - `No-photo export shows friendly warning and does not crash`
 - `Cancel path performs no-op and does not crash`
+- `Default suggested output name is OriginalName - Markup.png`
+- `Default initial save folder uses valid launch suggestedExportFolder first, then source-image folder when available`
+- `If target exists, export path is incremented safely (for example: OriginalName - Markup 2.png)`
 - `Current export output is viewport-resolution capture (full-resolution export deferred)`
+
+#### `Unsaved Changes Guard Dialog`
+- Source path: `app/lib/main.dart` + `app/lib/features/markup/utils/unsaved_changes_tracker.dart`
+- Purpose: `Prevent accidental loss of markup edits when replacing the loaded image or leaving the shell route`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Warning title/body text`
+- `Export action`
+- `Discard action`
+- `Cancel action`
+- Read/write behavior: `MIXED`
+- Notes:
+- `Shown when unsaved markup changes exist and user attempts open-photo replacement or pop/close route action`
+- `Export runs normal manual PNG save flow and marks state clean on success`
+- `Discard clears unsaved flag for current session state transition`
+- `Cancel keeps current image/markups in place`
 
 ## Dependency/Component Map
 | Name | Form | Purpose | Path |
@@ -336,6 +355,8 @@ Changes: Added Phase 1P launch-context adapter form/field contract and context b
 | `Dimension Label Dialog` | `Dimension Label Dialog` | `Collect manual label text with Save/Skip` | `app/lib/main.dart` |
 | `Dimension Label Formatter` | `Dimension Label Dialog` | `Normalize common feet/inches inputs` | `app/lib/features/markup/utils/dimension_label_formatter.dart` |
 | `Export Service` | `Export / Save Dialog` | `Capture marked canvas and write PNG bytes` | `app/lib/features/export/services/marked_up_image_export_service.dart` |
+| `Export Path Service` | `Export / Save Dialog` | `Resolve default name/folder and duplicate-safe export path` | `app/lib/features/export/services/markup_export_path_service.dart` |
+| `Unsaved Changes Tracker` | `Unsaved Changes Guard Dialog` | `Track dirty/saved state for guard prompts` | `app/lib/features/markup/utils/unsaved_changes_tracker.dart` |
 
 ## Phase 1D Review Note
 - Dimension label entry/edit behavior is implemented on top of existing dimension overlay.

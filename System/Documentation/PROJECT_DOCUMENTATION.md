@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1P launch-context adapter contract and standalone-safe startup behavior notes.
+Changes: Added Phase 1Q export-default naming/location and unsaved-guard workflow notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -34,8 +34,10 @@ Required sections are present and updated through Phase 1O.
 | Markup Utility | `Lightweight normalization for common measurement label formats` | `app/lib/features/markup/utils/dimension_label_formatter.dart` | `NCD / M` |
 | Move Utility | `Whole-markup move translation/clamp helpers used by drag-selected move workflow` | `app/lib/features/markup/utils/markup_move_utils.dart` | `NCD / M` |
 | Handle Utility | `Endpoint/corner handle hit-testing and resize math helpers` | `app/lib/features/markup/utils/markup_handle_utils.dart` | `NCD / M` |
+| Unsaved State Utility | `Tracks markup dirty/saved state for guard prompts before replace/close actions` | `app/lib/features/markup/utils/unsaved_changes_tracker.dart` | `NCD / M` |
 | Import Service | `Converts HEIC/HEIF source files into temporary PNG working copies for canvas display` | `app/lib/features/import/services/image_import_service.dart` | `NCD / M` |
 | Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
+| Export Path Service | `Builds default export name/folder and duplicate-safe output path` | `app/lib/features/export/services/markup_export_path_service.dart` | `NCD / M` |
 | Launch Context Adapter | `Parses optional launch context args/file for client/project/source image bootstrap while preserving standalone fallback` | `app/lib/features/integration/models/ + app/lib/features/integration/services/launch_context_service.dart` | `NCD / M` |
 | API | `Not implemented` | `app/lib (planned)` | `NCD / M` |
 | Engine | `Not implemented` | `app/lib (planned)` | `NCD / M` |
@@ -113,6 +115,7 @@ Required sections are present and updated through Phase 1O.
   - Unknown fields are ignored.
   - Invalid/missing JSON context file is handled with friendly error copy.
   - Invalid/unsupported launch source image path is rejected with friendly error copy.
+  - `suggestedExportFolder` is used only as an export-dialog default location when valid; no automatic writes occur.
   - No autosave, no auto-export, and no direct writes to suggested folders in this phase.
   - No direct dependency on Control Center app internals.
 
@@ -165,7 +168,7 @@ Required sections are present and updated through Phase 1O.
 | `RISK-013` | `Control Center-side launcher and return/save handoff remain deferred; Phase 1P only adds adapter contract inside Photo Markup` | `NCD / M` | `Future integration phase` | `Tracked in TODO-030/TODO-031/TODO-032/TODO-033` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.19`.
+- App bar shows `NCD Photo Markup` and `v0.20`.
 - Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
@@ -221,8 +224,15 @@ Required sections are present and updated through Phase 1O.
 - Export button now performs explicit user-selected PNG export workflow:
   - no photo loaded: friendly warning message
   - cancel save dialog: no-op, no crash
+  - default suggested name: `OriginalName - Markup.png`
+  - default initial save folder: valid `suggestedExportFolder`, otherwise source-image folder when available
+  - duplicate filename safety: if target exists, output path auto-increments (`... - Markup 2.png`, `... - Markup 3.png`, ...)
   - selected path: writes PNG cropped to displayed photo rect containing photo + markups
   - original source image is not modified
+- If unsaved markup changes exist, open-photo replacement and pop/close route attempts show:
+  - `You have unsaved markup changes. Export or discard before continuing.`
+  - actions: `Export`, `Discard`, `Cancel`
+  - successful export marks state clean.
 - Exported markups preserve style colors/strokes/fills from each markup's stored style preset.
 - Quick-entry measurement normalization currently outputs inches:
   - `72` -> `72"`
@@ -255,6 +265,8 @@ Required sections are present and updated through Phase 1O.
   - markup move threshold/hit-distance/fine-delta/bounds-padding tunables
   - endpoint/resize handle radius, hit-distance, drag-threshold, and handle visual style tunables
   - style selector labels/copy and preset definitions (names/colors/fill/text-note chip colors)
+  - export default filename suffix, extension, and duplicate-name sequence tunables
+  - unsaved-change warning copy/action labels
 - Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages and are tracked in validation notes.
 - Splash duration remains tunable through `BrandingAssetConstants.startupSplashDurationMs`.
 - Splash footprint remains tunable through:

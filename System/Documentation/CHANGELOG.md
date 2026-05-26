@@ -6,7 +6,41 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1P Control Center launch-context adapter entry.
+Changes: Added Phase 1Q export defaults and unsaved-guard entry.
+
+## Unreleased - 2026-05-25 (Phase 1Q Save-Back Export Defaults + Unsaved Change Guard)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Make export defaults safer/faster for Control Center launch flows and protect in-session work before replace/close actions.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/export/services/markup_export_path_service.dart`
+  - `app/lib/features/markup/utils/unsaved_changes_tracker.dart`
+  - `app/test/markup_export_path_service_test.dart`
+  - `app/test/unsaved_changes_tracker_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added default export naming rule: `OriginalName - Markup.png`.
+  - Added default export folder resolver:
+    - valid `suggestedExportFolder` first
+    - otherwise source image folder
+    - otherwise existing save-dialog default behavior.
+  - Added duplicate-safe filename generation (`... - Markup 2.png`, `... - Markup 3.png`) to avoid overwrite by default.
+  - Added unsaved-change tracker and guard dialog with `Export`, `Discard`, `Cancel` flows for open-photo replacement and pop/close navigation attempts.
+  - Kept export user-triggered only (no auto-export, no project-folder autosave).
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `flutter run` with valid/invalid launch context JSON source paths: `PASS` (safe startup behavior)
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Native Windows close-edge interception hardening remains open for additional field validation (`TODO-034`).
 
 ## Unreleased - 2026-05-25 (Phase 1P Control Center Integration Adapter / Launch Contract)
 - Owner: NCD / M

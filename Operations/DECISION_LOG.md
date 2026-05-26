@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Record material architecture/process decisions.
-Changes: Added Phase 1P adapter-first launch contract decision for future Control Center integration.
+Changes: Added Phase 1Q export-default and unsaved-guard safety decision.
 
 ## DECISION-001
 - Date: 2026-05-22
@@ -156,5 +156,21 @@ Changes: Added Phase 1P adapter-first launch contract decision for future Contro
 - Impact: Added isolated launch context model/service, optional startup context display, optional source image open path, and safe fallback behavior when context is absent/invalid.
 - Rollback or Reversal: Remove adapter files and startup wiring; keep standalone startup path only.
 - Related Changes: Phase 1P Control Center Integration Adapter / Launch Contract (uncommitted workspace)
+- Review Date: N/A
+
+## DECISION-011
+- Date: 2026-05-25
+- Status: Accepted
+- Owner: NCD / M
+- Area: Export Workflow Safety
+- Decision: Use source/launch-context aware default PNG save path + duplicate-safe filename incrementing, and require unsaved-change guard choices (`Export`, `Discard`, `Cancel`) before replacing context/image or closing route.
+- Alternatives Considered:
+- Keep generic save dialog defaults with no source-folder targeting.
+- Allow silent overwrite of existing ` - Markup` outputs.
+- Warn only on close and not on image replacement.
+- Rationale: Aligns with field workflow while protecting source image and in-session markup work.
+- Impact: Export defaults now prefer launch `suggestedExportFolder`, then source image folder; default name is `OriginalName - Markup.png`; duplicate names auto-increment; unsaved guard paths are centralized in shell flow.
+- Rollback or Reversal: Remove path helper/guard logic and restore raw save-dialog-only flow.
+- Related Changes: Phase 1Q Save-Back Export Defaults + Unsaved Change Guard (uncommitted workspace)
 - Review Date: N/A
 

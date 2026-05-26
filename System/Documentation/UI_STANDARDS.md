@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1P launch-context summary banner pattern for optional integration context display.
+Changes: Added Phase 1Q unsaved-guard dialog and export-default naming/location UI pattern notes.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -46,6 +46,8 @@ Changes: Added Phase 1P launch-context summary banner pattern for optional integ
 - Import picker/file-type scope should list all currently supported image formats (`jpg/jpeg/png/webp/heic/heif`).
 - HEIC/HEIF conversion failures should use field-safe, non-technical guidance copy.
 - Optional launch context should render as a compact non-intrusive summary banner (client/project/source) and must not block normal standalone workflow.
+- Unsaved-change guard prompts should use clear action hierarchy: `Export` (primary), `Discard`, `Cancel`.
+- Export save defaults should prioritize predictable naming/location (`OriginalName - Markup.png` in source/suggested folder) while keeping export user-triggered only.
 
 ## Accessibility/Usability
 - Large tap targets for tablet use.

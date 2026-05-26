@@ -4,9 +4,11 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/features/export/services/markup_export_path_service.dart';
 import 'package:ncd_photo_markup/features/export/services/marked_up_image_export_service.dart';
 import 'package:ncd_photo_markup/features/integration/models/photo_markup_launch_context.dart';
 import 'package:ncd_photo_markup/features/integration/services/launch_context_service.dart';
@@ -22,11 +24,13 @@ import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
+import 'package:ncd_photo_markup/features/markup/utils/unsaved_changes_tracker.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 
 typedef OpenFileCallback = Future<XFile?> Function();
 typedef SaveLocationCallback =
     Future<FileSaveLocation?> Function({
+      String? initialDirectory,
       String? suggestedName,
       String? confirmButtonText,
       List<XTypeGroup> acceptedTypeGroups,
@@ -213,13 +217,17 @@ class PhotoMarkupShellScreen extends StatefulWidget {
 
 class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   final ImageImportService _imageImportService = ImageImportService();
+  static const MarkupExportPathService _markupExportPathService =
+      MarkupExportPathService();
   PhotoMarkupLaunchContext? _launchContext;
   String? _imagePath;
+  String? _loadedSourceImagePath;
   String? _temporaryConvertedImagePath;
   String? _loadedFileName;
   String? _errorMessage;
   bool _isPickingFile = false;
   bool _isExporting = false;
+  final UnsavedChangesTracker _unsavedChangesTracker = UnsavedChangesTracker();
   Size? _loadedImagePixelSize;
   final GlobalKey _canvasExportKey = GlobalKey();
 
@@ -298,7 +306,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         return;
       }
 
-      await _loadImageFromPath(selectedFile.path);
+      await _loadImageFromPath(selectedFile.path, requireUnsavedGuard: true);
       if (mounted) {
         setState(() {
           _isPickingFile = false;
@@ -315,7 +323,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   Future<void> _loadImageFromPath(
     String path, {
     bool showErrorForFailure = true,
+    bool requireUnsavedGuard = false,
   }) async {
+    if (requireUnsavedGuard) {
+      final bool canContinue = await _confirmUnsavedChangesBeforeContinuing();
+      if (!canContinue || !mounted) {
+        return;
+      }
+    }
+
     final String extension = _fileExtension(path);
     final bool isHeicSource = ImageImportConstants.heicExtensionsSet.contains(
       extension,
@@ -387,6 +403,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
 
     setState(() {
       _imagePath = importResult.displayPath;
+      _loadedSourceImagePath = path;
       _temporaryConvertedImagePath = importResult.usedTemporaryConvertedCopy
           ? importResult.displayPath
           : null;
@@ -407,6 +424,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       _activeHandleDragSession = null;
       _didMoveSelectedMarkup = false;
       _nextMarkupId = 1;
+      _unsavedChangesTracker.markSaved();
     });
   }
 
@@ -503,14 +521,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     }
   }
 
-  Future<void> _exportMarkedUpImage() async {
+  Future<bool> _exportMarkedUpImage() async {
     if (_isExporting) {
-      return;
+      return false;
     }
 
     if (_imagePath == null) {
       _showSnack(UiCopyConstants.exportNoPhotoMessage);
-      return;
+      return false;
     }
 
     setState(() {
@@ -518,16 +536,20 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     });
 
     try {
+      final String suggestedName = _suggestedExportName();
+      final String? initialDirectory = _preferredExportDirectory();
       final FileSaveLocation? saveLocation = widget.saveLocationOverride != null
           ? await widget.saveLocationOverride!(
-              suggestedName: _suggestedExportName(),
+              initialDirectory: initialDirectory,
+              suggestedName: suggestedName,
               confirmButtonText: ExportConstants.saveDialogConfirmButtonText,
               acceptedTypeGroups: const <XTypeGroup>[
                 ExportConstants.pngSaveTypeGroup,
               ],
             )
           : await getSaveLocation(
-              suggestedName: _suggestedExportName(),
+              initialDirectory: initialDirectory,
+              suggestedName: suggestedName,
               confirmButtonText: ExportConstants.saveDialogConfirmButtonText,
               acceptedTypeGroups: const <XTypeGroup>[
                 ExportConstants.pngSaveTypeGroup,
@@ -535,17 +557,18 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
             );
 
       if (!mounted || saveLocation == null || saveLocation.path.isEmpty) {
-        return;
+        return false;
       }
 
       final double pixelRatio = MediaQuery.of(
         context,
       ).devicePixelRatio.clamp(1.0, ExportConstants.maxPixelRatio);
-      final String outputPath = _normalizeExportPath(saveLocation.path);
+      final String outputPath = _markupExportPathService
+          .buildSafeMarkupExportPath(_normalizeExportPath(saveLocation.path));
       final Rect? exportCropRect = _computeExportCropRect();
       if (exportCropRect == null || exportCropRect.isEmpty) {
         _showSnack(UiCopyConstants.exportFailureMessage);
-        return;
+        return false;
       }
 
       await MarkedUpImageExportService.exportBoundaryToPng(
@@ -556,14 +579,19 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       );
 
       if (!mounted) {
-        return;
+        return true;
       }
+      setState(() {
+        _unsavedChangesTracker.markSaved();
+      });
       _showSnack(UiCopyConstants.exportSuccessMessage);
+      return true;
     } catch (_) {
       if (!mounted) {
-        return;
+        return false;
       }
       _showSnack(UiCopyConstants.exportFailureMessage);
+      return false;
     } finally {
       if (mounted) {
         setState(() {
@@ -574,21 +602,22 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   }
 
   String _suggestedExportName() {
-    final String sourceName = _loadedFileName ?? 'photo';
-    final int extensionIndex = sourceName.lastIndexOf('.');
-    final String baseName = extensionIndex > 0
-        ? sourceName.substring(0, extensionIndex)
-        : sourceName;
-    return '$baseName${ExportConstants.defaultFileSuffix}.${ExportConstants.outputExtension}';
+    final String sourceName =
+        _loadedSourceImagePath ?? _loadedFileName ?? 'photo';
+    return _markupExportPathService.buildDefaultMarkupExportName(
+      sourcePathOrFileName: sourceName,
+    );
+  }
+
+  String? _preferredExportDirectory() {
+    return _markupExportPathService.resolveDefaultExportDirectory(
+      suggestedExportFolder: _launchContext?.suggestedExportFolder,
+      sourceImagePath: _loadedSourceImagePath,
+    );
   }
 
   String _normalizeExportPath(String path) {
-    final String lowerPath = path.toLowerCase();
-    final String extension = '.${ExportConstants.outputExtension}';
-    if (lowerPath.endsWith(extension)) {
-      return path;
-    }
-    return '$path$extension';
+    return _markupExportPathService.ensurePngExtension(path);
   }
 
   Rect? _computeExportCropRect() {
@@ -604,6 +633,82 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  bool get _hasUnsavedMarkupChanges => _unsavedChangesTracker.hasUnsavedChanges;
+
+  @visibleForTesting
+  bool get debugHasUnsavedMarkupChanges => _hasUnsavedMarkupChanges;
+
+  @visibleForTesting
+  void debugSetUnsavedMarkupChanges(bool value) {
+    if (value) {
+      _unsavedChangesTracker.markDirty();
+    } else {
+      _unsavedChangesTracker.markSaved();
+    }
+  }
+
+  Future<bool> _confirmUnsavedChangesBeforeContinuing() async {
+    if (!_hasUnsavedMarkupChanges) {
+      return true;
+    }
+
+    final _UnsavedChangesDecision? decision = await _showUnsavedChangesDialog();
+    if (!mounted || decision == null) {
+      return false;
+    }
+
+    if (decision == _UnsavedChangesDecision.cancel) {
+      return false;
+    }
+
+    if (decision == _UnsavedChangesDecision.discard) {
+      setState(() {
+        _unsavedChangesTracker.markSaved();
+      });
+      return true;
+    }
+
+    final bool exported = await _exportMarkedUpImage();
+    return exported && !_hasUnsavedMarkupChanges;
+  }
+
+  Future<_UnsavedChangesDecision?> _showUnsavedChangesDialog() {
+    return showDialog<_UnsavedChangesDecision>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text(UiCopyConstants.unsavedChangesWarningTitle),
+          content: const Text(UiCopyConstants.unsavedChangesWarningBody),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(
+                dialogContext,
+              ).pop(_UnsavedChangesDecision.cancel),
+              child: const Text(UiCopyConstants.unsavedChangesCancelButton),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(
+                dialogContext,
+              ).pop(_UnsavedChangesDecision.discard),
+              child: const Text(UiCopyConstants.unsavedChangesDiscardButton),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(
+                dialogContext,
+              ).pop(_UnsavedChangesDecision.export),
+              child: const Text(UiCopyConstants.unsavedChangesExportButton),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<bool> _onShellWillPop() async {
+    final bool canClose = await _confirmUnsavedChangesBeforeContinuing();
+    return canClose;
   }
 
   bool get _showLaunchContextBanner =>
@@ -688,6 +793,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     setState(() {
       _selectedStylePresetId = selected;
       _applyStylePresetToSelectedMarkup(selected);
+      if (_hasSelectedMarkup) {
+        _unsavedChangesTracker.markDirty();
+      }
     });
     if (_hasSelectedMarkup) {
       _showSnack(UiCopyConstants.styleApplyToSelectedMessage);
@@ -941,6 +1049,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
           _clearMarkupSelection();
         }
       }
+      _unsavedChangesTracker.markDirty();
     });
   }
 
@@ -952,6 +1061,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
           (DimensionLine line) => line.id == selectedDimensionId,
         );
         _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
       });
       return;
     }
@@ -961,6 +1071,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       setState(() {
         _arrows.removeWhere((ArrowMarkup arrow) => arrow.id == selectedArrowId);
         _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
       });
       return;
     }
@@ -972,6 +1083,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
           (RectangleMarkup rectangle) => rectangle.id == selectedRectangleId,
         );
         _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
       });
       return;
     }
@@ -981,6 +1093,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       setState(() {
         _ovals.removeWhere((OvalMarkup oval) => oval.id == selectedOvalId);
         _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
       });
       return;
     }
@@ -992,6 +1105,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
           (FreehandMarkup freehand) => freehand.id == selectedFreehandId,
         );
         _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
       });
       return;
     }
@@ -1003,6 +1117,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
           (TextNoteMarkup textNote) => textNote.id == selectedTextNoteId,
         );
         _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
       });
       return;
     }
@@ -1106,6 +1221,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         setState(() {
           _arrows.add(arrow);
           _selectArrowById(arrow.id);
+          _unsavedChangesTracker.markDirty();
         });
       }
       return;
@@ -1128,6 +1244,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         setState(() {
           _freehands.add(freehand);
           _selectFreehandById(freehand.id);
+          _unsavedChangesTracker.markDirty();
         });
       }
       return;
@@ -1154,6 +1271,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         setState(() {
           _rectangles.add(rectangle);
           _selectRectangleById(rectangle.id);
+          _unsavedChangesTracker.markDirty();
         });
       }
       return;
@@ -1178,6 +1296,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         setState(() {
           _ovals.add(oval);
           _selectOvalById(oval.id);
+          _unsavedChangesTracker.markDirty();
         });
       }
       return;
@@ -1199,6 +1318,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
           _dimensionLines.add(line);
           newLineId = line.id;
           _selectDimensionById(line.id);
+          _unsavedChangesTracker.markDirty();
         }
       });
 
@@ -1239,6 +1359,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
           ? _dimensionLines[refreshIndex].copyWith(clearLabel: true)
           : _dimensionLines[refreshIndex].copyWith(label: normalized);
       _selectDimensionById(dimensionId);
+      _unsavedChangesTracker.markDirty();
     });
   }
 
@@ -1274,6 +1395,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     setState(() {
       _textNotes.add(note);
       _selectTextNoteById(note.id);
+      _unsavedChangesTracker.markDirty();
     });
   }
 
@@ -1304,6 +1426,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       setState(() {
         _textNotes.removeAt(refreshIndex);
         _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
       });
       return;
     }
@@ -1313,6 +1436,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         text: trimmed,
       );
       _selectTextNoteById(noteId);
+      _unsavedChangesTracker.markDirty();
     });
   }
 
@@ -1533,6 +1657,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     }
     setState(() {
       _dimensionLines[index] = updated;
+      _unsavedChangesTracker.markDirty();
     });
     return true;
   }
@@ -1564,6 +1689,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     }
     setState(() {
       _arrows[index] = updated;
+      _unsavedChangesTracker.markDirty();
     });
     return true;
   }
@@ -1601,6 +1727,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     }
     setState(() {
       _rectangles[index] = updated;
+      _unsavedChangesTracker.markDirty();
     });
     return true;
   }
@@ -1638,6 +1765,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     }
     setState(() {
       _ovals[index] = updated;
+      _unsavedChangesTracker.markDirty();
     });
     return true;
   }
@@ -1891,6 +2019,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     ).copyWith(label: line.label);
     setState(() {
       _dimensionLines[index] = movedLine;
+      _unsavedChangesTracker.markDirty();
     });
     return appliedDelta;
   }
@@ -1929,6 +2058,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     );
     setState(() {
       _arrows[index] = movedArrow;
+      _unsavedChangesTracker.markDirty();
     });
     return appliedDelta;
   }
@@ -1965,6 +2095,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     );
     setState(() {
       _rectangles[index] = movedRectangle;
+      _unsavedChangesTracker.markDirty();
     });
     return appliedDelta;
   }
@@ -2001,6 +2132,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     );
     setState(() {
       _ovals[index] = movedOval;
+      _unsavedChangesTracker.markDirty();
     });
     return appliedDelta;
   }
@@ -2035,6 +2167,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     );
     setState(() {
       _freehands[index] = movedFreehand;
+      _unsavedChangesTracker.markDirty();
     });
     return appliedDelta;
   }
@@ -2067,6 +2200,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     );
     setState(() {
       _textNotes[index] = movedNote;
+      _unsavedChangesTracker.markDirty();
     });
     return appliedDelta;
   }
@@ -2416,168 +2550,187 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     return Focus(
       autofocus: true,
       onKeyEvent: _onShellKeyEvent,
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: AppThemeConstants.ncdBlue,
-          foregroundColor: Colors.white,
-          leading: Padding(
-            padding: const EdgeInsets.all(
-              UiLayoutConstants.appBarBrandingIconPadding,
+      child: PopScope<void>(
+        canPop: !_hasUnsavedMarkupChanges,
+        onPopInvokedWithResult: (bool didPop, void _) async {
+          final NavigatorState navigator = Navigator.of(context);
+          if (didPop) {
+            return;
+          }
+          final bool canClose = await _onShellWillPop();
+          if (canClose && mounted) {
+            navigator.pop();
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            backgroundColor: AppThemeConstants.ncdBlue,
+            foregroundColor: Colors.white,
+            leading: Padding(
+              padding: const EdgeInsets.all(
+                UiLayoutConstants.appBarBrandingIconPadding,
+              ),
+              child: Image.asset(
+                BrandingAssetConstants.iconV15AssetPath,
+                fit: BoxFit.contain,
+                errorBuilder:
+                    (
+                      BuildContext context,
+                      Object error,
+                      StackTrace? stackTrace,
+                    ) {
+                      return const Icon(Icons.photo_camera_outlined);
+                    },
+              ),
             ),
-            child: Image.asset(
-              BrandingAssetConstants.iconV15AssetPath,
-              fit: BoxFit.contain,
-              errorBuilder:
-                  (BuildContext context, Object error, StackTrace? stackTrace) {
-                    return const Icon(Icons.photo_camera_outlined);
-                  },
-            ),
-          ),
-          title: const Text(AppConstants.appName),
-          actions: [
-            if (_loadedFileName != null)
-              ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: UiLayoutConstants.loadedNameMaxWidth,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    right: UiLayoutConstants.appBarLoadedNameRightPadding,
+            title: const Text(AppConstants.appName),
+            actions: [
+              if (_loadedFileName != null)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: UiLayoutConstants.loadedNameMaxWidth,
                   ),
-                  child: Center(
-                    child: Text(
-                      _loadedFileName!,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: UiLayoutConstants.loadedNameFontSize,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      right: UiLayoutConstants.appBarLoadedNameRightPadding,
                     ),
-                  ),
-                ),
-              ),
-            const Padding(
-              padding: EdgeInsets.only(
-                right: UiLayoutConstants.appBarVersionRightPadding,
-              ),
-              child: Center(
-                child: Text(
-                  AppConstants.appVersion,
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            if (_showLaunchContextBanner)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal:
-                      UiLayoutConstants.launchContextBannerHorizontalPadding,
-                  vertical:
-                      UiLayoutConstants.launchContextBannerVerticalPadding,
-                ),
-                color: AppThemeConstants.toolbarBackground,
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.link,
-                      size: UiLayoutConstants.launchContextBannerFontSize + 2,
-                      color: AppThemeConstants.ncdBlue,
-                    ),
-                    const SizedBox(
-                      width: UiLayoutConstants.launchContextBannerGap,
-                    ),
-                    Expanded(
+                    child: Center(
                       child: Text(
-                        _buildLaunchContextSummary(),
-                        maxLines: 1,
+                        _loadedFileName!,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize:
-                              UiLayoutConstants.launchContextBannerFontSize,
-                          fontWeight: FontWeight.w600,
+                          fontSize: UiLayoutConstants.loadedNameFontSize,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(
-                  UiLayoutConstants.canvasOuterPadding,
-                ),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(
-                      UiLayoutConstants.canvasBorderRadius,
-                    ),
-                    border: Border.all(
-                      color: AppThemeConstants.ncdBlue,
-                      width: UiLayoutConstants.canvasBorderWidth,
                     ),
                   ),
-                  child: _buildCanvasContent(),
+                ),
+              const Padding(
+                padding: EdgeInsets.only(
+                  right: UiLayoutConstants.appBarVersionRightPadding,
+                ),
+                child: Center(
+                  child: Text(
+                    AppConstants.appVersion,
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
-            ),
-            Container(
-              color: AppThemeConstants.toolbarBackground,
-              padding: const EdgeInsets.symmetric(
-                horizontal: UiLayoutConstants.toolbarHorizontalPadding,
-                vertical: UiLayoutConstants.toolbarVerticalPadding,
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    for (final String label in ToolbarConstants.labels)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: UiLayoutConstants.toolbarButtonGap,
-                        ),
-                        child: Builder(
-                          builder: (BuildContext context) {
-                            final String displayLabel =
-                                label == ToolbarConstants.style
-                                ? '${ToolbarConstants.style}: ${_selectedStylePreset.shortLabel}'
-                                : label;
-                            return _ToolbarActionButton(
-                              label: displayLabel,
-                              isSelected:
-                                  (label == ToolbarConstants.dimension &&
-                                      _selectedTool == MarkupTool.dimension) ||
-                                  (label == ToolbarConstants.arrow &&
-                                      _selectedTool == MarkupTool.arrow) ||
-                                  (label == ToolbarConstants.circle &&
-                                      _selectedTool == MarkupTool.oval) ||
-                                  (label == ToolbarConstants.rectangle &&
-                                      _selectedTool == MarkupTool.rectangle) ||
-                                  (label == ToolbarConstants.freehand &&
-                                      _selectedTool == MarkupTool.freehand) ||
-                                  (label == ToolbarConstants.textNote &&
-                                      _selectedTool == MarkupTool.textNote),
-                              isDisabled:
-                                  (label == ToolbarConstants.undo &&
-                                      !_isUndoEnabled()) ||
-                                  (label == ToolbarConstants.export &&
-                                      _isExporting),
-                              onPressed: () => _onToolbarPressed(label),
-                            );
-                          },
+            ],
+          ),
+          body: Column(
+            children: [
+              if (_showLaunchContextBanner)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal:
+                        UiLayoutConstants.launchContextBannerHorizontalPadding,
+                    vertical:
+                        UiLayoutConstants.launchContextBannerVerticalPadding,
+                  ),
+                  color: AppThemeConstants.toolbarBackground,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.link,
+                        size: UiLayoutConstants.launchContextBannerFontSize + 2,
+                        color: AppThemeConstants.ncdBlue,
+                      ),
+                      const SizedBox(
+                        width: UiLayoutConstants.launchContextBannerGap,
+                      ),
+                      Expanded(
+                        child: Text(
+                          _buildLaunchContextSummary(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize:
+                                UiLayoutConstants.launchContextBannerFontSize,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                  ],
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(
+                    UiLayoutConstants.canvasOuterPadding,
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(
+                        UiLayoutConstants.canvasBorderRadius,
+                      ),
+                      border: Border.all(
+                        color: AppThemeConstants.ncdBlue,
+                        width: UiLayoutConstants.canvasBorderWidth,
+                      ),
+                    ),
+                    child: _buildCanvasContent(),
+                  ),
                 ),
               ),
-            ),
-          ],
+              Container(
+                color: AppThemeConstants.toolbarBackground,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: UiLayoutConstants.toolbarHorizontalPadding,
+                  vertical: UiLayoutConstants.toolbarVerticalPadding,
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final String label in ToolbarConstants.labels)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: UiLayoutConstants.toolbarButtonGap,
+                          ),
+                          child: Builder(
+                            builder: (BuildContext context) {
+                              final String displayLabel =
+                                  label == ToolbarConstants.style
+                                  ? '${ToolbarConstants.style}: ${_selectedStylePreset.shortLabel}'
+                                  : label;
+                              return _ToolbarActionButton(
+                                label: displayLabel,
+                                isSelected:
+                                    (label == ToolbarConstants.dimension &&
+                                        _selectedTool ==
+                                            MarkupTool.dimension) ||
+                                    (label == ToolbarConstants.arrow &&
+                                        _selectedTool == MarkupTool.arrow) ||
+                                    (label == ToolbarConstants.circle &&
+                                        _selectedTool == MarkupTool.oval) ||
+                                    (label == ToolbarConstants.rectangle &&
+                                        _selectedTool ==
+                                            MarkupTool.rectangle) ||
+                                    (label == ToolbarConstants.freehand &&
+                                        _selectedTool == MarkupTool.freehand) ||
+                                    (label == ToolbarConstants.textNote &&
+                                        _selectedTool == MarkupTool.textNote),
+                                isDisabled:
+                                    (label == ToolbarConstants.undo &&
+                                        !_isUndoEnabled()) ||
+                                    (label == ToolbarConstants.export &&
+                                        _isExporting),
+                                onPressed: () => _onToolbarPressed(label),
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2731,6 +2884,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     );
   }
 }
+
+enum _UnsavedChangesDecision { export, discard, cancel }
 
 class _NearestMarkupHit {
   const _NearestMarkupHit({required this.markupId, required this.markupTool});

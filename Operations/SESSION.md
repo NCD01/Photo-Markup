@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track concise session history and handoff state.
-Changes: Added Phase 1P Control Center launch-context adapter session notes.
+Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 
 # SESSION_2026-05-22_0001_bootstrap_phase0
 
@@ -1742,6 +1742,62 @@ Changes: Added Phase 1P Control Center launch-context adapter session notes.
 - No project-folder autosave added.
 - No unrelated tools/shapes added.
 - No PDF/full-resolution export added.
+
+# SESSION_2026-05-25_0021_phase1q_export_defaults_unsaved_guard
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add export save-back defaults from launch/source context and unsaved-change guard behavior without adding autosave/auto-export.
+
+## Actions
+- Added `app/lib/features/export/services/markup_export_path_service.dart`:
+  - default export name builder (`OriginalName - Markup.png`)
+  - default export folder resolver (valid `suggestedExportFolder` first, then source image folder)
+  - safe duplicate filename strategy (`... - Markup 2.png`, `... - Markup 3.png`, ...)
+- Updated export flow in `app/lib/main.dart`:
+  - uses centralized export name/folder/path helpers
+  - keeps PNG-only export
+  - marks unsaved state clean after successful export
+- Added unsaved-change tracker utility:
+  - `app/lib/features/markup/utils/unsaved_changes_tracker.dart`
+  - integrated in shell state for dirty/saved transitions
+- Added unsaved-change guard dialog:
+  - copy: `You have unsaved markup changes. Export or discard before continuing.`
+  - choices: `Export`, `Discard`, `Cancel`
+  - applied to open-photo replacement flow and pop/close navigation flow.
+- Added/updated tests:
+  - `app/test/markup_export_path_service_test.dart`
+  - `app/test/unsaved_changes_tracker_test.dart`
+
+## Logging/Debug Notes
+- Root cause for save-back gap: export path/name logic used only file name suggestion and did not resolve default directory from launch/source context.
+- Chosen duplicate strategy: safe incremented filename generation (never overwrite source or existing markup export by default).
+- Initial widget-path unsaved tests were removed due deterministic timeout risk under animated picker/export flows; replaced with focused unit tests for path and unsaved-state logic.
+- No Control Center code or dependency boundaries changed.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.20`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `flutter run` with valid `--launchContextPath`: `PASS` (startup with context/image)
+- `flutter run` with invalid `--launchContextPath` source image: `PASS` (safe startup, no crash)
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (new suffix/copy/duplicate constants centralized)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center repo code changed.
+- No auto-export or project-folder autosave added.
+- No full-resolution export added.
+- No PDF export added.
 
 # SESSION_2026-05-25_0021_phase1n_commit_approval
 

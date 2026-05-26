@@ -146,6 +146,12 @@ class UiCopyConstants {
   static const String exportSuccessMessage = 'Export complete.';
   static const String exportFailureMessage =
       'Could not export this image. Please try again.';
+  static const String unsavedChangesWarningTitle = 'Unsaved Markups';
+  static const String unsavedChangesWarningBody =
+      'You have unsaved markup changes. Export or discard before continuing.';
+  static const String unsavedChangesExportButton = 'Export';
+  static const String unsavedChangesDiscardButton = 'Discard';
+  static const String unsavedChangesCancelButton = 'Cancel';
   static const String eraseNoSelectionMessage = 'Select a markup to erase.';
   static const String launchContextFileNotFoundMessage =
       'Launch context file was not found. You can still open a photo manually.';
@@ -353,7 +359,9 @@ class ExportConstants {
   static const String saveDialogConfirmButtonText = 'Export PNG';
   static const String saveTypeGroupLabel = 'PNG Image';
   static const String outputExtension = 'png';
-  static const String defaultFileSuffix = '_marked';
+  static const String defaultFileSuffix = ' - Markup';
+  static const String duplicateNameSeparator = ' ';
+  static const int duplicateNameStartIndex = 2;
   static const double maxPixelRatio = 3.0;
 
   static const XTypeGroup pngSaveTypeGroup = XTypeGroup(
