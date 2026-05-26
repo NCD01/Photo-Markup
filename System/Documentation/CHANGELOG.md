@@ -1051,3 +1051,15 @@ Changes: Added Phase 1Q export defaults and unsaved-guard entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.21 - 2026-05-26
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve markup export defaults and unsaved guard
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
