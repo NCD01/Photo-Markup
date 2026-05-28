@@ -5,15 +5,16 @@ Version: `v0.5`
 Pack File Version: `v1.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-22`
+Last Updated: `2026-05-27`
 Purpose: Owner-selection form for finalizing enforced UI standards.
-Changes: Reconfirmed baseline selections with Phase 1C startup maximize and larger splash presentation.
+Changes: Added Phase 1R note to keep Save/Open Markup as explicit user-triggered actions with predictable naming defaults.
 
 ## Purpose
 Use this form to select baseline UI standards before broad UI modernization.
 
 ## Status
 Completed baseline selection for current phase. Owner can revise selections later.
+- Phase 1R addendum: `Open Markup` and `Save Markup` remain explicit manual actions; no autosave or auto-export behavior is part of this UI pattern.
 
 ## 1. Color System Approval
 Brand/accent color:

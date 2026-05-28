@@ -5,9 +5,9 @@ Version: `v0.5`
 Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-25`
+Last Updated: `2026-05-27`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1Q export-default naming/location and unsaved-guard workflow notes.
+Changes: Added Phase 1R editable sidecar save/reopen architecture and behavior notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -35,6 +35,8 @@ Required sections are present and updated through Phase 1O.
 | Move Utility | `Whole-markup move translation/clamp helpers used by drag-selected move workflow` | `app/lib/features/markup/utils/markup_move_utils.dart` | `NCD / M` |
 | Handle Utility | `Endpoint/corner handle hit-testing and resize math helpers` | `app/lib/features/markup/utils/markup_handle_utils.dart` | `NCD / M` |
 | Unsaved State Utility | `Tracks markup dirty/saved state for guard prompts before replace/close actions` | `app/lib/features/markup/utils/unsaved_changes_tracker.dart` | `NCD / M` |
+| Editable Markup Model | `Typed sidecar schema model for persisted editable markup sessions` | `app/lib/features/markup/models/editable_markup_document.dart` | `NCD / M` |
+| Editable Markup Service | `Builds safe sidecar paths and reads/writes .ncdmarkup.json documents` | `app/lib/features/markup/services/editable_markup_document_service.dart` | `NCD / M` |
 | Import Service | `Converts HEIC/HEIF source files into temporary PNG working copies for canvas display` | `app/lib/features/import/services/image_import_service.dart` | `NCD / M` |
 | Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
 | Export Path Service | `Builds default export name/folder and duplicate-safe output path` | `app/lib/features/export/services/markup_export_path_service.dart` | `NCD / M` |
@@ -83,6 +85,8 @@ Required sections are present and updated through Phase 1O.
 | `Undo Dimension` | `Undo removes most recently added dimension line` | `app/lib/main.dart` | `Widget tests` |
 | `Undo Latest Markup` | `Undo removes latest remaining markup regardless of type (dimension, arrow, rectangle, oval, freehand, or text note)` | `app/lib/main.dart` | `Runtime smoke + code review` |
 | `Export PNG` | `Prompts user for save location and exports displayed photo area + markups as PNG (no outer letterbox/canvas whitespace)` | `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart` | `Analyze/test/build/run + pending owner manual E2E` |
+| `Save Markup` | `Prompts user for save location and writes editable sidecar (OriginalName - Markup.ncdmarkup.json)` | `app/lib/main.dart` + `app/lib/features/markup/services/editable_markup_document_service.dart` | `Service tests + runtime smoke` |
+| `Open Markup` | `Prompts user for sidecar file, loads source photo, and restores editable markups/styles` | `app/lib/main.dart` + `app/lib/features/markup/models/editable_markup_document.dart` | `Service tests + runtime smoke` |
 | `Cancel Handling` | `Picker cancel leaves state stable and no crash` | `app/lib/main.dart` | `Runtime automation attempt + no runtime errors` |
 | `Non-Approved Future Toolbar Actions` | `Any future actions outside approved scope remain placeholders until explicitly approved` | `app/lib/main.dart` | `Code review + widget/runtime observation` |
 | `Branding Assets` | `Startup splash and app bar icon load from app-local branding assets` | `app/assets/branding/` + `app/lib/main.dart` + `app/pubspec.yaml` | `Runtime smoke + asset registration review` |
@@ -168,7 +172,7 @@ Required sections are present and updated through Phase 1O.
 | `RISK-013` | `Control Center-side launcher and return/save handoff remain deferred; Phase 1P only adds adapter contract inside Photo Markup` | `NCD / M` | `Future integration phase` | `Tracked in TODO-030/TODO-031/TODO-032/TODO-033` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.20`.
+- App bar shows `NCD Photo Markup` and `v0.21`.
 - Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
@@ -234,6 +238,9 @@ Required sections are present and updated through Phase 1O.
   - actions: `Export`, `Discard`, `Cancel`
   - successful export marks state clean.
 - Exported markups preserve style colors/strokes/fills from each markup's stored style preset.
+- Save Markup defaults to `OriginalName - Markup.ncdmarkup.json` naming with duplicate-safe increment behavior.
+- Open Markup restores saved dimension/arrow/rectangle/oval/freehand/text note geometry and stored style preset IDs.
+- If sidecar source image is missing, app prompts user to locate the source image before restoring markups.
 - Quick-entry measurement normalization currently outputs inches:
   - `72` -> `72"`
   - `6 6` -> `78"`
@@ -266,6 +273,7 @@ Required sections are present and updated through Phase 1O.
   - endpoint/resize handle radius, hit-distance, drag-threshold, and handle visual style tunables
   - style selector labels/copy and preset definitions (names/colors/fill/text-note chip colors)
   - export default filename suffix, extension, and duplicate-name sequence tunables
+  - editable markup sidecar schema version, extension, dialog labels, and duplicate-name sequence tunables
   - unsaved-change warning copy/action labels
 - Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages and are tracked in validation notes.
 - Splash duration remains tunable through `BrandingAssetConstants.startupSplashDurationMs`.

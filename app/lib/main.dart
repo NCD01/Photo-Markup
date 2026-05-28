@@ -15,12 +15,14 @@ import 'package:ncd_photo_markup/features/integration/services/launch_context_se
 import 'package:ncd_photo_markup/features/import/services/image_import_service.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
+import 'package:ncd_photo_markup/features/markup/models/editable_markup_document.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
+import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
@@ -219,6 +221,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   final ImageImportService _imageImportService = ImageImportService();
   static const MarkupExportPathService _markupExportPathService =
       MarkupExportPathService();
+  static const EditableMarkupDocumentService _editableMarkupDocumentService =
+      EditableMarkupDocumentService();
   PhotoMarkupLaunchContext? _launchContext;
   String? _imagePath;
   String? _loadedSourceImagePath;
@@ -227,6 +231,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   String? _errorMessage;
   bool _isPickingFile = false;
   bool _isExporting = false;
+  bool _isSavingMarkupDocument = false;
   final UnsavedChangesTracker _unsavedChangesTracker = UnsavedChangesTracker();
   Size? _loadedImagePixelSize;
   final GlobalKey _canvasExportKey = GlobalKey();
@@ -320,7 +325,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     }
   }
 
-  Future<void> _loadImageFromPath(
+  Future<bool> _loadImageFromPath(
     String path, {
     bool showErrorForFailure = true,
     bool requireUnsavedGuard = false,
@@ -328,7 +333,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
     if (requireUnsavedGuard) {
       final bool canContinue = await _confirmUnsavedChangesBeforeContinuing();
       if (!canContinue || !mounted) {
-        return;
+        return false;
       }
     }
 
@@ -340,7 +345,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       if (showErrorForFailure) {
         _setLoadError();
       }
-      return;
+      return false;
     }
 
     final File imageFile = File(path);
@@ -348,7 +353,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       if (showErrorForFailure) {
         _setLoadError();
       }
-      return;
+      return false;
     }
 
     late final ImageImportResult importResult;
@@ -364,7 +369,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
               : ImageImportConstants.openErrorMessage,
         );
       }
-      return;
+      return false;
     }
 
     final Size? imageSize = await _readImagePixelSize(importResult.displayPath);
@@ -381,7 +386,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
               : ImageImportConstants.openErrorMessage,
         );
       }
-      return;
+      return false;
     }
 
     final String? previousTemporaryPath = _temporaryConvertedImagePath;
@@ -391,7 +396,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
           importResult.displayPath,
         );
       }
-      return;
+      return false;
     }
 
     if (previousTemporaryPath != null &&
@@ -426,6 +431,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
       _nextMarkupId = 1;
       _unsavedChangesTracker.markSaved();
     });
+    return true;
   }
 
   Future<Size?> _readImagePixelSize(String imagePath) async {
@@ -455,6 +461,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   void _onToolbarPressed(String label) {
     if (label == ToolbarConstants.openPhoto) {
       _openPhoto();
+      return;
+    }
+
+    if (label == ToolbarConstants.openMarkup) {
+      _openMarkupDocument();
+      return;
+    }
+
+    if (label == ToolbarConstants.saveMarkup) {
+      _saveMarkupDocument();
       return;
     }
 
@@ -599,6 +615,299 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
         });
       }
     }
+  }
+
+  Future<void> _openMarkupDocument() async {
+    if (_isPickingFile || _isExporting || _isSavingMarkupDocument) {
+      return;
+    }
+
+    final bool canContinue = await _confirmUnsavedChangesBeforeContinuing();
+    if (!canContinue || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isPickingFile = true;
+    });
+
+    try {
+      final XFile? selectedFile = await openFile(
+        acceptedTypeGroups: const <XTypeGroup>[
+          EditableMarkupConstants.markupOpenTypeGroup,
+        ],
+        confirmButtonText: EditableMarkupConstants.openDialogConfirmButtonText,
+      );
+
+      if (!mounted) {
+        return;
+      }
+      if (selectedFile == null || selectedFile.path.trim().isEmpty) {
+        setState(() {
+          _isPickingFile = false;
+        });
+        return;
+      }
+
+      final EditableMarkupDocument document =
+          await _editableMarkupDocumentService.readDocument(selectedFile.path);
+      final String? sourceImagePath = await _resolveSourceImagePathForDocument(
+        document,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (sourceImagePath == null || sourceImagePath.isEmpty) {
+        setState(() {
+          _isPickingFile = false;
+        });
+        return;
+      }
+
+      final bool imageLoaded = await _loadImageFromPath(
+        sourceImagePath,
+        showErrorForFailure: true,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (!imageLoaded) {
+        setState(() {
+          _isPickingFile = false;
+        });
+        return;
+      }
+
+      setState(() {
+        _applyEditableMarkupDocument(document);
+        _unsavedChangesTracker.markSaved();
+        _isPickingFile = false;
+      });
+      _showSnack(UiCopyConstants.markupDocumentOpenSuccessMessage);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isPickingFile = false;
+      });
+      _showSnack(UiCopyConstants.markupDocumentOpenFailureMessage);
+    }
+  }
+
+  Future<void> _saveMarkupDocument() async {
+    if (_isSavingMarkupDocument || _isExporting || _isPickingFile) {
+      return;
+    }
+    if (_imagePath == null || _loadedSourceImagePath == null) {
+      _showSnack(UiCopyConstants.markupDocumentSaveNoPhotoMessage);
+      return;
+    }
+
+    setState(() {
+      _isSavingMarkupDocument = true;
+    });
+
+    try {
+      final String suggestedName = _suggestedMarkupDocumentName();
+      final String? initialDirectory = _preferredMarkupDocumentDirectory();
+      final FileSaveLocation? saveLocation = await getSaveLocation(
+        initialDirectory: initialDirectory,
+        suggestedName: suggestedName,
+        confirmButtonText: EditableMarkupConstants.saveDialogConfirmButtonText,
+        acceptedTypeGroups: const <XTypeGroup>[
+          EditableMarkupConstants.markupSaveTypeGroup,
+        ],
+      );
+
+      if (!mounted || saveLocation == null || saveLocation.path.isEmpty) {
+        return;
+      }
+
+      final EditableMarkupDocument document = _buildEditableMarkupDocument();
+      final String safePath = _editableMarkupDocumentService
+          .buildSafeEditableMarkupPath(
+            _normalizeMarkupDocumentPath(saveLocation.path),
+          );
+      await _editableMarkupDocumentService.saveDocument(
+        document: document,
+        outputPath: safePath,
+      );
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _unsavedChangesTracker.markSaved();
+      });
+      _showSnack(UiCopyConstants.markupDocumentSaveSuccessMessage);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      _showSnack(UiCopyConstants.markupDocumentSaveFailureMessage);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingMarkupDocument = false;
+        });
+      }
+    }
+  }
+
+  EditableMarkupDocument _buildEditableMarkupDocument() {
+    return EditableMarkupDocument(
+      schemaVersion: EditableMarkupConstants.schemaVersion,
+      appVersion: AppConstants.appVersion,
+      savedAtUtc: DateTime.now().toUtc().toIso8601String(),
+      sourceImagePath: _loadedSourceImagePath ?? '',
+      sourceImageFileName: _loadedFileName ?? '',
+      imagePixelSize: _loadedImagePixelSize,
+      activeStylePresetId: _selectedStylePresetId,
+      nextMarkupId: _nextMarkupId,
+      dimensionLines: List<DimensionLine>.unmodifiable(_dimensionLines),
+      arrows: List<ArrowMarkup>.unmodifiable(_arrows),
+      rectangles: List<RectangleMarkup>.unmodifiable(_rectangles),
+      ovals: List<OvalMarkup>.unmodifiable(_ovals),
+      freehands: List<FreehandMarkup>.unmodifiable(_freehands),
+      textNotes: List<TextNoteMarkup>.unmodifiable(_textNotes),
+    );
+  }
+
+  void _applyEditableMarkupDocument(EditableMarkupDocument document) {
+    _selectedStylePresetId = document.activeStylePresetId;
+    _clearMarkupSelection();
+    _selectedTool = MarkupTool.none;
+    _activeDimensionStart = null;
+    _activeDimensionCurrent = null;
+    _activeFreehandPoints.clear();
+    _activeMoveSession = null;
+    _activeHandleDragSession = null;
+    _didMoveSelectedMarkup = false;
+    _dimensionLines
+      ..clear()
+      ..addAll(document.dimensionLines);
+    _arrows
+      ..clear()
+      ..addAll(document.arrows);
+    _rectangles
+      ..clear()
+      ..addAll(document.rectangles);
+    _ovals
+      ..clear()
+      ..addAll(document.ovals);
+    _freehands
+      ..clear()
+      ..addAll(document.freehands);
+    _textNotes
+      ..clear()
+      ..addAll(document.textNotes);
+
+    int maxId = 0;
+    for (final DimensionLine line in _dimensionLines) {
+      if (line.id > maxId) {
+        maxId = line.id;
+      }
+    }
+    for (final ArrowMarkup arrow in _arrows) {
+      if (arrow.id > maxId) {
+        maxId = arrow.id;
+      }
+    }
+    for (final RectangleMarkup rectangle in _rectangles) {
+      if (rectangle.id > maxId) {
+        maxId = rectangle.id;
+      }
+    }
+    for (final OvalMarkup oval in _ovals) {
+      if (oval.id > maxId) {
+        maxId = oval.id;
+      }
+    }
+    for (final FreehandMarkup freehand in _freehands) {
+      if (freehand.id > maxId) {
+        maxId = freehand.id;
+      }
+    }
+    for (final TextNoteMarkup note in _textNotes) {
+      if (note.id > maxId) {
+        maxId = note.id;
+      }
+    }
+    _nextMarkupId = math.max(document.nextMarkupId, maxId + 1);
+  }
+
+  Future<String?> _resolveSourceImagePathForDocument(
+    EditableMarkupDocument document,
+  ) async {
+    final String sourcePath = document.sourceImagePath.trim();
+    if (sourcePath.isNotEmpty && File(sourcePath).existsSync()) {
+      return sourcePath;
+    }
+
+    final String message = sourcePath.isEmpty
+        ? UiCopyConstants.markupDocumentNoSourceMessage
+        : UiCopyConstants.markupDocumentMissingSourceMessage;
+    final bool shouldLocate = await _showLocateSourceImageDialog(message);
+    if (!mounted || !shouldLocate) {
+      return null;
+    }
+    final XFile? selectedImage = await openFile(
+      acceptedTypeGroups: const <XTypeGroup>[
+        ImageImportConstants.imageTypeGroup,
+      ],
+      confirmButtonText: ImageImportConstants.pickerConfirmButtonText,
+    );
+    if (selectedImage == null || selectedImage.path.trim().isEmpty) {
+      return null;
+    }
+    return selectedImage.path.trim();
+  }
+
+  Future<bool> _showLocateSourceImageDialog(String body) async {
+    final bool? shouldLocate = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text(UiCopyConstants.markupDocumentMissingSourceTitle),
+          content: Text(body),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text(UiCopyConstants.markupDocumentCancelButton),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text(
+                UiCopyConstants.markupDocumentLocateImageButton,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    return shouldLocate ?? false;
+  }
+
+  String _suggestedMarkupDocumentName() {
+    final String sourceName =
+        _loadedSourceImagePath ?? _loadedFileName ?? 'photo';
+    return _editableMarkupDocumentService.buildDefaultMarkupFileName(
+      sourcePathOrFileName: sourceName,
+    );
+  }
+
+  String? _preferredMarkupDocumentDirectory() {
+    return _editableMarkupDocumentService.resolveDefaultMarkupDirectory(
+      suggestedEditableMarkupFolder:
+          _launchContext?.suggestedEditableMarkupFolder,
+      suggestedExportFolder: _launchContext?.suggestedExportFolder,
+      sourceImagePath: _loadedSourceImagePath,
+    );
+  }
+
+  String _normalizeMarkupDocumentPath(String path) {
+    return _editableMarkupDocumentService.ensureEditableMarkupExtension(path);
   }
 
   String _suggestedExportName() {
@@ -2716,6 +3025,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
                                     (label == ToolbarConstants.textNote &&
                                         _selectedTool == MarkupTool.textNote),
                                 isDisabled:
+                                    (label == ToolbarConstants.saveMarkup &&
+                                        _isSavingMarkupDocument) ||
                                     (label == ToolbarConstants.undo &&
                                         !_isUndoEnabled()) ||
                                     (label == ToolbarConstants.export &&

@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\FORM_DEFINITIONS.m
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-25`
+Last Updated: `2026-05-27`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1Q export-default and unsaved-guard dialog definitions.
+Changes: Added Phase 1R Save Markup and Open Markup dialog/workflow definitions.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -319,6 +319,36 @@ Changes: Added Phase 1Q export-default and unsaved-guard dialog definitions.
 - `Default initial save folder uses valid launch suggestedExportFolder first, then source-image folder when available`
 - `If target exists, export path is incremented safely (for example: OriginalName - Markup 2.png)`
 - `Current export output is viewport-resolution capture (full-resolution export deferred)`
+
+#### `Save Markup Dialog`
+- Source path: `app/lib/main.dart` + `app/lib/features/markup/services/editable_markup_document_service.dart`
+- Purpose: `Prompt for editable sidecar save location and write .ncdmarkup.json document`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Save location prompt`
+- `Success/failure feedback snackbar`
+- Read/write behavior: `WRITE_ONLY`
+- Notes:
+- `Save is user-triggered only (no autosave)`
+- `Default sidecar name is OriginalName - Markup.ncdmarkup.json`
+- `Default folder prefers launch suggestedEditableMarkupFolder, then launch suggestedExportFolder, then source-image folder`
+- `If target exists, sidecar path is incremented safely (for example: OriginalName - Markup 2.ncdmarkup.json)`
+- `Successful save marks unsaved state clean`
+
+#### `Open Markup Dialog`
+- Source path: `app/lib/main.dart` + `app/lib/features/markup/models/editable_markup_document.dart`
+- Purpose: `Open editable sidecar and restore source image + markup state`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Open file prompt`
+- `Missing source image locate prompt`
+- `Success/failure feedback snackbar`
+- Read/write behavior: `READ_ONLY`
+- Notes:
+- `Open is user-triggered only`
+- `Reopen restores dimension/arrow/rectangle/oval/freehand/text note markups and style preset ids`
+- `If source image path is missing/invalid, app prompts user to locate source image before restore`
+- `Successful reopen marks unsaved state clean`
 
 #### `Unsaved Changes Guard Dialog`
 - Source path: `app/lib/main.dart` + `app/lib/features/markup/utils/unsaved_changes_tracker.dart`

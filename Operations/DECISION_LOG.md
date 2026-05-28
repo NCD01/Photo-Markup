@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\DECISION_LOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-25`
+Last Updated: `2026-05-27`
 Purpose: Record material architecture/process decisions.
-Changes: Added Phase 1Q export-default and unsaved-guard safety decision.
+Changes: Added Phase 1R editable sidecar persistence decision.
 
 ## DECISION-001
 - Date: 2026-05-22
@@ -172,5 +172,20 @@ Changes: Added Phase 1Q export-default and unsaved-guard safety decision.
 - Impact: Export defaults now prefer launch `suggestedExportFolder`, then source image folder; default name is `OriginalName - Markup.png`; duplicate names auto-increment; unsaved guard paths are centralized in shell flow.
 - Rollback or Reversal: Remove path helper/guard logic and restore raw save-dialog-only flow.
 - Related Changes: Phase 1Q Save-Back Export Defaults + Unsaved Change Guard (uncommitted workspace)
+- Review Date: N/A
+
+## DECISION-012
+- Date: 2026-05-27
+- Status: Accepted
+- Owner: NCD / M
+- Area: Editable Markup Persistence
+- Decision: Use a standalone JSON sidecar format (`.ncdmarkup.json`) with centralized schema versioning and duplicate-safe naming, triggered by explicit user `Save Markup`/`Open Markup` actions only.
+- Alternatives Considered:
+- Persist editable state only in memory and require redraw after reopen.
+- Auto-save sidecar on every export or launch-context event.
+- Rationale: Delivers editable reopen capability without coupling to Control Center or introducing autosave risk to project/source folders.
+- Impact: Added document model/service, toolbar save/open actions, source-image locate fallback for missing paths, and unsaved-state integration on successful save/reopen.
+- Rollback or Reversal: Remove sidecar model/service and toolbar actions; keep PNG export-only workflow.
+- Related Changes: Phase 1R Editable Markup Save / Reopen MVP (uncommitted workspace)
 - Review Date: N/A
 

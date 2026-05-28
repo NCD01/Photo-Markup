@@ -189,6 +189,29 @@ void main() {
     expect(find.text(UiCopyConstants.exportNoPhotoMessage), findsOneWidget);
   });
 
+  testWidgets('save markup with no photo shows friendly warning', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    final Finder saveMarkupButton = find.widgetWithText(
+      OutlinedButton,
+      ToolbarConstants.saveMarkup,
+    );
+    final Finder toolbarScrollable = find.byType(Scrollable);
+    await tester.scrollUntilVisible(
+      saveMarkupButton,
+      240,
+      scrollable: toolbarScrollable,
+    );
+    await tester.tap(saveMarkupButton);
+    await tester.pump();
+
+    expect(
+      find.text(UiCopyConstants.markupDocumentSaveNoPhotoMessage),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('erase with no selected line shows gentle message', (
     WidgetTester tester,
   ) async {

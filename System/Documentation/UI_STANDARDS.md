@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-25`
+Last Updated: `2026-05-27`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1Q unsaved-guard dialog and export-default naming/location UI pattern notes.
+Changes: Added Phase 1R editable sidecar save/open UI pattern notes.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -48,6 +48,8 @@ Changes: Added Phase 1Q unsaved-guard dialog and export-default naming/location 
 - Optional launch context should render as a compact non-intrusive summary banner (client/project/source) and must not block normal standalone workflow.
 - Unsaved-change guard prompts should use clear action hierarchy: `Export` (primary), `Discard`, `Cancel`.
 - Export save defaults should prioritize predictable naming/location (`OriginalName - Markup.png` in source/suggested folder) while keeping export user-triggered only.
+- Editable sidecar actions should stay explicit (`Open Markup`, `Save Markup`) and never auto-run.
+- Editable sidecar defaults should use predictable naming/location (`OriginalName - Markup.ncdmarkup.json`) with duplicate-safe increment behavior.
 
 ## Accessibility/Usability
 - Large tap targets for tablet use.

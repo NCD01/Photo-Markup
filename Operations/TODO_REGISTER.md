@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\TODO_REGISTER.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-25`
+Last Updated: `2026-05-27`
 Purpose: Track planned and in-progress work items.
-Changes: Updated for Phase 1Q export-defaults/unsaved-guard MVP and follow-up close-intercept hardening.
+Changes: Updated for Phase 1R editable markup sidecar save/reopen MVP and follow-up advanced relink hardening.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -46,9 +46,10 @@ Changes: Updated for Phase 1Q export-defaults/unsaved-guard MVP and follow-up cl
 | `TODO-029` | `Markup` | `Evaluate advanced style controls beyond Phase 1O (custom color picker, per-tool style editor, optional saved user defaults)` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-030` | `Integration` | `Implement Control Center-side launcher to pass Phase 1P launch contract fields to Photo Markup` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-031` | `Integration` | `Define return workflow contract after manual export (returnMode behavior and handoff status)` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
-| `TODO-032` | `Data` | `Define editable markup save format contract tied to launch context (placeholder only in Phase 1P)` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-032` | `Data` | `Define editable markup save format contract tied to launch context (placeholder only in Phase 1P)` | `High` | `NCD / M` | `Done` | `N/A` | `2026-05-27` |
 | `TODO-033` | `Integration` | `Evaluate safe project-folder autosave workflow only after explicit approval` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-034` | `Export` | `Harden unsaved-change close interception for native Windows close edge-cases beyond current PopScope guard` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-035` | `Data` | `Add advanced sidecar image relink workflow (search-by-name and optional relative path resolution) for missing source image scenarios` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -71,8 +72,9 @@ Changes: Updated for Phase 1Q export-defaults/unsaved-guard MVP and follow-up cl
 | `16` | `Markup` | `Move/Adjust + endpoint/resize handle MVP delivered for dimension/arrow/rectangle/oval` | `Done` | `N/A` | `Phase 1M+1N delivered` |
 | `17` | `Markup` | `Advanced handle work (freehand points/text-note resize/rotation/edge handles)` | `Open` | `Owner approval for post-MVP advanced adjust UX` | `Tracked in TODO-028` |
 | `18` | `Markup` | `Markup style preset MVP delivered for new markups + selected-markup restyle; advanced style controls deferred` | `Open` | `Owner approval for post-MVP style UX expansion` | `Tracked in TODO-029` |
-| `19` | `Integration` | `Control Center launch-context adapter delivered with standalone-safe fallback; Control Center launcher/save-return flow remains deferred` | `Open` | `Owner approval for adapter consumption and save-return workflow` | `Tracked in TODO-030/TODO-031/TODO-032/TODO-033` |
+| `19` | `Integration` | `Control Center launch-context adapter delivered with standalone-safe fallback; editable sidecar save/reopen contract delivered in Photo Markup; Control Center launcher/save-return flow remains deferred` | `Open` | `Owner approval for adapter consumption and save-return workflow` | `Tracked in TODO-030/TODO-031/TODO-033` |
 | `20` | `Export` | `Export default naming/location and duplicate-safe save behavior delivered; unsaved-change guard delivered for open/close flows` | `Open` | `Owner manual workflow validation + native close-edge hardening` | `Tracked in VAL-155 + TODO-034` |
+| `21` | `Data` | `Editable sidecar save/reopen MVP delivered; advanced relink automation remains deferred` | `Open` | `Owner approval for enhanced relink behavior` | `Tracked in TODO-035` |
 
 
 
@@ -109,8 +111,11 @@ Changes: Updated for Phase 1Q export-defaults/unsaved-guard MVP and follow-up cl
 - Added independent text notes (not tied to dimension lines), touch-friendly entry, render/export support, and select/edit/delete parity.
 - Voice-to-text remains separate and deferred (see item 18).
 2. Editable Markup Save / Reopen
-- Save editable markup separately from exported PNG and reopen later with original image unchanged.
-- Keep standalone; no Control Center integration/autosave yet.
+- Status: `MVP Done` in Phase 1R.
+- Sidecar format added: `OriginalName - Markup.ncdmarkup.json`.
+- Stores source image path, image metadata, all current markup types, style preset ids, schema/app version.
+- Reopen restores markup state for continued edits; source-image locate fallback prompt added for missing-path cases.
+- Advanced relink automation remains deferred (see TODO-035).
 3. Full-Resolution Export
 - Add export using original image dimensions with correct markup scaling/placement.
 - Keep PNG first; PDF remains separate.

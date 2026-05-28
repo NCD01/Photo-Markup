@@ -4,9 +4,42 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-25`
+Last Updated: `2026-05-27`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1Q export defaults and unsaved-guard entry.
+Changes: Added Phase 1R editable markup save/reopen sidecar entry.
+
+## Unreleased - 2026-05-27 (Phase 1R Editable Markup Save / Reopen MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Feature
+- Reason: Allow markup sessions to be saved and reopened for continued editing without modifying original photos.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/editable_markup_document.dart`
+  - `app/lib/features/markup/services/editable_markup_document_service.dart`
+  - `app/test/editable_markup_document_service_test.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added `Save Markup` and `Open Markup` toolbar actions.
+  - Added editable sidecar schema (`.ncdmarkup.json`) with centralized schema version and extension constants.
+  - Added duplicate-safe sidecar naming to avoid silent overwrite.
+  - Added reopen restore for dimension/arrow/rectangle/oval/freehand/text note markups and style preset IDs.
+  - Added missing-source-image prompt with `Locate Image` fallback.
+  - Integrated unsaved-change state so successful save/reopen marks session clean.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - launch-context startup probes (valid + invalid source path): `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Advanced missing-image relink automation is deferred (TODO-035).
+  - Native Windows close-edge unsaved-guard hardening remains open (TODO-034).
 
 ## Unreleased - 2026-05-25 (Phase 1Q Save-Back Export Defaults + Unsaved Change Guard)
 - Owner: NCD / M

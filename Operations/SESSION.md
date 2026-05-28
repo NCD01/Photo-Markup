@@ -1743,6 +1743,70 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No unrelated tools/shapes added.
 - No PDF/full-resolution export added.
 
+# SESSION_2026-05-27_0001_phase1r_editable_markup_save_reopen_mvp
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add editable markup save/reopen sidecar workflow (`.ncdmarkup.json`) while preserving current PNG export and standalone behavior.
+
+## Actions
+- Added sidecar document model:
+  - `app/lib/features/markup/models/editable_markup_document.dart`
+- Added sidecar service:
+  - `app/lib/features/markup/services/editable_markup_document_service.dart`
+- Added toolbar actions:
+  - `Open Markup`
+  - `Save Markup`
+- Added save/open dialogs and safe sidecar path handling:
+  - default name: `OriginalName - Markup.ncdmarkup.json`
+  - duplicate-safe increment naming
+- Added reopen flow:
+  - parse sidecar
+  - load source image
+  - restore dimension/arrow/rectangle/oval/freehand/text note/style state
+  - restore next markup id safely
+- Added missing-source handling for sidecar reopen:
+  - friendly prompt + `Locate Image` fallback
+- Integrated unsaved state:
+  - successful Save Markup marks session clean
+  - successful reopen marks session clean
+- Added tests:
+  - `app/test/editable_markup_document_service_test.dart`
+  - `app/test/widget_test.dart` no-photo save-markup warning check
+
+## Logging/Debug Notes
+- Sidecar schema version is centralized as `EditableMarkupConstants.schemaVersion`.
+- Sidecar extension is centralized as `EditableMarkupConstants.outputFileSuffix`.
+- Save/reopen reuses normalized geometry + `stylePresetId` already used by live render pipeline.
+- Launch context behavior remains unchanged; valid and invalid launch-context runs still start cleanly.
+
+## Validation
+- `git status --short`: `PASS` (expected dirty from Phase 1R changes only)
+- `verify-version-sync.ps1`: `PASS` (`v0.21`)
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test`: `PASS` (includes new sidecar tests)
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident --dart-entrypoint-args=--launchContextPath=<valid>`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident --dart-entrypoint-args=--launchContextPath=<invalid source path>`: `PASS` (safe startup)
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (new strings/extensions/schema centralized)
+- Manual Phase 1R full interactive checklist: `NOT_VALIDATED` (owner-side)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center repo code changed.
+- No auto-export added.
+- No project-folder autosave added.
+- No full-resolution export added.
+- No PDF export added.
+
 # SESSION_2026-05-25_0021_phase1q_export_defaults_unsaved_guard
 
 ## Context

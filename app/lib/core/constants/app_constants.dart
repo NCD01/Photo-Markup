@@ -142,6 +142,22 @@ class UiCopyConstants {
   static const String styleDialogTitle = 'Markup Style Preset';
   static const String styleApplyToSelectedMessage =
       'Style applied to selection.';
+  static const String markupDocumentOpenFailureMessage =
+      'Could not open this markup file. Please choose a valid .ncdmarkup.json file.';
+  static const String markupDocumentMissingSourceTitle = 'Source Photo Needed';
+  static const String markupDocumentSaveNoPhotoMessage =
+      'Load a photo before saving markup.';
+  static const String markupDocumentSaveSuccessMessage =
+      'Markup save complete.';
+  static const String markupDocumentSaveFailureMessage =
+      'Could not save markup. Please try again.';
+  static const String markupDocumentOpenSuccessMessage = 'Markup file loaded.';
+  static const String markupDocumentMissingSourceMessage =
+      'This markup file references a missing source image. Select the source photo to continue.';
+  static const String markupDocumentNoSourceMessage =
+      'This markup file does not include a source image path. Select the source photo to continue.';
+  static const String markupDocumentLocateImageButton = 'Locate Image';
+  static const String markupDocumentCancelButton = 'Cancel';
   static const String exportNoPhotoMessage = 'Load a photo before exporting.';
   static const String exportSuccessMessage = 'Export complete.';
   static const String exportFailureMessage =
@@ -169,6 +185,8 @@ class ToolbarConstants {
   const ToolbarConstants._();
 
   static const String openPhoto = 'Open Photo';
+  static const String openMarkup = 'Open Markup';
+  static const String saveMarkup = 'Save Markup';
   static const String dimension = 'Dimension';
   static const String arrow = 'Arrow';
   static const String circle = 'Circle';
@@ -181,6 +199,8 @@ class ToolbarConstants {
   static const String export = 'Export';
   static const List<String> labels = <String>[
     openPhoto,
+    openMarkup,
+    saveMarkup,
     dimension,
     arrow,
     circle,
@@ -365,6 +385,29 @@ class ExportConstants {
   static const double maxPixelRatio = 3.0;
 
   static const XTypeGroup pngSaveTypeGroup = XTypeGroup(
+    label: saveTypeGroupLabel,
+    extensions: <String>[outputExtension],
+  );
+}
+
+class EditableMarkupConstants {
+  const EditableMarkupConstants._();
+
+  static const String schemaVersion = '1.0';
+  static const String saveDialogConfirmButtonText = 'Save Markup';
+  static const String openDialogConfirmButtonText = 'Open Markup';
+  static const String saveTypeGroupLabel = 'NCD Markup File';
+  static const String outputExtension = 'json';
+  static const String outputFileSuffix = '.ncdmarkup.json';
+  static const String duplicateNameSeparator = ' ';
+  static const int duplicateNameStartIndex = 2;
+
+  static const XTypeGroup markupSaveTypeGroup = XTypeGroup(
+    label: saveTypeGroupLabel,
+    extensions: <String>[outputExtension],
+  );
+
+  static const XTypeGroup markupOpenTypeGroup = XTypeGroup(
     label: saveTypeGroupLabel,
     extensions: <String>[outputExtension],
   );
