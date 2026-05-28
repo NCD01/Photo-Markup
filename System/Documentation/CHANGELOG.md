@@ -1096,3 +1096,15 @@ Changes: Added Phase 1R editable markup save/reopen sidecar entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.22 - 2026-05-28
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve editable markup save reopen MVP
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
