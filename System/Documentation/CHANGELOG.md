@@ -1132,3 +1132,15 @@ Changes: Added Phase 1S-A native Windows close-guard hardening entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.23 - 2026-05-28
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve native Windows close guard hardening
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
