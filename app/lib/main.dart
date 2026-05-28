@@ -217,7 +217,8 @@ class PhotoMarkupShellScreen extends StatefulWidget {
   State<PhotoMarkupShellScreen> createState() => _PhotoMarkupShellScreenState();
 }
 
-class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
+class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
+    with WidgetsBindingObserver {
   final ImageImportService _imageImportService = ImageImportService();
   static const MarkupExportPathService _markupExportPathService =
       MarkupExportPathService();
@@ -262,6 +263,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _launchContext = widget.launchContext;
     _errorMessage = widget.launchErrorMessage;
     final String? initialPath = widget.initialImagePath;
@@ -272,6 +274,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(
       _imageImportService.deleteTemporaryDisplayPath(
         _temporaryConvertedImagePath,
@@ -1016,8 +1019,24 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen> {
   }
 
   Future<bool> _onShellWillPop() async {
+    final ui.AppExitResponse response = await _resolveAppExitRequest();
+    return response == ui.AppExitResponse.exit;
+  }
+
+  Future<ui.AppExitResponse> _resolveAppExitRequest() async {
+    if (!mounted) {
+      return ui.AppExitResponse.cancel;
+    }
     final bool canClose = await _confirmUnsavedChangesBeforeContinuing();
-    return canClose;
+    if (canClose) {
+      return ui.AppExitResponse.exit;
+    }
+    return ui.AppExitResponse.cancel;
+  }
+
+  @override
+  Future<ui.AppExitResponse> didRequestAppExit() async {
+    return _resolveAppExitRequest();
   }
 
   bool get _showLaunchContextBanner =>

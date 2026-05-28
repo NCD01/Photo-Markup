@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\FORM_DEFINITIONS.m
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-27`
+Last Updated: `2026-05-28`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1R Save Markup and Open Markup dialog/workflow definitions.
+Changes: Added Phase 1S-A native Windows close-guard integration notes.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -26,6 +26,7 @@ Changes: Added Phase 1R Save Markup and Open Markup dialog/workflow definitions.
 - `Selected Markup Erase Action` (implemented)
 - `Selected Markup Move/Adjust Action` (implemented, whole-markup move MVP)
 - `Endpoint/Resize Handle Adjust Action` (implemented for dimension/arrow/rectangle/oval)
+- `Unsaved Close Guard Dialog` (implemented for route pop + native Windows app-exit requests)
 
 ## Field Work Forms
 ### `Shell` Forms
@@ -58,6 +59,7 @@ Changes: Added Phase 1R Save Markup and Open Markup dialog/workflow definitions.
 - `Preset selection updates new-markup style and can apply style to selected markup`
 - `Open Photo supports jpg/jpeg/png/webp/heic/heif`
 - `Optional launch context is parsed at startup and can show a non-intrusive context banner`
+- `Native Windows title-bar close requests are intercepted and routed to the unsaved guard dialog when markup state is dirty`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
 - `Startup splash image is scaled to fill most of startup screen`
 - `Startup splash version text uses AppConstants.appVersion (shared with app bar version)`

@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\VALIDATION_MATRIX.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-27`
+Last Updated: `2026-05-28`
 Purpose: Track required validation activities and outcomes.
-Changes: Added Phase 1R editable sidecar save/reopen validation gates and evidence status.
+Changes: Added Phase 1S-A native Windows close-guard hardening validation gates and evidence status.
 
 ## Validation Matrix
 | ID | Validation | Command/Method | Trigger | Pass Criteria | Owner | Status | Evidence Path |
@@ -173,3 +173,6 @@ Changes: Added Phase 1R editable sidecar save/reopen validation gates and eviden
 | `VAL-158` | Phase 1R Sidecar Serialization Coverage Gate | `flutter test` (`editable_markup_document_service_test.dart`) | Sidecar schema/model introduced | Save/load round-trip persists all markup types and `stylePresetId` values; corrupt/unsupported files fail safely | `NCD / M` | `PASS` | `editable_markup_document_service_test.dart results` |
 | `VAL-159` | Phase 1R Launch Context Regression Gate | `flutter run --dart-entrypoint-args=--launchContextPath=<valid/invalid>` | Launch + reopen workflows coexist | App starts with valid context image and handles invalid context source path safely without crash | `NCD / M` | `PASS` | `.agent_temp/diagnostics/phase1r_launch_context_valid.json + phase1r_launch_context_invalid.json` |
 | `VAL-160` | Phase 1R Manual Save/Reopen Workflow | Manual interactive save/reopen/edit/export workflow | Editable markup sidecar user flow added | End-to-end save/reopen/restore/edit/export behavior verified interactively | `NCD / M` | `NOT_VALIDATED` | `Owner manual validation pending` |
+| `VAL-161` | Phase 1S-A Native Close Guard Static/Unit Gate | `flutter analyze` + `flutter test` | Native app-exit interception code changed | Analyzer/tests pass with no regressions across existing guard/export/markup flows | `NCD / M` | `PASS` | `Terminal output 2026-05-28 (Phase 1S-A)` |
+| `VAL-162` | Phase 1S-A Build/Run Gate | `flutter build windows --debug` + `flutter run -d windows --debug --no-resident` | Window-exit handling changed | Windows build/startup smoke pass after close-guard hardening | `NCD / M` | `PASS` | `Terminal output 2026-05-28 (Phase 1S-A)` |
+| `VAL-163` | Phase 1S-A Manual Native-X Guard Workflow | Manual interactive workflow for native title-bar `X` with dirty session | Native close bypass bugfix | Unsaved warning appears on native close with Export/Discard/Cancel behavior and safe export-cancel handling | `NCD / M` | `PASS` | `Owner manual validation PASS (2026-05-28)` |

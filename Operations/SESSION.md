@@ -1807,6 +1807,50 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No full-resolution export added.
 - No PDF export added.
 
+# SESSION_2026-05-28_0001_phase1s_a_native_windows_close_guard_hardening
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Harden native Windows title-bar `X` close handling so unsaved markup warning flow runs before app exit.
+
+## Actions
+- Added native app-exit interception in shell state:
+  - `_PhotoMarkupShellScreenState` now mixes in `WidgetsBindingObserver`.
+  - Registered/unregistered observer in `initState`/`dispose`.
+  - Implemented `didRequestAppExit()` to reuse existing unsaved guard (`Export` / `Discard` / `Cancel`) via shared `_resolveAppExitRequest()`.
+- Kept existing `PopScope` path for route pop behavior and reused same shared guard helper.
+- No dependency additions, no Windows runner/native C++ edits, no dialog-copy changes.
+
+## Logging/Debug Notes
+- Root cause: previous guard relied on `PopScope` (Navigator route pop), while native Windows `X` issues platform app-exit requests that can bypass route-pop-only interception.
+- Fix path: Flutter-supported `WidgetsBindingObserver.didRequestAppExit`.
+- Export cancel/failure path remains safe (`cancel` app exit).
+
+## Validation
+- `git status --short` baseline: `PASS` (only Phase 1S-A code/doc changes)
+- `verify-version-sync.ps1`: `PASS` (`v0.22`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (no new user-facing copy/magic literals introduced)
+- Manual native-X interactive validation: `PASS` (owner-side validation completed 2026-05-28)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave changes.
+- No editable schema changes.
+- No full-resolution/PDF export changes.
+- No unrelated feature additions.
+
 # SESSION_2026-05-25_0021_phase1q_export_defaults_unsaved_guard
 
 ## Context

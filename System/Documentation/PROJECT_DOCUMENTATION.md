@@ -5,9 +5,9 @@ Version: `v0.5`
 Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-27`
+Last Updated: `2026-05-28`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1R editable sidecar save/reopen architecture and behavior notes.
+Changes: Added Phase 1S-A native Windows app-exit unsaved-guard hardening notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -87,6 +87,7 @@ Required sections are present and updated through Phase 1O.
 | `Export PNG` | `Prompts user for save location and exports displayed photo area + markups as PNG (no outer letterbox/canvas whitespace)` | `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart` | `Analyze/test/build/run + pending owner manual E2E` |
 | `Save Markup` | `Prompts user for save location and writes editable sidecar (OriginalName - Markup.ncdmarkup.json)` | `app/lib/main.dart` + `app/lib/features/markup/services/editable_markup_document_service.dart` | `Service tests + runtime smoke` |
 | `Open Markup` | `Prompts user for sidecar file, loads source photo, and restores editable markups/styles` | `app/lib/main.dart` + `app/lib/features/markup/models/editable_markup_document.dart` | `Service tests + runtime smoke` |
+| `Native Windows Close Guard` | `Native title-bar close requests route through unsaved warning flow and block immediate app exit when dirty` | `app/lib/main.dart` | `Analyze/test/build/run + owner manual native-close validation` |
 | `Cancel Handling` | `Picker cancel leaves state stable and no crash` | `app/lib/main.dart` | `Runtime automation attempt + no runtime errors` |
 | `Non-Approved Future Toolbar Actions` | `Any future actions outside approved scope remain placeholders until explicitly approved` | `app/lib/main.dart` | `Code review + widget/runtime observation` |
 | `Branding Assets` | `Startup splash and app bar icon load from app-local branding assets` | `app/assets/branding/` + `app/lib/main.dart` + `app/pubspec.yaml` | `Runtime smoke + asset registration review` |
@@ -237,6 +238,7 @@ Required sections are present and updated through Phase 1O.
   - `You have unsaved markup changes. Export or discard before continuing.`
   - actions: `Export`, `Discard`, `Cancel`
   - successful export marks state clean.
+- Native Windows app-exit requests (title-bar `X`) also use the same unsaved guard flow through `didRequestAppExit`.
 - Exported markups preserve style colors/strokes/fills from each markup's stored style preset.
 - Save Markup defaults to `OriginalName - Markup.ncdmarkup.json` naming with duplicate-safe increment behavior.
 - Open Markup restores saved dimension/arrow/rectangle/oval/freehand/text note geometry and stored style preset IDs.

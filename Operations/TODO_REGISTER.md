@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\TODO_REGISTER.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-27`
+Last Updated: `2026-05-28`
 Purpose: Track planned and in-progress work items.
-Changes: Updated for Phase 1R editable markup sidecar save/reopen MVP and follow-up advanced relink hardening.
+Changes: Updated for Phase 1S-A native Windows close-guard hardening completion and TODO-034 closure.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -48,7 +48,7 @@ Changes: Updated for Phase 1R editable markup sidecar save/reopen MVP and follow
 | `TODO-031` | `Integration` | `Define return workflow contract after manual export (returnMode behavior and handoff status)` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-032` | `Data` | `Define editable markup save format contract tied to launch context (placeholder only in Phase 1P)` | `High` | `NCD / M` | `Done` | `N/A` | `2026-05-27` |
 | `TODO-033` | `Integration` | `Evaluate safe project-folder autosave workflow only after explicit approval` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
-| `TODO-034` | `Export` | `Harden unsaved-change close interception for native Windows close edge-cases beyond current PopScope guard` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-034` | `Export` | `Harden unsaved-change close interception for native Windows close edge-cases beyond current PopScope guard` | `Medium` | `NCD / M` | `Done` | `N/A` | `2026-05-28` |
 | `TODO-035` | `Data` | `Add advanced sidecar image relink workflow (search-by-name and optional relative path resolution) for missing source image scenarios` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 
 ## Active Workstream Summary
@@ -73,7 +73,7 @@ Changes: Updated for Phase 1R editable markup sidecar save/reopen MVP and follow
 | `17` | `Markup` | `Advanced handle work (freehand points/text-note resize/rotation/edge handles)` | `Open` | `Owner approval for post-MVP advanced adjust UX` | `Tracked in TODO-028` |
 | `18` | `Markup` | `Markup style preset MVP delivered for new markups + selected-markup restyle; advanced style controls deferred` | `Open` | `Owner approval for post-MVP style UX expansion` | `Tracked in TODO-029` |
 | `19` | `Integration` | `Control Center launch-context adapter delivered with standalone-safe fallback; editable sidecar save/reopen contract delivered in Photo Markup; Control Center launcher/save-return flow remains deferred` | `Open` | `Owner approval for adapter consumption and save-return workflow` | `Tracked in TODO-030/TODO-031/TODO-033` |
-| `20` | `Export` | `Export default naming/location and duplicate-safe save behavior delivered; unsaved-change guard delivered for open/close flows` | `Open` | `Owner manual workflow validation + native close-edge hardening` | `Tracked in VAL-155 + TODO-034` |
+| `20` | `Export` | `Export default naming/location and duplicate-safe save behavior delivered; unsaved-change guard delivered for open/close flows including native app-exit interception hardening` | `Open` | `Owner manual workflow validation complete for native close guard` | `Tracked in VAL-155 + VAL-163` |
 | `21` | `Data` | `Editable sidecar save/reopen MVP delivered; advanced relink automation remains deferred` | `Open` | `Owner approval for enhanced relink behavior` | `Tracked in TODO-035` |
 
 

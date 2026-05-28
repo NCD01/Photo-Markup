@@ -4,9 +4,33 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-27`
+Last Updated: `2026-05-28`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1R editable markup save/reopen sidecar entry.
+Changes: Added Phase 1S-A native Windows close-guard hardening entry.
+
+## Unreleased - 2026-05-28 (Phase 1S-A Native Windows Close Guard Hardening)
+- Owner: NCD / M
+- Author: Codex
+- Type: Hardening
+- Reason: Ensure native Windows title-bar close (`X`) respects unsaved markup protection.
+- Scope:
+  - `app/lib/main.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added native app-exit interception using `WidgetsBindingObserver.didRequestAppExit`.
+  - Routed native app-exit requests through the existing unsaved guard flow (`Export`, `Discard`, `Cancel`).
+  - Unified route-pop and native-close decisions through shared close-resolution helper logic.
+  - Preserved existing export/save-reopen/original-image safety behavior.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Native Windows close guard manual owner validation passed; `TODO-034` closed.
 
 ## Unreleased - 2026-05-27 (Phase 1R Editable Markup Save / Reopen MVP)
 - Owner: NCD / M

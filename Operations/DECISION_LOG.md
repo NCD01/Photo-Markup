@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\DECISION_LOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-27`
+Last Updated: `2026-05-28`
 Purpose: Record material architecture/process decisions.
-Changes: Added Phase 1R editable sidecar persistence decision.
+Changes: Added Phase 1S-A native app-exit interception decision.
 
 ## DECISION-001
 - Date: 2026-05-22
@@ -187,5 +187,21 @@ Changes: Added Phase 1R editable sidecar persistence decision.
 - Impact: Added document model/service, toolbar save/open actions, source-image locate fallback for missing paths, and unsaved-state integration on successful save/reopen.
 - Rollback or Reversal: Remove sidecar model/service and toolbar actions; keep PNG export-only workflow.
 - Related Changes: Phase 1R Editable Markup Save / Reopen MVP (uncommitted workspace)
+- Review Date: N/A
+
+## DECISION-013
+- Date: 2026-05-28
+- Status: Accepted
+- Owner: NCD / M
+- Area: Native Window Close Guard
+- Decision: Intercept native app close requests using Flutter `WidgetsBindingObserver.didRequestAppExit` and route them through the existing unsaved-change dialog flow (`Export`, `Discard`, `Cancel`).
+- Alternatives Considered:
+- Keep `PopScope` only and accept platform close edge cases.
+- Add third-party window-management dependency for close interception.
+- Modify Windows runner C++ close path.
+- Rationale: `didRequestAppExit` is built-in, minimal-risk, avoids dependency/native code expansion, and keeps one shared guard path.
+- Impact: Native Windows title-bar `X` close requests now call the same unsaved guard logic used by route pop/open-photo replacement.
+- Rollback or Reversal: Remove observer + `didRequestAppExit` override and restore route-pop-only guard.
+- Related Changes: Phase 1S-A Native Windows Close Guard Hardening (uncommitted workspace)
 - Review Date: N/A
 
