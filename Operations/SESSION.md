@@ -2188,3 +2188,64 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No full-resolution export added.
 - No PDF export added.
 - Original source image mutation not introduced.
+
+# SESSION_2026-05-28_0003_phase1t_a2_deeper_heic_optimization
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Extend Phase 1T-A before commit with one more HEIC optimization pass focused on repeated-open performance and practical first-open gains.
+
+## Actions
+- Measured current repeated-open baseline in automated probe:
+  - first open: `~3491ms`
+  - second open: `~3452ms`
+  - output path changed per open (timestamped temp file), confirming reconversion.
+- Benchmarked ImageMagick conversion variants (real HEIC sample):
+  - `png 2560`: ~`3373ms`, ~`5.35MB`
+  - `png 2048`: ~`1993ms`, ~`3.82MB`
+  - `jpg85 2560`: ~`749ms`, ~`0.77MB`
+- Implemented deterministic HEIC preview cache reuse keyed by:
+  - source absolute path
+  - source size + modified time
+  - preview settings/constants
+- Switched HEIC temporary display output extension from `png` to `jpg` with centralized quality (`85`).
+- Added dedicated cache folder usage:
+  - `${systemTemp}/ncd_photo_markup_heic_cache`
+- Preserved existing package-first with fallback policy as a tunable (no fallback-first flip in this pass).
+- Added tests for cache-hit reuse and cache invalidation when source file changes.
+
+## Logging/Debug Notes
+- Root cause: HEIC reopen path reconverted each open due timestamped output paths and no reusable cache keying.
+- Additional bottleneck: fallback PNG preview output remained heavier/slower than JPEG preview for the tested sample.
+- After 1T-A2 update (same real HEIC sample):
+  - first open: `~1102ms`
+  - second open (cache-hit): `~10ms`
+  - converted output: `~773858` bytes (`jpg85`, 2560 cap)
+- Relative to prior optimized baseline (`~3377ms`, `~5.35MB`), first-open improved further and repeated-open latency was substantially reduced via cache reuse.
+
+## Validation
+- `git status --short`: `PASS` (Phase 1T-A2 file set only)
+- `verify-version-sync.ps1`: `PASS` (`v0.24`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- launch-context run (valid path): `PASS`
+- launch-context run (invalid source path): `PASS`
+- HEIC real-file probe (first open + repeat open): `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (new cache/quality/output-extension tunables centralized)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+- Original source image mutation not introduced.

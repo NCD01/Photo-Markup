@@ -8,6 +8,38 @@ Last Updated: `2026-05-28`
 Purpose: Canonical changelog for project changes.
 Changes: Added Phase 1T-A import performance and memory cleanup entry.
 
+## Unreleased - 2026-05-28 (Phase 1T-A2 Deeper HEIC Optimization Extension)
+- Owner: NCD / M
+- Author: Codex
+- Type: Performance / Reliability
+- Reason: Improve practical HEIC first-open speed and repeated-open speed before Phase 1T-A commit approval.
+- Scope:
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/import/services/image_import_service.dart`
+  - `app/test/image_import_service_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added deterministic HEIC preview cache-key reuse using source path + file metadata + preview settings.
+  - Switched HEIC temporary display output extension to preview JPEG (`quality=85`) under a dedicated temp cache folder.
+  - Kept package-first conversion policy with fallback retained and tunable for future fallback-first decisioning.
+  - Added test coverage for cache-hit reuse and cache invalidation when source metadata changes.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - launch-context startup probes (valid + invalid source path): `PASS`
+  - real HEIC repeated-open probe: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Performance Evidence (real HEIC sample):
+  - pre-extension repeated-open baseline: open1 ~`3491ms`, open2 ~`3452ms`
+  - after extension: open1 ~`1102ms`, open2 ~`10ms` (cache-hit)
+  - converted working-copy size (after extension): ~`773858` bytes (`jpg85`, preview cap)
+- Risks / Known Gaps:
+  - Package-path reliability still needs broader sample investigation (`TODO-036`).
+
 ## Unreleased - 2026-05-28 (Phase 1T-A Image Import Performance + Memory Cleanup)
 - Owner: NCD / M
 - Author: Codex

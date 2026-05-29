@@ -45,7 +45,7 @@ Changes: Added Phase 1T-A import performance/memory cleanup and import-progress 
 - `DimensionLinesOverlay`
 - Related services:
 - `file_selector picker integration`
-- `image_import_service (HEIC/HEIF conversion to temporary PNG working copy)`
+- `image_import_service (HEIC/HEIF conversion to temporary preview working copy with cache reuse)`
 - Data sources:
 - `Runtime-selected local image path`
 - Route/name:
@@ -79,13 +79,13 @@ Changes: Added Phase 1T-A import performance/memory cleanup and import-progress 
 - Notes:
 - `Original selected source file is not modified`
 - `Shows safe error message if image cannot be opened`
-- `HEIC/HEIF source files are converted to preview-capped temporary PNG working copies for display/markup`
+- `HEIC/HEIF source files are converted to preview-capped temporary working copies for display/markup (current policy: JPEG cache output)`
 - `Import progress message ('Opening photo...') is shown while import/conversion is active`
 - `Dimension overlay is constrained to displayed photo bounds (BoxFit.contain rect)`
 
 #### `HEIC/HEIF Import Conversion Flow`
 - Source path: `app/lib/features/import/services/image_import_service.dart`
-- Purpose: `Convert HEIC/HEIF images to displayable preview-capped PNG file paths for Flutter canvas rendering`
+- Purpose: `Convert HEIC/HEIF images to displayable preview-capped working-copy file paths for Flutter canvas rendering`
 - Parent/master form: `Photo Markup Shell`
 - Child components:
 - `HEIC extension detection`
@@ -379,7 +379,7 @@ Changes: Added Phase 1T-A import performance/memory cleanup and import-progress 
 | `Startup Splash` | `Photo Markup Shell` | `Show startup branding image before shell loads` | `app/lib/main.dart` + `app/assets/branding/splash_v1_5.png` |
 | `Windows Runner Icon` | `Photo Markup Shell` | `Apply app icon branding to Windows executable resources` | `app/windows/runner/resources/app_icon.ico` |
 | `Open Photo Action` | `Photo Markup Shell` | `Launch picker and request image file` | `app/lib/main.dart` |
-| `Image Import Service` | `HEIC/HEIF Import Conversion Flow` | `Convert HEIC/HEIF to preview-capped temporary PNG working copy with fallback + temp cleanup` | `app/lib/features/import/services/image_import_service.dart` |
+| `Image Import Service` | `HEIC/HEIF Import Conversion Flow` | `Convert HEIC/HEIF to preview-capped temporary working copy with cache reuse, fallback conversion, and stale-cache cleanup` | `app/lib/features/import/services/image_import_service.dart` |
 | `Canvas Image View` | `Photo Canvas Area` | `Render selected photo with BoxFit.contain` | `app/lib/main.dart` |
 | `Touch Toolbar` | `Photo Markup Shell` | `Expose tool actions with selected/disabled state` | `app/lib/main.dart` |
 | `Dimension Overlay` | `Dimension Overlay Layer` | `Render and capture dimension line interactions` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` |

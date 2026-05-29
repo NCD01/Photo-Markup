@@ -105,7 +105,11 @@ class ImageImportConstants {
     'heif',
   };
   static const Set<String> heicExtensionsSet = <String>{'heic', 'heif'};
+  static const String heicPreviewCacheFolderName = 'ncd_photo_markup_heic_cache';
+  static const String heicPreviewCacheKeyVersion = 'v2';
   static const int heicMaxPreviewDimension = 2560;
+  static const int heicPreviewJpegQuality = 85;
+  static const bool heicPreferFallbackConverterFirst = false;
   static const Duration heicPackageConversionTimeout = Duration(seconds: 3);
   static const Duration heicFallbackConversionTimeout = Duration(seconds: 20);
   static const int tempConvertedFileMaxAgeHours = 24;
@@ -113,14 +117,17 @@ class ImageImportConstants {
   static const String heicConversionFailedMessage =
       'Could not open this HEIC image. Please convert it to JPG/PNG or try another photo.';
   static const String heicTempSuffix = '_heic_converted';
-  static const String heicConvertedOutputExtension = 'png';
+  static const String heicConvertedOutputExtension = 'jpg';
   static const String heicFallbackConverterCommand = 'magick';
   static const String heicFallbackResizeOption =
       '$heicMaxPreviewDimension''x$heicMaxPreviewDimension>';
+  static const String heicFallbackQualityOption = '$heicPreviewJpegQuality';
   static const List<String> heicFallbackConverterOptions = <String>[
     '-auto-orient',
     '-resize',
     heicFallbackResizeOption,
+    '-quality',
+    heicFallbackQualityOption,
   ];
   static const String importDiagnosticsPrefix = '[ImageImport]';
   static const String openErrorMessage =

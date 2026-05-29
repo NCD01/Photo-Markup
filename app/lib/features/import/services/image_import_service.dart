@@ -36,11 +36,12 @@ class ImageImportService {
   }) : _heicFileConverter = heicFileConverter ?? _defaultHeicFileConverter,
        _externalHeicConverter =
            externalHeicConverter ?? _defaultExternalHeicConverter,
-       _tempDirectoryPath = tempDirectoryPath ?? Directory.systemTemp.path;
+       _cacheDirectoryPath =
+           '${tempDirectoryPath ?? Directory.systemTemp.path}${Platform.pathSeparator}${ImageImportConstants.heicPreviewCacheFolderName}';
 
   final HeicFileConverter _heicFileConverter;
   final ExternalHeicConverter _externalHeicConverter;
-  final String _tempDirectoryPath;
+  final String _cacheDirectoryPath;
 
   Future<ImageImportResult> prepareDisplayableImage({
     required String sourcePath,
@@ -54,8 +55,16 @@ class ImageImportService {
       );
     }
 
-    final String tempPath = _buildTempPath(sourcePath);
     await _cleanupStaleTemporaryConvertedFiles();
+    final String tempPath = await _buildCachedTempPath(sourcePath);
+    if (await _isUsableConvertedFile(tempPath)) {
+      _logDebug('cache hit path=$tempPath');
+      return ImageImportResult(
+        sourcePath: sourcePath,
+        displayPath: tempPath,
+        usedTemporaryConvertedCopy: true,
+      );
+    }
 
     final Stopwatch totalStopwatch = Stopwatch()..start();
     await _convertHeicToDisplayableImage(
@@ -78,6 +87,9 @@ class ImageImportService {
     if (displayPath == null || displayPath.isEmpty) {
       return;
     }
+    if (_isHeicPreviewCachePath(displayPath)) {
+      return;
+    }
     try {
       final File file = File(displayPath);
       if (await file.exists()) {
@@ -88,19 +100,21 @@ class ImageImportService {
     }
   }
 
-  String _buildTempPath(String sourcePath) {
-    final String normalized = sourcePath.replaceAll('\\', '/');
-    final String rawName = normalized.split('/').last;
-    final int dotIndex = rawName.lastIndexOf('.');
-    final String baseName = dotIndex > 0
-        ? rawName.substring(0, dotIndex)
-        : rawName;
-    final String safeBaseName = baseName.replaceAll(
-      RegExp(r'[^A-Za-z0-9_-]'),
-      '_',
-    );
-    final String timestamp = DateTime.now().microsecondsSinceEpoch.toString();
-    return '$_tempDirectoryPath${Platform.pathSeparator}$safeBaseName${ImageImportConstants.heicTempSuffix}_$timestamp.${ImageImportConstants.heicConvertedOutputExtension}';
+  Future<String> _buildCachedTempPath(String sourcePath) async {
+    final File sourceFile = File(sourcePath);
+    final FileStat sourceStat = await sourceFile.stat();
+    final String absolutePath = sourceFile.absolute.path;
+    final String signature =
+        '${ImageImportConstants.heicPreviewCacheKeyVersion}|'
+        '${absolutePath.toLowerCase()}|'
+        '${sourceStat.size}|'
+        '${sourceStat.modified.millisecondsSinceEpoch}|'
+        '${ImageImportConstants.heicMaxPreviewDimension}|'
+        '${ImageImportConstants.heicPreviewJpegQuality}|'
+        '${ImageImportConstants.heicConvertedOutputExtension}|'
+        '${ImageImportConstants.heicPreferFallbackConverterFirst}';
+    final String cacheKey = _stableCacheKey(signature);
+    return '$_cacheDirectoryPath${Platform.pathSeparator}$cacheKey.${ImageImportConstants.heicConvertedOutputExtension}';
   }
 
   String _fileExtension(String path) {
@@ -113,8 +127,8 @@ class ImageImportService {
 
   Future<void> _cleanupStaleTemporaryConvertedFiles() async {
     try {
-      final Directory tempDirectory = Directory(_tempDirectoryPath);
-      if (!await tempDirectory.exists()) {
+      final Directory cacheDirectory = Directory(_cacheDirectoryPath);
+      if (!await cacheDirectory.exists()) {
         return;
       }
 
@@ -122,12 +136,11 @@ class ImageImportService {
       final DateTime cutoff = now.subtract(
         Duration(hours: ImageImportConstants.tempConvertedFileMaxAgeHours),
       );
-      final List<FileSystemEntity> matchingFiles = await tempDirectory
+      final List<FileSystemEntity> matchingFiles = await cacheDirectory
           .list(followLinks: false)
           .where(
             (FileSystemEntity entity) =>
                 entity is File &&
-                entity.path.contains(ImageImportConstants.heicTempSuffix) &&
                 entity.path.toLowerCase().endsWith(
                   '.${ImageImportConstants.heicConvertedOutputExtension}',
                 ),
@@ -179,37 +192,21 @@ class ImageImportService {
     final File outputFile = File(outputPath);
     await outputFile.parent.create(recursive: true);
 
-    bool packageConversionSucceeded = false;
-    final Stopwatch packageStopwatch = Stopwatch()..start();
-    try {
-      packageConversionSucceeded = await _heicFileConverter(
-        sourcePath: sourcePath,
-        outputPath: outputPath,
-        maxPreviewDimension: ImageImportConstants.heicMaxPreviewDimension,
+    final bool preferFallbackFirst =
+        ImageImportConstants.heicPreferFallbackConverterFirst;
+    final bool conversionSucceeded = preferFallbackFirst
+        ? await _tryFallbackThenPackage(
+            sourcePath: sourcePath,
+            outputPath: outputPath,
+          )
+        : await _tryPackageThenFallback(
+            sourcePath: sourcePath,
+            outputPath: outputPath,
+          );
+    if (!conversionSucceeded) {
+      throw const ConversionFailedException(
+        ImageImportConstants.heicConversionFailedMessage,
       );
-    } catch (_) {
-      packageConversionSucceeded = false;
-    }
-    packageStopwatch.stop();
-    _logDebug(
-      'package conversion success=$packageConversionSucceeded duration=${packageStopwatch.elapsedMilliseconds}ms',
-    );
-
-    if (!packageConversionSucceeded) {
-      final Stopwatch fallbackStopwatch = Stopwatch()..start();
-      final bool externalSucceeded = await _externalHeicConverter(
-        sourcePath: sourcePath,
-        outputPath: outputPath,
-      );
-      fallbackStopwatch.stop();
-      _logDebug(
-        'fallback conversion success=$externalSucceeded duration=${fallbackStopwatch.elapsedMilliseconds}ms',
-      );
-      if (!externalSucceeded) {
-        throw const ConversionFailedException(
-          ImageImportConstants.heicConversionFailedMessage,
-        );
-      }
     }
 
     if (!await outputFile.exists() || await outputFile.length() == 0) {
@@ -229,7 +226,7 @@ class ImageImportService {
       final String writtenPath = await HeicConverter.convertFile(
         inputPath: sourcePath,
         outputPath: outputPath,
-        format: ImageFormat.png,
+        format: _packageOutputFormat(),
         maxWidth: maxPreviewDimension,
         maxHeight: maxPreviewDimension,
       ).timeout(ImageImportConstants.heicPackageConversionTimeout);
@@ -261,6 +258,128 @@ class ImageImportService {
     } catch (_) {
       return false;
     }
+  }
+
+  Future<bool> _tryPackageThenFallback({
+    required String sourcePath,
+    required String outputPath,
+  }) async {
+    final Stopwatch packageStopwatch = Stopwatch()..start();
+    final bool packageSucceeded = await _tryPackageConvert(
+      sourcePath: sourcePath,
+      outputPath: outputPath,
+    );
+    packageStopwatch.stop();
+    _logDebug(
+      'package conversion success=$packageSucceeded duration=${packageStopwatch.elapsedMilliseconds}ms',
+    );
+    if (packageSucceeded) {
+      return true;
+    }
+
+    final Stopwatch fallbackStopwatch = Stopwatch()..start();
+    final bool fallbackSucceeded = await _tryFallbackConvert(
+      sourcePath: sourcePath,
+      outputPath: outputPath,
+    );
+    fallbackStopwatch.stop();
+    _logDebug(
+      'fallback conversion success=$fallbackSucceeded duration=${fallbackStopwatch.elapsedMilliseconds}ms',
+    );
+    return fallbackSucceeded;
+  }
+
+  Future<bool> _tryFallbackThenPackage({
+    required String sourcePath,
+    required String outputPath,
+  }) async {
+    final Stopwatch fallbackStopwatch = Stopwatch()..start();
+    final bool fallbackSucceeded = await _tryFallbackConvert(
+      sourcePath: sourcePath,
+      outputPath: outputPath,
+    );
+    fallbackStopwatch.stop();
+    _logDebug(
+      'fallback conversion success=$fallbackSucceeded duration=${fallbackStopwatch.elapsedMilliseconds}ms',
+    );
+    if (fallbackSucceeded) {
+      return true;
+    }
+
+    final Stopwatch packageStopwatch = Stopwatch()..start();
+    final bool packageSucceeded = await _tryPackageConvert(
+      sourcePath: sourcePath,
+      outputPath: outputPath,
+    );
+    packageStopwatch.stop();
+    _logDebug(
+      'package conversion success=$packageSucceeded duration=${packageStopwatch.elapsedMilliseconds}ms',
+    );
+    return packageSucceeded;
+  }
+
+  Future<bool> _tryPackageConvert({
+    required String sourcePath,
+    required String outputPath,
+  }) async {
+    try {
+      return await _heicFileConverter(
+        sourcePath: sourcePath,
+        outputPath: outputPath,
+        maxPreviewDimension: ImageImportConstants.heicMaxPreviewDimension,
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _tryFallbackConvert({
+    required String sourcePath,
+    required String outputPath,
+  }) async {
+    try {
+      return await _externalHeicConverter(
+        sourcePath: sourcePath,
+        outputPath: outputPath,
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _isUsableConvertedFile(String path) async {
+    try {
+      final File file = File(path);
+      return await file.exists() && await file.length() > 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool _isHeicPreviewCachePath(String path) {
+    final String normalizedPath = path.replaceAll('\\', '/').toLowerCase();
+    final String normalizedCacheDir = _cacheDirectoryPath
+        .replaceAll('\\', '/')
+        .toLowerCase();
+    return normalizedPath.startsWith('$normalizedCacheDir/');
+  }
+
+  static String _stableCacheKey(String input) {
+    const int mask = 0xFFFFFFFF;
+    int hash = 5381;
+    for (final int value in input.codeUnits) {
+      hash = ((hash << 5) + hash + value) & mask;
+    }
+    return hash.toRadixString(16).padLeft(8, '0');
+  }
+
+  static ImageFormat _packageOutputFormat() {
+    final String extension = ImageImportConstants.heicConvertedOutputExtension
+        .toLowerCase();
+    if (extension == 'jpg' || extension == 'jpeg') {
+      return ImageFormat.jpg;
+    }
+    return ImageFormat.png;
   }
 
   void _logDebug(String message) {

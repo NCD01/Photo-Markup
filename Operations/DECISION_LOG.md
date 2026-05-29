@@ -220,3 +220,19 @@ Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decisio
 - Rollback or Reversal: Remove preview resize cap and revert to prior conversion flow in `ImageImportService` and related constants.
 - Related Changes: Phase 1T-A Image Import Performance + Memory Cleanup (uncommitted workspace)
 - Review Date: N/A
+
+## DECISION-015
+- Date: 2026-05-28
+- Status: Accepted
+- Owner: NCD / M
+- Area: Import Performance / HEIC Reopen Latency
+- Decision: Add deterministic HEIC preview cache reuse and switch temporary HEIC display output to preview JPEG (`quality=85`) under a dedicated temp cache folder, while keeping package-first then fallback conversion policy for now.
+- Alternatives Considered:
+- Keep timestamped one-off temp conversion files and reconvert every open.
+- Keep PNG preview output for temporary HEIC working copies.
+- Switch to fallback-first immediately without broader sample reliability checks.
+- Rationale: Measurably improves first-open conversion time and drastically improves repeated-open latency with lower temp output size, without changing export format, source-image safety, or sidecar schema behavior.
+- Impact: Reopen of the same HEIC now reuses cached converted preview when source path/size/mtime/settings match; stale cache cleanup remains bounded by age/count limits.
+- Rollback or Reversal: Revert cache-key path logic and output extension/quality constants; restore non-reused timestamped conversion flow.
+- Related Changes: Phase 1T-A2 deeper HEIC optimization pass (uncommitted workspace)
+- Review Date: N/A

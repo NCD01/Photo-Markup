@@ -37,7 +37,7 @@ Required sections are present and updated through Phase 1O.
 | Unsaved State Utility | `Tracks markup dirty/saved state for guard prompts before replace/close actions` | `app/lib/features/markup/utils/unsaved_changes_tracker.dart` | `NCD / M` |
 | Editable Markup Model | `Typed sidecar schema model for persisted editable markup sessions` | `app/lib/features/markup/models/editable_markup_document.dart` | `NCD / M` |
 | Editable Markup Service | `Builds safe sidecar paths and reads/writes .ncdmarkup.json documents` | `app/lib/features/markup/services/editable_markup_document_service.dart` | `NCD / M` |
-| Import Service | `Converts HEIC/HEIF source files into capped temporary PNG working copies, applies fallback conversion, and cleans stale temp artifacts` | `app/lib/features/import/services/image_import_service.dart` | `NCD / M` |
+| Import Service | `Converts HEIC/HEIF source files into preview-capped temporary working copies (cache-reused JPEG in current policy), applies fallback conversion, and cleans stale cache artifacts` | `app/lib/features/import/services/image_import_service.dart` | `NCD / M` |
 | Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
 | Export Path Service | `Builds default export name/folder and duplicate-safe output path` | `app/lib/features/export/services/markup_export_path_service.dart` | `NCD / M` |
 | Launch Context Adapter | `Parses optional launch context args/file for client/project/source image bootstrap while preserving standalone fallback` | `app/lib/features/integration/models/ + app/lib/features/integration/services/launch_context_service.dart` | `NCD / M` |
@@ -49,7 +49,7 @@ Required sections are present and updated through Phase 1O.
 | Feature | Behavior | Primary Module | Test Evidence |
 |---|---|---|---|
 | `Open Photo` | `Opens Windows-compatible file picker and loads JPG/JPEG/PNG/WEBP/HEIC/HEIF into canvas` | `app/lib/main.dart` + `app/lib/features/import/services/image_import_service.dart` | `flutter analyze/test/build + runtime smoke` |
-| `HEIC/HEIF Conversion` | `Converts HEIC/HEIF to preview-capped temporary PNG working copy, preserves original file, and retains fallback conversion safety` | `app/lib/features/import/services/image_import_service.dart` | `Service tests + runtime smoke` |
+| `HEIC/HEIF Conversion` | `Converts HEIC/HEIF to preview-capped temporary working copy (current policy: JPEG cache), preserves original file, and retains fallback conversion safety` | `app/lib/features/import/services/image_import_service.dart` | `Service tests + runtime smoke` |
 | `Import Progress Feedback` | `Shows user-friendly progress copy while photo import/conversion is in progress` | `app/lib/main.dart` | `Runtime smoke + widget/runtime observation` |
 | `Canvas Image Display` | `Shows selected image centered with BoxFit.contain (no default cropping)` | `app/lib/main.dart` | `Loaded-image screenshot` |
 | `Dimension Tool Selection` | `Dimension button toggles active drawing mode with visible selected state` | `app/lib/main.dart` | `Widget tests + runtime smoke` |
@@ -98,7 +98,7 @@ Required sections are present and updated through Phase 1O.
 - Canonical data source: `User-selected local image file path at runtime`
 - HEIC/HEIF working-copy policy: `Converted PNG is temporary/internal only, preview-capped for display performance, and original source file remains unchanged`
 - Launch-context policy: `Client/project/source context can be passed in, but app remains standalone and has no direct Control Center code dependency`
-- Local cache policy: `Best-effort FileImage cache eviction on image replacement; stale HEIC temp files are pruned by age/count guardrails`
+- Local cache policy: `Best-effort FileImage cache eviction on image replacement; stale HEIC preview cache files are pruned by age/count guardrails`
 - Migration policy: `N/A`
 - Backup/recovery policy: `N/A`
 
@@ -192,7 +192,7 @@ Required sections are present and updated through Phase 1O.
 - App accepts optional launch context (`--sourceImagePath`, client/project fields, or `--launchContextPath`) and still runs standalone when absent.
 - Launch context can display a non-intrusive client/project/source banner when provided.
 - Invalid or unsupported launch source image paths show a friendly message and do not block normal app usage.
-- HEIC/HEIF files are converted to preview-capped temporary PNG working copies for display/markup, with fallback conversion when package conversion fails.
+- HEIC/HEIF files are converted to preview-capped temporary working copies for display/markup (current policy: JPEG cache output), with fallback conversion when package conversion fails.
 - Original HEIC/HEIF source files are not modified, moved, overwritten, or deleted.
 - Loaded photo is displayed in-canvas with preserved aspect ratio and contain fit.
 - Dimension tool can be selected before photo load without crash.
@@ -259,7 +259,7 @@ Required sections are present and updated through Phase 1O.
 - Grouped domains:
   - app metadata/version
   - theme/colors
-  - image import (picker labels, supported extensions, HEIC preview cap/timeout, fallback args, temp cleanup limits, and friendly import error/progress copy)
+  - image import (picker labels, supported extensions, HEIC preview cache/output/quality/cap/timeout, fallback args, temp cleanup limits, and friendly import error/progress copy)
   - UI copy strings
   - tool labels
   - layout/spacing/sizing
