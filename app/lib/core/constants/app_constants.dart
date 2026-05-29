@@ -5,7 +5,7 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'NCD Photo Markup';
-  static const String appVersion = 'v0.23';
+  static const String appVersion = 'v0.24';
   static const String startupImageEnvKey = 'NCD_STARTUP_IMAGE_PATH';
 }
 
