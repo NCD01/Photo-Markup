@@ -6,7 +6,41 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-28`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1S-A native Windows close-guard hardening entry.
+Changes: Added Phase 1T-A import performance and memory cleanup entry.
+
+## Unreleased - 2026-05-28 (Phase 1T-A Image Import Performance + Memory Cleanup)
+- Owner: NCD / M
+- Author: Codex
+- Type: Performance / Reliability
+- Reason: Reduce HEIC/HEIF import latency and temp/memory pressure while preserving existing behavior.
+- Scope:
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/import/services/image_import_service.dart`
+  - `app/lib/main.dart`
+  - `app/test/image_import_service_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added centralized HEIC preview conversion tunables (`maxPreviewDimension`, conversion timeout, temp cleanup limits).
+  - Switched package conversion path to file-based conversion with preview resize cap and retained fallback conversion safety.
+  - Added stale HEIC temp working-copy cleanup policy (age + max-count).
+  - Added best-effort image cache eviction when replacing loaded image files.
+  - Replaced pixel-size decode path with `ImageDescriptor` file-based metadata read.
+  - Added import progress copy (`Opening photo...`) in empty and loaded canvas states.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - launch-context startup probes (valid + invalid source path): `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Performance Evidence (real HEIC sample):
+  - baseline import: ~`5327ms`, temp output ~`9059923` bytes
+  - after change: ~`3377ms`, temp output ~`5354339` bytes
+  - observed improvement: ~`36.6%` faster, ~`40.9%` smaller temp output
+- Risks / Known Gaps:
+  - `heic_to_png_jpg` package conversion path still fails on the current sample and falls back to ImageMagick (`TODO-036`).
 
 ## Unreleased - 2026-05-28 (Phase 1S-A Native Windows Close Guard Hardening)
 - Owner: NCD / M

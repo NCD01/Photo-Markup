@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-28`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1S-A native Windows close-guard integration notes.
+Changes: Added Phase 1T-A import performance/memory cleanup and import-progress UI notes.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -74,30 +74,34 @@ Changes: Added Phase 1S-A native Windows close-guard integration notes.
 - `Image display pane`
 - `Dimension line overlay (when photo loaded)`
 - `Loaded filename indicator`
+- `Import in-progress indicator/copy while loading/converting`
 - Read/write behavior: `READ_ONLY`
 - Notes:
 - `Original selected source file is not modified`
 - `Shows safe error message if image cannot be opened`
-- `HEIC/HEIF source files are converted to temporary PNG working copies for display/markup`
+- `HEIC/HEIF source files are converted to preview-capped temporary PNG working copies for display/markup`
+- `Import progress message ('Opening photo...') is shown while import/conversion is active`
 - `Dimension overlay is constrained to displayed photo bounds (BoxFit.contain rect)`
 
 #### `HEIC/HEIF Import Conversion Flow`
 - Source path: `app/lib/features/import/services/image_import_service.dart`
-- Purpose: `Convert HEIC/HEIF images to displayable PNG bytes/file path for Flutter canvas rendering`
+- Purpose: `Convert HEIC/HEIF images to displayable preview-capped PNG file paths for Flutter canvas rendering`
 - Parent/master form: `Photo Markup Shell`
 - Child components:
 - `HEIC extension detection`
 - `Conversion call via heic_to_png_jpg (primary path)`
 - `External conversion fallback via magick command`
 - `Temporary file write and cleanup`
+- `Stale temp converted-file cleanup (age/count guardrails)`
 - Related widgets/components:
 - `PhotoMarkupShellScreen import path`
 - `ImageImportResult`
 - Read/write behavior: `READ_WRITE`
 - Notes:
 - `Original HEIC/HEIF file remains unchanged`
-- `Temporary converted file is internal working copy only`
-- `Conversion attempts package path first, then external fallback`
+- `Temporary converted file is internal working copy only and remains in temp path`
+- `Conversion attempts package file-based path first (with preview cap), then external fallback`
+- `Image replacement path performs best-effort file-image cache eviction`
 - `Conversion failure returns friendly field-safe HEIC message if both paths fail`
 
 #### `Launch Context Adapter`
@@ -375,7 +379,7 @@ Changes: Added Phase 1S-A native Windows close-guard integration notes.
 | `Startup Splash` | `Photo Markup Shell` | `Show startup branding image before shell loads` | `app/lib/main.dart` + `app/assets/branding/splash_v1_5.png` |
 | `Windows Runner Icon` | `Photo Markup Shell` | `Apply app icon branding to Windows executable resources` | `app/windows/runner/resources/app_icon.ico` |
 | `Open Photo Action` | `Photo Markup Shell` | `Launch picker and request image file` | `app/lib/main.dart` |
-| `Image Import Service` | `HEIC/HEIF Import Conversion Flow` | `Convert HEIC/HEIF to temporary PNG working copy` | `app/lib/features/import/services/image_import_service.dart` |
+| `Image Import Service` | `HEIC/HEIF Import Conversion Flow` | `Convert HEIC/HEIF to preview-capped temporary PNG working copy with fallback + temp cleanup` | `app/lib/features/import/services/image_import_service.dart` |
 | `Canvas Image View` | `Photo Canvas Area` | `Render selected photo with BoxFit.contain` | `app/lib/main.dart` |
 | `Touch Toolbar` | `Photo Markup Shell` | `Expose tool actions with selected/disabled state` | `app/lib/main.dart` |
 | `Dimension Overlay` | `Dimension Overlay Layer` | `Render and capture dimension line interactions` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` |

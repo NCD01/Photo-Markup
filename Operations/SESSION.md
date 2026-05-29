@@ -2129,3 +2129,62 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No project-folder autosave added.
 - No unrelated tools/shapes added.
 - No PDF/full-resolution export added.
+
+# SESSION_2026-05-28_0002_phase1t_a_import_performance_memory_cleanup
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Improve HEIC/HEIF import responsiveness and reduce temp/memory pressure without changing markup/export/save-reopen behavior.
+
+## Actions
+- Baseline-measured existing HEIC path and conversion artifacts using real sample:
+  - sample: `.agent_temp/diagnostics/heic_test_assets/IMG_2434.HEIC`
+  - baseline prepare/import: ~`5327ms`
+  - baseline converted temp size: ~`9059923` bytes
+- Updated import conversion flow in `image_import_service.dart`:
+  - switched package path from bytes-based `convertToPNG` to file-based `convertFile` with preview cap.
+  - added centralized preview cap (`2560`) and package conversion timeout.
+  - retained ImageMagick fallback with centralized resize options and orientation handling.
+  - added best-effort stale temp-converted cleanup policy (age + max count limits).
+  - added debug timing logs under centralized import diagnostics prefix.
+- Updated image load path in `main.dart`:
+  - replaced full file decode for pixel size with `ImageDescriptor.encoded` file-path path.
+  - added best-effort `FileImage` cache eviction for previous image/temp image on replacement.
+  - added visible import progress copy (`Opening photo...`) for empty-state and loaded-image overlay paths.
+- Updated tests for import service converter API refactor.
+
+## Logging/Debug Notes
+- Root cause: HEIC path commonly fell back to ImageMagick after package failure, creating full-size converted PNG and carrying extra decode/cache pressure.
+- Bottleneck on current sample: conversion stage dominated total load time.
+- Performance result on same sample after change:
+  - post-change prepare/import: ~`3377ms`
+  - post-change converted temp size: ~`5354339` bytes
+- Observed improvement: about `36.6%` faster import time and about `40.9%` smaller temp converted file for the tested sample.
+
+## Validation
+- `git status --short`: `PASS` (Phase 1T-A file set only)
+- `verify-version-sync.ps1`: `PASS` (`v0.23`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- launch-context run (valid path): `PASS`
+- launch-context run (invalid source path): `PASS`
+- HEIC probe (real sample timing): `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (new import tunables centralized)
+- Full owner manual checklist: `NOT_VALIDATED` in this environment
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+- Original source image mutation not introduced.

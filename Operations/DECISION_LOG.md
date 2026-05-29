@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-28`
 Purpose: Record material architecture/process decisions.
-Changes: Added Phase 1S-A native app-exit interception decision.
+Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decision.
 
 ## DECISION-001
 - Date: 2026-05-22
@@ -205,3 +205,18 @@ Changes: Added Phase 1S-A native app-exit interception decision.
 - Related Changes: Phase 1S-A Native Windows Close Guard Hardening (uncommitted workspace)
 - Review Date: N/A
 
+## DECISION-014
+- Date: 2026-05-28
+- Status: Accepted
+- Owner: NCD / M
+- Area: Import Performance / Memory
+- Decision: For HEIC/HEIF display working copies, use file-based conversion with capped preview dimensions (`2560`) and keep output as PNG, while adding temp artifact cleanup and best-effort image-cache eviction on image replacement.
+- Alternatives Considered:
+- Keep full-resolution HEIC fallback output for display working copy.
+- Change converted display output to JPEG in this phase.
+- Add a new dependency for background conversion.
+- Rationale: Provides measurable load-time and temp-size reduction with low risk and no export/schema behavior changes.
+- Impact: HEIC import conversion on current sample reduced from ~5.3s to ~3.4s with smaller temp output (~9.1MB to ~5.35MB); original source files remain unchanged.
+- Rollback or Reversal: Remove preview resize cap and revert to prior conversion flow in `ImageImportService` and related constants.
+- Related Changes: Phase 1T-A Image Import Performance + Memory Cleanup (uncommitted workspace)
+- Review Date: N/A

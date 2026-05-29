@@ -105,14 +105,24 @@ class ImageImportConstants {
     'heif',
   };
   static const Set<String> heicExtensionsSet = <String>{'heic', 'heif'};
+  static const int heicMaxPreviewDimension = 2560;
+  static const Duration heicPackageConversionTimeout = Duration(seconds: 3);
+  static const Duration heicFallbackConversionTimeout = Duration(seconds: 20);
+  static const int tempConvertedFileMaxAgeHours = 24;
+  static const int tempConvertedFileMaxCount = 25;
   static const String heicConversionFailedMessage =
       'Could not open this HEIC image. Please convert it to JPG/PNG or try another photo.';
   static const String heicTempSuffix = '_heic_converted';
   static const String heicConvertedOutputExtension = 'png';
   static const String heicFallbackConverterCommand = 'magick';
+  static const String heicFallbackResizeOption =
+      '$heicMaxPreviewDimension''x$heicMaxPreviewDimension>';
   static const List<String> heicFallbackConverterOptions = <String>[
     '-auto-orient',
+    '-resize',
+    heicFallbackResizeOption,
   ];
+  static const String importDiagnosticsPrefix = '[ImageImport]';
   static const String openErrorMessage =
       'Could not open this image. Please choose a JPG, PNG, WEBP, or HEIC/HEIF file.';
   static const String loadedPhotoPrefix = 'Loaded photo: ';
@@ -139,6 +149,7 @@ class UiCopyConstants {
   static const String textNoteHint = 'Example: Replace drywall here';
   static const String textNoteSaveButton = 'Save';
   static const String textNoteSkipButton = 'Skip';
+  static const String importInProgressMessage = 'Opening photo...';
   static const String styleDialogTitle = 'Markup Style Preset';
   static const String styleApplyToSelectedMessage =
       'Style applied to selection.';

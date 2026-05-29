@@ -57,9 +57,18 @@ void main() {
 
       final ImageImportService service = ImageImportService(
         tempDirectoryPath: tempDir.path,
-        heicPngConverter: (Uint8List input) async {
-          expect(input, isNotEmpty);
-          return fakePngBytes;
+        heicFileConverter:
+            ({
+              required String sourcePath,
+              required String outputPath,
+              required int maxPreviewDimension,
+            }) async {
+              expect(sourcePath, heicFile.path);
+              expect(maxPreviewDimension, greaterThan(0));
+              final File outputFile = File(outputPath);
+              await outputFile.parent.create(recursive: true);
+              await outputFile.writeAsBytes(fakePngBytes, flush: true);
+              return true;
         },
       );
 
@@ -105,8 +114,14 @@ void main() {
 
         final ImageImportService service = ImageImportService(
           tempDirectoryPath: tempDir.path,
-          heicPngConverter: (_) async {
-            throw Exception('Package converter failed');
+          heicFileConverter:
+              ({
+                required String sourcePath,
+                required String outputPath,
+                required int maxPreviewDimension,
+              }) async {
+                expect(sourcePath, heicFile.path);
+                return false;
           },
           externalHeicConverter:
               ({required String sourcePath, required String outputPath}) async {

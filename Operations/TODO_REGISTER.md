@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-28`
 Purpose: Track planned and in-progress work items.
-Changes: Updated for Phase 1S-A native Windows close-guard hardening completion and TODO-034 closure.
+Changes: Updated for Phase 1T-A import performance cleanup and added package-path reliability follow-up.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -50,6 +50,7 @@ Changes: Updated for Phase 1S-A native Windows close-guard hardening completion 
 | `TODO-033` | `Integration` | `Evaluate safe project-folder autosave workflow only after explicit approval` | `High` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-034` | `Export` | `Harden unsaved-change close interception for native Windows close edge-cases beyond current PopScope guard` | `Medium` | `NCD / M` | `Done` | `N/A` | `2026-05-28` |
 | `TODO-035` | `Data` | `Add advanced sidecar image relink workflow (search-by-name and optional relative path resolution) for missing source image scenarios` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
+| `TODO-036` | `Import` | `Investigate why heic_to_png_jpg package path fails on current Windows HEIC sample and decide whether to keep fallback-first behavior or adjust converter strategy` | `Medium` | `NCD / M` | `Open` | `DECISION-014` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -67,7 +68,7 @@ Changes: Updated for Phase 1S-A native Windows close-guard hardening completion 
 | `11` | `Markup` | `Arrow MVP delivered; optional arrow-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-018` |
 | `12` | `Markup` | `Rectangle MVP delivered; optional rectangle-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-019` |
 | `13` | `Markup` | `Circle/Oval MVP delivered; optional circle/oval-label enhancement deferred` | `Open` | `Owner approval for annotation expansion` | `Tracked in TODO-020` |
-| `14` | `Import` | `HEIC/HEIF conversion path implemented with package + ImageMagick fallback; continue deployment hardening` | `Open` | `Windows fallback dependency availability` | `Tracked in TODO-021/TODO-023` |
+| `14` | `Import` | `HEIC/HEIF conversion path now includes preview-size cap, temp cleanup, and cache cleanup; continue converter reliability hardening` | `Open` | `Windows fallback dependency availability + package-path reliability` | `Tracked in TODO-021/TODO-023/TODO-036` |
 | `15` | `Markup` | `Freehand MVP implemented; optional smoothing/path simplification tuning deferred` | `Open` | `Owner interactive validation + future tuning approval` | `Tracked in TODO-024` |
 | `16` | `Markup` | `Move/Adjust + endpoint/resize handle MVP delivered for dimension/arrow/rectangle/oval` | `Done` | `N/A` | `Phase 1M+1N delivered` |
 | `17` | `Markup` | `Advanced handle work (freehand points/text-note resize/rotation/edge handles)` | `Open` | `Owner approval for post-MVP advanced adjust UX` | `Tracked in TODO-028` |

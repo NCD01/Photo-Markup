@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-28`
 Purpose: Track required validation activities and outcomes.
-Changes: Added Phase 1S-A native Windows close-guard hardening validation gates and evidence status.
+Changes: Added Phase 1T-A import performance measurement and regression validation gates.
 
 ## Validation Matrix
 | ID | Validation | Command/Method | Trigger | Pass Criteria | Owner | Status | Evidence Path |
@@ -176,3 +176,6 @@ Changes: Added Phase 1S-A native Windows close-guard hardening validation gates 
 | `VAL-161` | Phase 1S-A Native Close Guard Static/Unit Gate | `flutter analyze` + `flutter test` | Native app-exit interception code changed | Analyzer/tests pass with no regressions across existing guard/export/markup flows | `NCD / M` | `PASS` | `Terminal output 2026-05-28 (Phase 1S-A)` |
 | `VAL-162` | Phase 1S-A Build/Run Gate | `flutter build windows --debug` + `flutter run -d windows --debug --no-resident` | Window-exit handling changed | Windows build/startup smoke pass after close-guard hardening | `NCD / M` | `PASS` | `Terminal output 2026-05-28 (Phase 1S-A)` |
 | `VAL-163` | Phase 1S-A Manual Native-X Guard Workflow | Manual interactive workflow for native title-bar `X` with dirty session | Native close bypass bugfix | Unsaved warning appears on native close with Export/Discard/Cancel behavior and safe export-cancel handling | `NCD / M` | `PASS` | `Owner manual validation PASS (2026-05-28)` |
+| `VAL-164` | Phase 1T-A HEIC Baseline/After Timing Gate | Controlled HEIC probe using `.agent_temp/diagnostics/heic_test_assets/IMG_2434.HEIC` | Import performance cleanup phase | Measured baseline vs after timings captured with conversion output size comparison | `NCD / M` | `PASS` | `Probe output 2026-05-28 (baseline and after)` |
+| `VAL-165` | Phase 1T-A Import Regression Gate | `flutter analyze` + `flutter test` + launch-context valid/invalid startup probes | Import pipeline logic changed | No regressions in import/export/markup/save-reopen/launch-context automated checks | `NCD / M` | `PASS` | `Terminal output 2026-05-28 (Phase 1T-A)` |
+| `VAL-166` | Phase 1T-A Windows Build/Run Gate | `flutter build windows --debug` + `flutter run -d windows --debug --no-resident` | Runtime image loading path changed | Windows debug build/startup succeeds after import optimizations | `NCD / M` | `PASS` | `Terminal output 2026-05-28 (Phase 1T-A)` |

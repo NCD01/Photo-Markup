@@ -333,9 +333,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     bool showErrorForFailure = true,
     bool requireUnsavedGuard = false,
   }) async {
+    final Stopwatch importStopwatch = Stopwatch()..start();
     if (requireUnsavedGuard) {
       final bool canContinue = await _confirmUnsavedChangesBeforeContinuing();
       if (!canContinue || !mounted) {
+        _logImportDebug('load canceled by unsaved-change guard');
         return false;
       }
     }
@@ -348,6 +350,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       if (showErrorForFailure) {
         _setLoadError();
       }
+      _logImportDebug('load rejected unsupported extension=$extension');
       return false;
     }
 
@@ -356,6 +359,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       if (showErrorForFailure) {
         _setLoadError();
       }
+      _logImportDebug('load rejected missing file path=$path');
       return false;
     }
 
@@ -372,10 +376,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
               : ImageImportConstants.openErrorMessage,
         );
       }
+      _logImportDebug('prepareDisplayableImage failed for path=$path');
       return false;
     }
 
+    final Stopwatch decodeStopwatch = Stopwatch()..start();
     final Size? imageSize = await _readImagePixelSize(importResult.displayPath);
+    decodeStopwatch.stop();
     if (imageSize == null) {
       if (importResult.usedTemporaryConvertedCopy) {
         await _imageImportService.deleteTemporaryDisplayPath(
@@ -389,9 +396,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
               : ImageImportConstants.openErrorMessage,
         );
       }
+      _logImportDebug('image decode failed for displayPath=${importResult.displayPath}');
       return false;
     }
 
+    final String? previousImagePath = _imagePath;
     final String? previousTemporaryPath = _temporaryConvertedImagePath;
     if (!mounted) {
       if (importResult.usedTemporaryConvertedCopy) {
@@ -408,6 +417,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         previousTemporaryPath,
       );
     }
+    await _evictImageFromCache(previousImagePath);
+    await _evictImageFromCache(previousTemporaryPath);
 
     setState(() {
       _imagePath = importResult.displayPath;
@@ -434,24 +445,53 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _nextMarkupId = 1;
       _unsavedChangesTracker.markSaved();
     });
+    importStopwatch.stop();
+    _logImportDebug(
+      'load complete extension=$extension '
+      'decodeMs=${decodeStopwatch.elapsedMilliseconds} '
+      'totalMs=${importStopwatch.elapsedMilliseconds} '
+      'displayPath=${importResult.displayPath}',
+    );
     return true;
   }
 
   Future<Size?> _readImagePixelSize(String imagePath) async {
     try {
-      final Uint8List bytes = await File(imagePath).readAsBytes();
-      final ui.Codec codec = await ui.instantiateImageCodec(bytes);
-      final ui.FrameInfo frame = await codec.getNextFrame();
-      final Size size = Size(
-        frame.image.width.toDouble(),
-        frame.image.height.toDouble(),
+      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromFilePath(
+        imagePath,
       );
-      frame.image.dispose();
-      codec.dispose();
+      final ui.ImageDescriptor descriptor = await ui.ImageDescriptor.encoded(
+        buffer,
+      );
+      final Size size = Size(
+        descriptor.width.toDouble(),
+        descriptor.height.toDouble(),
+      );
+      descriptor.dispose();
+      buffer.dispose();
       return size;
     } catch (_) {
       return null;
     }
+  }
+
+  Future<void> _evictImageFromCache(String? path) async {
+    if (path == null || path.isEmpty) {
+      return;
+    }
+    try {
+      final ImageProvider provider = FileImage(File(path));
+      await provider.evict();
+    } catch (_) {
+      // Best-effort cache cleanup only.
+    }
+  }
+
+  void _logImportDebug(String message) {
+    if (!kDebugMode) {
+      return;
+    }
+    debugPrint('${ImageImportConstants.importDiagnosticsPrefix} $message');
   }
 
   void _setLoadError({String? message}) {
@@ -3116,6 +3156,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
               if (_isPickingFile) ...[
                 const SizedBox(height: UiLayoutConstants.messageTopGap),
                 const CircularProgressIndicator(),
+                const SizedBox(height: UiLayoutConstants.messageTopGap),
+                const Text(
+                  UiCopyConstants.importInProgressMessage,
+                  style: TextStyle(
+                    fontSize: UiLayoutConstants.messageFontSize,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ],
           ),
@@ -3186,6 +3235,29 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                         onTap: (Offset point) =>
                             _onDimensionTap(point, imageRect),
                       ),
+                      if (_isPickingFile)
+                        Container(
+                          color: AppThemeConstants.toolbarBackground.withAlpha(
+                            200,
+                          ),
+                          alignment: Alignment.center,
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              CircularProgressIndicator(),
+                              SizedBox(
+                                height: UiLayoutConstants.messageTopGap,
+                              ),
+                              Text(
+                                UiCopyConstants.importInProgressMessage,
+                                style: TextStyle(
+                                  fontSize: UiLayoutConstants.messageFontSize,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 );
