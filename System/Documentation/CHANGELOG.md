@@ -1222,3 +1222,15 @@ Changes: Added Phase 1T-A import performance and memory cleanup entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.25 - 2026-05-29
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve HEIC preview cache optimization
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
