@@ -91,6 +91,7 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - `Dimension overlay is constrained to displayed photo bounds (BoxFit.contain rect)`
 - `View controls adjust render transform only; underlying markup geometry model stays normalized to displayed image rect`
 - `Pan mode temporarily disables markup pointer actions to avoid draw/select gesture conflicts while dragging view`
+- `Selecting a markup drawing tool while Pan mode is ON automatically turns Pan mode OFF so draw/select actions are immediately available`
 
 #### `HEIC/HEIF Import Conversion Flow`
 - Source path: `app/lib/features/import/services/image_import_service.dart`

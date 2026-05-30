@@ -56,6 +56,7 @@ Required sections are present and updated through Phase 1O.
 | `Canvas Zoom Controls` | `In-canvas controls support zoom in/out with configured min/max clamping and zoom-percent status` | `app/lib/main.dart` + `app/lib/features/view/utils/canvas_view_transform_utils.dart` | `Utility tests + runtime smoke` |
 | `Canvas Pan Controls` | `Pan mode toggle enables drag-panning and wheel scroll panning while preserving markup model coordinates` | `app/lib/main.dart` | `Runtime smoke + code review` |
 | `Canvas Fit/Actual Controls` | `Fit and 100% actions reset or normalize canvas transform without mutating markup geometry` | `app/lib/main.dart` | `Runtime smoke + code review` |
+| `Pan/Tool Selection Safety` | `Selecting any markup drawing tool auto-disables pan mode so draw/select interactions resume immediately` | `app/lib/main.dart` | `Widget tests + runtime smoke` |
 | `Dimension Tool Selection` | `Dimension button toggles active drawing mode with visible selected state` | `app/lib/main.dart` | `Widget tests + runtime smoke` |
 | `Arrow Tool Selection` | `Arrow button toggles active arrow drawing mode with visible selected state` | `app/lib/main.dart` | `Runtime smoke + code review` |
 | `Rectangle Tool Selection` | `Rectangle button toggles active rectangle drawing mode with visible selected state` | `app/lib/main.dart` | `Runtime smoke + code review` |

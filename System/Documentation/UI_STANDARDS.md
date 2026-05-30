@@ -24,6 +24,7 @@ Changes: Added Phase 1U compact rail + expandable drawer field-usability pattern
 - Drawer attachment rule: `Drawer left edge must align flush to rail right edge with no visible seam/gutter strip`
 - Canvas view-control pattern: `Use compact in-canvas control surface for zoom in/out, fit, actual-size, and pan toggle without horizontal overflow`
 - Canvas transform rule: `Apply transforms to image + markup overlay together; do not rewrite stored markup coordinates during zoom/pan`
+- Pan/tool interaction rule: `When a markup drawing tool is selected while Pan mode is active, auto-disable Pan mode to restore immediate draw/select behavior`
 - Active tool visibility: `Show active tool status text in the expanded sidebar header`
 - Style visibility: `Show current style short-label directly on Style action`
 - Icon color hierarchy: `Inactive icons use neutral charcoal; active/selected states use NCD Blue accent; erase uses restrained muted-red accent`

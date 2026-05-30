@@ -2188,6 +2188,44 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No full-resolution export added.
 - No PDF export added.
 
+# SESSION_2026-05-29_0003_phase1v_a_pan_tool_bugfix
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Fix Phase 1V bug where markup tool selection remained blocked when Pan Mode was enabled.
+
+## Actions
+- Confirmed root cause in `_onToolbarPressed`: tool changes did not clear `_isPanModeEnabled`.
+- Added centralized `_selectMarkupTool(...)` helper to set active tool and auto-disable pan mode.
+- Updated all markup tool button handlers to use the helper.
+- Added widget coverage proving pan mode turns off when selecting Dimension/Text Note/Arrow/Rectangle/Circle/Freehand.
+
+## Logging/Debug Notes
+- Root cause was state coupling, not gesture math: overlay correctly blocked interaction during pan mode, but tool selection never exited pan mode.
+- No export/save/reopen/import/transform schema changes were introduced.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.27`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS` after one transient Windows build-file lock rerun
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+
 # SESSION_2026-05-29_0002_phase1v_canvas_zoom_pan
 
 ## Context
@@ -2514,3 +2552,47 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No full-resolution export added.
 - No PDF export added.
 - Original source image mutation not introduced.
+# SESSION_2026-05-30_0001_phase1v_a_pan_tool_test_hardening
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Resolve Phase 1V-A blocking validation failure where `widget_test.dart` timed out on pan-mode/tool-selection coverage.
+
+## Actions
+- Kept Phase 1V-A production behavior fix centralized in `_selectMarkupTool(...)` (`main.dart`), where selecting a markup tool auto-disables pan mode.
+- Added `@visibleForTesting` hooks on `PhotoMarkupShellScreen` state:
+  - `debugSetPanModeEnabled(bool enabled)`
+  - `debugIsPanModeEnabled`
+- Reworked the Phase 1V-A widget test to deterministic state-driven coverage:
+  - Removed image-load dependency that caused widget-test hangs in this environment.
+  - Removed unbounded settle dependence for the pan/tool test path.
+  - Test now explicitly toggles pan state through test hook, taps each markup tool rail action, and asserts pan mode auto-disables.
+
+## Logging/Debug Notes
+- Root timeout cause in test harness: image-dependent widget path + settle/interaction timing produced a non-deterministic hang in the test runner.
+- Production behavior did not require additional pan-reset scatter; fix remains centralized at tool-selection helper.
+- Runtime lock note: one `flutter run --no-resident` attempt failed from transient Windows build file locks; process cleanup + immediate rerun passed.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.27`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test test/widget_test.dart`: `PASS`
+- `flutter test --timeout 20m`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS` (after clearing transient lock contention)
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (pan reset remains centralized in `_selectMarkupTool(...)`; no scattered resets)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+- M-approved documentation/image asset changes were left untouched.

@@ -32,6 +32,25 @@ Changes: Added Phase 1U compact rail/drawer sidebar field-usability polish entry
 - Risks / Known Gaps:
   - Optional touch-gesture ergonomics follow-up remains deferred (`TODO-038`).
 
+## Unreleased - 2026-05-29 (Phase 1V-A Pan Mode / Tool Selection Bugfix)
+- Owner: NCD / M
+- Author: Codex
+- Type: Bugfix / Interaction
+- Reason: Ensure selecting a markup tool while Pan Mode is active immediately restores normal drawing/selection behavior.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added centralized markup tool selection helper that auto-disables Pan Mode before setting active markup tool.
+  - Updated tool-selection routing for Dimension, Text Note, Arrow, Rectangle, Circle/Oval, and Freehand.
+  - Added widget test coverage validating pan auto-disable behavior across markup tools.
+- Validation Evidence:
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS` (after one transient build-lock rerun)
+
 ## Unreleased - 2026-05-29 (Phase 1U Field Polish / Toolbar Organization)
 - Owner: NCD / M
 - Author: Codex

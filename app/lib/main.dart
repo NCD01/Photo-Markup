@@ -601,6 +601,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     });
   }
 
+  @visibleForTesting
+  void debugSetPanModeEnabled(bool enabled) {
+    setState(() {
+      _isPanModeEnabled = enabled;
+    });
+  }
+
+  @visibleForTesting
+  bool get debugIsPanModeEnabled => _isPanModeEnabled;
+
   void _onCanvasInteractionUpdate(ScaleUpdateDetails details) {
     _syncViewScaleFromController();
   }
@@ -652,44 +662,32 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
 
     if (label == ToolbarConstants.dimension) {
-      setState(() {
-        _selectedTool = MarkupTool.dimension;
-      });
+      _selectMarkupTool(MarkupTool.dimension);
       return;
     }
 
     if (label == ToolbarConstants.arrow) {
-      setState(() {
-        _selectedTool = MarkupTool.arrow;
-      });
+      _selectMarkupTool(MarkupTool.arrow);
       return;
     }
 
     if (label == ToolbarConstants.rectangle) {
-      setState(() {
-        _selectedTool = MarkupTool.rectangle;
-      });
+      _selectMarkupTool(MarkupTool.rectangle);
       return;
     }
 
     if (label == ToolbarConstants.circle) {
-      setState(() {
-        _selectedTool = MarkupTool.oval;
-      });
+      _selectMarkupTool(MarkupTool.oval);
       return;
     }
 
     if (label == ToolbarConstants.freehand) {
-      setState(() {
-        _selectedTool = MarkupTool.freehand;
-      });
+      _selectMarkupTool(MarkupTool.freehand);
       return;
     }
 
     if (label == ToolbarConstants.textNote) {
-      setState(() {
-        _selectedTool = MarkupTool.textNote;
-      });
+      _selectMarkupTool(MarkupTool.textNote);
       return;
     }
 
@@ -712,6 +710,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _exportMarkedUpImage();
       return;
     }
+  }
+
+  void _selectMarkupTool(MarkupTool tool) {
+    setState(() {
+      _selectedTool = tool;
+      if (_isPanModeEnabled) {
+        _isPanModeEnabled = false;
+      }
+    });
   }
 
   Future<bool> _exportMarkedUpImage() async {

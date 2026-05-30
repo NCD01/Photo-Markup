@@ -52,7 +52,7 @@ Changes: Updated for Phase 1U compact rail/drawer toolbar polish and retained na
 | `TODO-035` | `Data` | `Add advanced sidecar image relink workflow (search-by-name and optional relative path resolution) for missing source image scenarios` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-036` | `Import` | `Investigate why heic_to_png_jpg package path fails on current Windows HEIC sample and decide whether to keep package-first policy or switch fallback-first by default after broader sample reliability checks` | `Medium` | `NCD / M` | `Open` | `DECISION-014, DECISION-015` | `N/A` |
 | `TODO-037` | `UI` | `Evaluate optional ultra-compact action strategy for very short/narrow windows while keeping critical sidebar actions visible` | `Medium` | `NCD / M` | `Open` | `DECISION-016` | `N/A` |
-| `TODO-038` | `Canvas View` | `Evaluate optional gesture-polish follow-up for touch-first pan/zoom ergonomics (for example, pinch+pan behavior tuning while preserving markup-draw gesture safety)` | `Medium` | `NCD / M` | `Open` | `DECISION-018` | `N/A` |
+| `TODO-038` | `Canvas View` | `Evaluate optional gesture-polish follow-up for touch-first pan/zoom ergonomics (for example, pinch+pan behavior tuning and optional smart pan/tool mode transitions beyond Phase 1V-A auto-disable fix)` | `Medium` | `NCD / M` | `Open` | `DECISION-018` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |

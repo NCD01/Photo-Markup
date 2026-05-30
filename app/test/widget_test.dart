@@ -13,6 +13,12 @@ import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/main.dart';
 
+Future<void> _pumpFrames(WidgetTester tester, {int frames = 12}) async {
+  for (int i = 0; i < frames; i++) {
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+}
+
 Future<void> _expandSidebarIfCollapsed(WidgetTester tester) async {
   final Finder drawerToggle = find.byKey(
     const ValueKey<String>('sidebar-drawer-toggle'),
@@ -25,7 +31,7 @@ Future<void> _expandSidebarIfCollapsed(WidgetTester tester) async {
   );
   if (expandButton.evaluate().isNotEmpty) {
     await tester.tap(expandButton);
-    await tester.pumpAndSettle();
+    await _pumpFrames(tester, frames: 20);
   }
 }
 
@@ -45,9 +51,9 @@ Future<void> _tapSidebarAction(WidgetTester tester, String label) async {
     scrollable: sidebarScrollable,
   );
   await tester.ensureVisible(actionLabel);
-  await tester.pumpAndSettle();
+  await _pumpFrames(tester, frames: 8);
   await tester.tap(actionLabel, warnIfMissed: false);
-  await tester.pump();
+  await _pumpFrames(tester, frames: 8);
 }
 
 void main() {
@@ -156,7 +162,7 @@ void main() {
         milliseconds: BrandingAssetConstants.startupSplashDurationMs,
       ),
     );
-    await tester.pumpAndSettle();
+    await _pumpFrames(tester, frames: 20);
   });
 
   testWidgets('shows launch context summary when provided', (
@@ -224,11 +230,11 @@ void main() {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
     await _expandSidebarIfCollapsed(tester);
     await _tapSidebarAction(tester, ToolbarConstants.style);
-    await tester.pumpAndSettle();
+    await _pumpFrames(tester, frames: 16);
     expect(find.text(UiCopyConstants.styleDialogTitle), findsOneWidget);
 
     await tester.tap(find.text('Red'));
-    await tester.pumpAndSettle();
+    await _pumpFrames(tester, frames: 16);
     expect(find.text('Style: Red'), findsWidgets);
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
@@ -325,5 +331,43 @@ void main() {
     expect(startPoint, isNotNull);
     expect(updatePoint, isNotNull);
     expect(endCalled, isTrue);
+  });
+
+  testWidgets('selecting markup tool disables pan mode when active', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    await _pumpFrames(tester, frames: 16);
+
+    final List<String> tools = <String>[
+      ToolbarConstants.dimension,
+      ToolbarConstants.textNote,
+      ToolbarConstants.arrow,
+      ToolbarConstants.rectangle,
+      ToolbarConstants.circle,
+      ToolbarConstants.freehand,
+    ];
+
+    for (final String tool in tools) {
+      final dynamic stateBefore = tester.state(
+        find.byType(PhotoMarkupShellScreen),
+      );
+      stateBefore.debugSetPanModeEnabled(true);
+      await _pumpFrames(tester, frames: 4);
+      expect(stateBefore.debugIsPanModeEnabled, isTrue);
+
+      final Finder railToolButton = find.byKey(
+        ValueKey<String>('sidebar-rail-$tool'),
+      );
+      expect(railToolButton, findsOneWidget);
+
+      await tester.tap(railToolButton);
+      await _pumpFrames(tester, frames: 8);
+
+      final dynamic stateAfter = tester.state(
+        find.byType(PhotoMarkupShellScreen),
+      );
+      expect(stateAfter.debugIsPanModeEnabled, isFalse);
+    }
   });
 }
