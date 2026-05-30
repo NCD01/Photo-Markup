@@ -91,6 +91,10 @@ class AppThemeConstants {
   static const Color sidebarDivider = Color(0xFFE0E8EE);
   static const Color sidebarHeaderText = Color(0xFF1D2A33);
   static const Color errorAccent = Colors.redAccent;
+  static const Color viewControlSurface = Color(0xEAF6FAFD);
+  static const Color viewControlBorder = Color(0xFFD0DEE8);
+  static const Color viewControlIcon = Color(0xFF1F2C36);
+  static const Color viewControlAccent = Color(0xFF007FB7);
 }
 
 class ImageImportConstants {
@@ -215,6 +219,29 @@ class UiCopyConstants {
   static const String sidebarCollapseTooltip = 'Collapse Sidebar';
   static const String sidebarStylePrefix = 'Style';
   static const String sidebarTitle = 'Quick Actions';
+  static const String viewZoomOutTooltip = 'Zoom Out';
+  static const String viewZoomInTooltip = 'Zoom In';
+  static const String viewFitTooltip = 'Fit to Screen';
+  static const String viewActualSizeTooltip = 'Actual Size (100%)';
+  static const String viewPanEnableTooltip = 'Enable Pan Drag';
+  static const String viewPanDisableTooltip = 'Disable Pan Drag';
+  static const String viewZoomPrefix = 'Zoom';
+  static const String viewPanLabel = 'Pan';
+  static const String viewStateOn = 'On';
+  static const String viewStateOff = 'Off';
+}
+
+class ViewControlConstants {
+  const ViewControlConstants._();
+
+  static const double defaultScale = 1.0;
+  static const double minScale = 1.0;
+  static const double maxScale = 5.0;
+  static const double buttonZoomStep = 0.25;
+  static const double wheelZoomSensitivity = 0.0015;
+  static const double panStepMultiplier = 1.0;
+  static const double scaleEpsilon = 0.001;
+  static const EdgeInsets boundaryMargin = EdgeInsets.all(1200);
 }
 
 class ToolbarSectionDefinition {
@@ -370,6 +397,18 @@ class UiLayoutConstants {
   static const double toolbarButtonFontSize = 16;
   static const double loadedNameFontSize = 13;
   static const double toolbarButtonSelectedBorderWidth = 2.4;
+  static const double viewControlPanelTop = 12;
+  static const double viewControlPanelRight = 12;
+  static const double viewControlPanelPadding = 6;
+  static const double viewControlPanelRadius = 10;
+  static const double viewControlPanelBorderWidth = 1;
+  static const double viewControlButtonSize = 38;
+  static const double viewControlIconSize = 20;
+  static const double viewControlGap = 4;
+  static const double viewControlZoomLabelWidth = 66;
+  static const double viewControlZoomLabelFontSize = 12;
+  static const double viewControlPanLabelFontSize = 11;
+  static const double viewControlPanLabelTopGap = 2;
   static const double dimensionEndpointOuterRadius = 5;
   static const double dimensionEndpointInnerRadius = 2.5;
   static const double dimensionTapDragMinDistance = 6;

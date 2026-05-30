@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
@@ -28,6 +29,7 @@ import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart'
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/unsaved_changes_tracker.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
+import 'package:ncd_photo_markup/features/view/utils/canvas_view_transform_utils.dart';
 
 typedef OpenFileCallback = Future<XFile?> Function();
 typedef SaveLocationCallback =
@@ -236,9 +238,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   final UnsavedChangesTracker _unsavedChangesTracker = UnsavedChangesTracker();
   Size? _loadedImagePixelSize;
   final GlobalKey _canvasExportKey = GlobalKey();
+  final TransformationController _canvasTransformController =
+      TransformationController();
 
   MarkupTool _selectedTool = MarkupTool.none;
   bool _isSidebarExpanded = false;
+  bool _isPanModeEnabled = false;
+  double _viewScale = ViewControlConstants.defaultScale;
   MarkupStylePresetId _selectedStylePresetId =
       MarkupStylePresets.defaultPresetId;
   final List<DimensionLine> _dimensionLines = <DimensionLine>[];
@@ -276,6 +282,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _canvasTransformController.dispose();
     unawaited(
       _imageImportService.deleteTemporaryDisplayPath(
         _temporaryConvertedImagePath,
@@ -432,6 +439,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _loadedFileName = _fileNameFromPath(path);
       _loadedImagePixelSize = imageSize;
       _errorMessage = null;
+      _isPanModeEnabled = false;
+      _canvasTransformController.value = Matrix4.identity();
+      _viewScale = ViewControlConstants.defaultScale;
       _clearMarkupSelection();
       _activeDimensionStart = null;
       _activeDimensionCurrent = null;
@@ -502,6 +512,127 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _errorMessage = message ?? ImageImportConstants.openErrorMessage;
       _isPickingFile = false;
     });
+  }
+
+  double get _normalizedViewScale =>
+      CanvasViewTransformUtils.clampScale(_viewScale);
+
+  bool get _isZoomedCanvas =>
+      (_normalizedViewScale - ViewControlConstants.defaultScale).abs() >
+      ViewControlConstants.scaleEpsilon;
+
+  int get _zoomPercent =>
+      CanvasViewTransformUtils.zoomPercent(_normalizedViewScale);
+
+  void _syncViewScaleFromController({bool force = false}) {
+    final double nextScale = CanvasViewTransformUtils.clampScale(
+      _canvasTransformController.value.getMaxScaleOnAxis(),
+    );
+    if (!force &&
+        (nextScale - _viewScale).abs() <= ViewControlConstants.scaleEpsilon) {
+      return;
+    }
+    setState(() {
+      _viewScale = nextScale;
+    });
+  }
+
+  Offset _currentCanvasCenter() {
+    final BuildContext? context = _canvasExportKey.currentContext;
+    if (context == null) {
+      return Offset.zero;
+    }
+    final RenderObject? renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox) {
+      return Offset.zero;
+    }
+    return renderObject.size.center(Offset.zero);
+  }
+
+  void _setCanvasScale(double targetScale, {Offset? focalPoint}) {
+    if (_imagePath == null) {
+      return;
+    }
+    final double clampedTarget = CanvasViewTransformUtils.clampScale(
+      targetScale,
+    );
+    final double currentScale = CanvasViewTransformUtils.clampScale(
+      _canvasTransformController.value.getMaxScaleOnAxis(),
+    );
+    if ((clampedTarget - currentScale).abs() <=
+        ViewControlConstants.scaleEpsilon) {
+      return;
+    }
+    final Offset localFocal = focalPoint ?? _currentCanvasCenter();
+    final Offset sceneFocal = _canvasTransformController.toScene(localFocal);
+    final double zoomDelta = clampedTarget / currentScale;
+    // ignore: deprecated_member_use
+    final Matrix4 nextTransform = _canvasTransformController.value.clone()
+      // ignore: deprecated_member_use
+      ..translate(sceneFocal.dx, sceneFocal.dy)
+      // ignore: deprecated_member_use
+      ..scale(zoomDelta)
+      // ignore: deprecated_member_use
+      ..translate(-sceneFocal.dx, -sceneFocal.dy);
+    _canvasTransformController.value = nextTransform;
+    _syncViewScaleFromController(force: true);
+  }
+
+  void _zoomInView() {
+    _setCanvasScale(CanvasViewTransformUtils.zoomInStep(_normalizedViewScale));
+  }
+
+  void _zoomOutView() {
+    _setCanvasScale(CanvasViewTransformUtils.zoomOutStep(_normalizedViewScale));
+  }
+
+  void _setCanvasViewActualSize() {
+    _setCanvasScale(ViewControlConstants.defaultScale);
+  }
+
+  void _fitCanvasToScreen() {
+    _canvasTransformController.value = Matrix4.identity();
+    _syncViewScaleFromController(force: true);
+  }
+
+  void _togglePanMode() {
+    setState(() {
+      _isPanModeEnabled = !_isPanModeEnabled;
+    });
+  }
+
+  void _onCanvasInteractionUpdate(ScaleUpdateDetails details) {
+    _syncViewScaleFromController();
+  }
+
+  void _onCanvasPointerSignal(PointerSignalEvent event) {
+    if (_imagePath == null || event is! PointerScrollEvent) {
+      return;
+    }
+    final double scrollDy = event.scrollDelta.dy;
+    final bool zoomModifierPressed =
+        HardwareKeyboard.instance.isControlPressed ||
+        HardwareKeyboard.instance.isMetaPressed;
+    if (zoomModifierPressed) {
+      final double deltaScale = CanvasViewTransformUtils.wheelScaleDelta(
+        scrollDy,
+      );
+      final double targetScale = _normalizedViewScale * deltaScale;
+      _setCanvasScale(targetScale, focalPoint: event.localPosition);
+      return;
+    }
+    if (!_isZoomedCanvas) {
+      return;
+    }
+    // ignore: deprecated_member_use
+    final Matrix4 nextTransform = _canvasTransformController.value.clone()
+      // ignore: deprecated_member_use
+      ..translate(
+        -event.scrollDelta.dx * ViewControlConstants.panStepMultiplier,
+        -event.scrollDelta.dy * ViewControlConstants.panStepMultiplier,
+      );
+    _canvasTransformController.value = nextTransform;
+    _syncViewScaleFromController();
   }
 
   void _onToolbarPressed(String label) {
@@ -1512,6 +1643,149 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewControlButton({
+    required String keySuffix,
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback? onPressed,
+    Color? iconColor,
+    bool isActive = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: SizedBox(
+        key: ValueKey<String>('view-control-$keySuffix'),
+        width: UiLayoutConstants.viewControlButtonSize,
+        height: UiLayoutConstants.viewControlButtonSize,
+        child: Material(
+          color: isActive
+              ? AppThemeConstants.sidebarSelectedTint
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(
+            UiLayoutConstants.sidebarActionRadius,
+          ),
+          child: IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            onPressed: onPressed,
+            icon: Icon(
+              icon,
+              size: UiLayoutConstants.viewControlIconSize,
+              color: iconColor ?? AppThemeConstants.viewControlIcon,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCanvasViewControls() {
+    final bool canZoomIn =
+        _normalizedViewScale <
+        ViewControlConstants.maxScale - ViewControlConstants.scaleEpsilon;
+    final bool canZoomOut =
+        _normalizedViewScale >
+        ViewControlConstants.minScale + ViewControlConstants.scaleEpsilon;
+    final bool canReset = _isZoomedCanvas;
+
+    return Material(
+      elevation: 3,
+      color: AppThemeConstants.viewControlSurface,
+      borderRadius: BorderRadius.circular(UiLayoutConstants.viewControlPanelRadius),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(
+            UiLayoutConstants.viewControlPanelRadius,
+          ),
+          border: Border.all(
+            color: AppThemeConstants.viewControlBorder,
+            width: UiLayoutConstants.viewControlPanelBorderWidth,
+          ),
+        ),
+        padding: const EdgeInsets.all(UiLayoutConstants.viewControlPanelPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                _buildViewControlButton(
+                  keySuffix: 'zoom-out',
+                  tooltip: UiCopyConstants.viewZoomOutTooltip,
+                  icon: Icons.remove,
+                  onPressed: canZoomOut ? _zoomOutView : null,
+                ),
+                const SizedBox(width: UiLayoutConstants.viewControlGap),
+                SizedBox(
+                  width: UiLayoutConstants.viewControlZoomLabelWidth,
+                  child: Text(
+                    '${UiCopyConstants.viewZoomPrefix}: $_zoomPercent%',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: UiLayoutConstants.viewControlZoomLabelFontSize,
+                      fontWeight: FontWeight.w700,
+                      color: AppThemeConstants.sidebarHeaderText,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: UiLayoutConstants.viewControlGap),
+                _buildViewControlButton(
+                  keySuffix: 'zoom-in',
+                  tooltip: UiCopyConstants.viewZoomInTooltip,
+                  icon: Icons.add,
+                  onPressed: canZoomIn ? _zoomInView : null,
+                ),
+              ],
+            ),
+            const SizedBox(height: UiLayoutConstants.viewControlGap),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                _buildViewControlButton(
+                  keySuffix: 'fit',
+                  tooltip: UiCopyConstants.viewFitTooltip,
+                  icon: Icons.fit_screen,
+                  onPressed: canReset ? _fitCanvasToScreen : null,
+                  iconColor: AppThemeConstants.viewControlAccent,
+                ),
+                const SizedBox(width: UiLayoutConstants.viewControlGap),
+                _buildViewControlButton(
+                  keySuffix: 'actual',
+                  tooltip: UiCopyConstants.viewActualSizeTooltip,
+                  icon: Icons.center_focus_strong,
+                  onPressed: canReset ? _setCanvasViewActualSize : null,
+                ),
+                const SizedBox(width: UiLayoutConstants.viewControlGap),
+                _buildViewControlButton(
+                  keySuffix: 'pan',
+                  tooltip: _isPanModeEnabled
+                      ? UiCopyConstants.viewPanDisableTooltip
+                      : UiCopyConstants.viewPanEnableTooltip,
+                  icon: Icons.pan_tool_alt_outlined,
+                  onPressed: _togglePanMode,
+                  iconColor: _isPanModeEnabled
+                      ? AppThemeConstants.viewControlAccent
+                      : AppThemeConstants.viewControlIcon,
+                  isActive: _isPanModeEnabled,
+                ),
+              ],
+            ),
+            const SizedBox(height: UiLayoutConstants.viewControlPanLabelTopGap),
+            Text(
+              '${UiCopyConstants.viewPanLabel}: '
+              '${_isPanModeEnabled ? UiCopyConstants.viewStateOn : UiCopyConstants.viewStateOff}',
+              style: const TextStyle(
+                fontSize: UiLayoutConstants.viewControlPanLabelFontSize,
+                fontWeight: FontWeight.w600,
+                color: AppThemeConstants.sidebarSectionLabel,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -3245,6 +3519,26 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (event is! KeyDownEvent) {
       return KeyEventResult.ignored;
     }
+    final bool ctrlOrMetaPressed =
+        HardwareKeyboard.instance.isControlPressed ||
+        HardwareKeyboard.instance.isMetaPressed;
+    if (ctrlOrMetaPressed) {
+      if (event.logicalKey == LogicalKeyboardKey.equal ||
+          event.logicalKey == LogicalKeyboardKey.numpadAdd) {
+        _zoomInView();
+        return KeyEventResult.handled;
+      }
+      if (event.logicalKey == LogicalKeyboardKey.minus ||
+          event.logicalKey == LogicalKeyboardKey.numpadSubtract) {
+        _zoomOutView();
+        return KeyEventResult.handled;
+      }
+      if (event.logicalKey == LogicalKeyboardKey.digit0 ||
+          event.logicalKey == LogicalKeyboardKey.numpad0) {
+        _fitCanvasToScreen();
+        return KeyEventResult.handled;
+      }
+    }
     if (event.logicalKey == LogicalKeyboardKey.delete ||
         event.logicalKey == LogicalKeyboardKey.backspace) {
       _eraseSelectedMarkup();
@@ -3265,7 +3559,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   bool _isOverlayInteractionEnabled(Rect imageRect) {
-    return _imagePath != null && imageRect.width > 0 && imageRect.height > 0;
+    return !_isPanModeEnabled &&
+        _imagePath != null &&
+        imageRect.width > 0 &&
+        imageRect.height > 0;
   }
 
   bool _isUndoEnabled() {
@@ -3555,80 +3852,109 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                   constraints.maxHeight,
                 );
                 final Rect imageRect = _computeDisplayedImageRect(canvasSize);
-                return RepaintBoundary(
-                  key: _canvasExportKey,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Center(
-                        child: Image.file(
-                          File(_imagePath!),
-                          fit: BoxFit.contain,
-                          errorBuilder:
-                              (_, Object error, StackTrace? stackTrace) {
-                                return const Text(
-                                  ImageImportConstants.openErrorMessage,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: AppThemeConstants.errorAccent,
-                                    fontSize: UiLayoutConstants.messageFontSize,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                );
-                              },
-                        ),
-                      ),
-                      DimensionLinesOverlay(
-                        lines: _dimensionLines,
-                        arrows: _arrows,
-                        rectangles: _rectangles,
-                        ovals: _ovals,
-                        freehands: _freehands,
-                        textNotes: _textNotes,
-                        imageRect: imageRect,
-                        selectedDimensionId: _selectedDimensionId,
-                        selectedArrowId: _selectedArrowId,
-                        selectedRectangleId: _selectedRectangleId,
-                        selectedOvalId: _selectedOvalId,
-                        selectedFreehandId: _selectedFreehandId,
-                        selectedTextNoteId: _selectedTextNoteId,
-                        activeStylePresetId: _selectedStylePresetId,
-                        activeTool: _selectedTool,
-                        activeStart: _activeDimensionStart,
-                        activeEnd: _activeDimensionCurrent,
-                        activeFreehandPoints: _activeFreehandPoints,
-                        isEnabled: _isOverlayInteractionEnabled(imageRect),
-                        onStart: (Offset point) =>
-                            _onDimensionStart(point, imageRect),
-                        onUpdate: (Offset point) =>
-                            _onDimensionUpdate(point, imageRect),
-                        onEnd: () => _onDimensionEnd(imageRect),
-                        onTap: (Offset point) =>
-                            _onDimensionTap(point, imageRect),
-                      ),
-                      if (_isPickingFile)
-                        Container(
-                          color: AppThemeConstants.toolbarBackground.withAlpha(
-                            200,
-                          ),
-                          alignment: Alignment.center,
-                          child: const Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              CircularProgressIndicator(),
-                              SizedBox(height: UiLayoutConstants.messageTopGap),
-                              Text(
-                                UiCopyConstants.importInProgressMessage,
-                                style: TextStyle(
-                                  fontSize: UiLayoutConstants.messageFontSize,
-                                  fontWeight: FontWeight.w600,
+                return Stack(
+                  fit: StackFit.expand,
+                  children: <Widget>[
+                    Listener(
+                      onPointerSignal: _onCanvasPointerSignal,
+                      child: InteractiveViewer(
+                        transformationController: _canvasTransformController,
+                        minScale: ViewControlConstants.minScale,
+                        maxScale: ViewControlConstants.maxScale,
+                        boundaryMargin: ViewControlConstants.boundaryMargin,
+                        constrained: true,
+                        panEnabled: _isPanModeEnabled,
+                        scaleEnabled: true,
+                        onInteractionUpdate: _onCanvasInteractionUpdate,
+                        child: RepaintBoundary(
+                          key: _canvasExportKey,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Center(
+                                child: Image.file(
+                                  File(_imagePath!),
+                                  fit: BoxFit.contain,
+                                  errorBuilder:
+                                      (_, Object error, StackTrace? stackTrace) {
+                                        return const Text(
+                                          ImageImportConstants.openErrorMessage,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: AppThemeConstants.errorAccent,
+                                            fontSize:
+                                                UiLayoutConstants.messageFontSize,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        );
+                                      },
                                 ),
                               ),
+                              DimensionLinesOverlay(
+                                lines: _dimensionLines,
+                                arrows: _arrows,
+                                rectangles: _rectangles,
+                                ovals: _ovals,
+                                freehands: _freehands,
+                                textNotes: _textNotes,
+                                imageRect: imageRect,
+                                selectedDimensionId: _selectedDimensionId,
+                                selectedArrowId: _selectedArrowId,
+                                selectedRectangleId: _selectedRectangleId,
+                                selectedOvalId: _selectedOvalId,
+                                selectedFreehandId: _selectedFreehandId,
+                                selectedTextNoteId: _selectedTextNoteId,
+                                activeStylePresetId: _selectedStylePresetId,
+                                activeTool: _selectedTool,
+                                activeStart: _activeDimensionStart,
+                                activeEnd: _activeDimensionCurrent,
+                                activeFreehandPoints: _activeFreehandPoints,
+                                isEnabled: _isOverlayInteractionEnabled(
+                                  imageRect,
+                                ),
+                                onStart: (Offset point) =>
+                                    _onDimensionStart(point, imageRect),
+                                onUpdate: (Offset point) =>
+                                    _onDimensionUpdate(point, imageRect),
+                                onEnd: () => _onDimensionEnd(imageRect),
+                                onTap: (Offset point) =>
+                                    _onDimensionTap(point, imageRect),
+                              ),
+                              if (_isPickingFile)
+                                Container(
+                                  color:
+                                      AppThemeConstants.toolbarBackground
+                                          .withAlpha(200),
+                                  alignment: Alignment.center,
+                                  child: const Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      CircularProgressIndicator(),
+                                      SizedBox(
+                                        height: UiLayoutConstants.messageTopGap,
+                                      ),
+                                      Text(
+                                        UiCopyConstants.importInProgressMessage,
+                                        style: TextStyle(
+                                          fontSize:
+                                              UiLayoutConstants.messageFontSize,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                             ],
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                    ),
+                    Positioned(
+                      top: UiLayoutConstants.viewControlPanelTop,
+                      right: UiLayoutConstants.viewControlPanelRight,
+                      child: _buildCanvasViewControls(),
+                    ),
+                  ],
                 );
               },
             ),

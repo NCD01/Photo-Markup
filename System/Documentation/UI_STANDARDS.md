@@ -22,6 +22,8 @@ Changes: Added Phase 1U compact rail + expandable drawer field-usability pattern
 - Toolbar organization pattern: `Use compact left rail + expandable drawer with File / Markup Tools / Edit sections and clean section headers`
 - Sidebar interaction pattern: `Collapsed icon rail (~52-56 px) + hamburger toggle to expanded labeled drawer (~240-260 px) that overlays canvas content`
 - Drawer attachment rule: `Drawer left edge must align flush to rail right edge with no visible seam/gutter strip`
+- Canvas view-control pattern: `Use compact in-canvas control surface for zoom in/out, fit, actual-size, and pan toggle without horizontal overflow`
+- Canvas transform rule: `Apply transforms to image + markup overlay together; do not rewrite stored markup coordinates during zoom/pan`
 - Active tool visibility: `Show active tool status text in the expanded sidebar header`
 - Style visibility: `Show current style short-label directly on Style action`
 - Icon color hierarchy: `Inactive icons use neutral charcoal; active/selected states use NCD Blue accent; erase uses restrained muted-red accent`

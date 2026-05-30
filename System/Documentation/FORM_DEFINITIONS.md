@@ -79,6 +79,7 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - `Empty-state icon/text`
 - `Image display pane`
 - `Dimension line overlay (when photo loaded)`
+- `Canvas view controls (zoom/pan/fit/100%)`
 - `Loaded filename indicator`
 - `Import in-progress indicator/copy while loading/converting`
 - Read/write behavior: `READ_ONLY`
@@ -88,6 +89,8 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - `HEIC/HEIF source files are converted to preview-capped temporary working copies for display/markup (current policy: JPEG cache output)`
 - `Import progress message ('Opening photo...') is shown while import/conversion is active`
 - `Dimension overlay is constrained to displayed photo bounds (BoxFit.contain rect)`
+- `View controls adjust render transform only; underlying markup geometry model stays normalized to displayed image rect`
+- `Pan mode temporarily disables markup pointer actions to avoid draw/select gesture conflicts while dragging view`
 
 #### `HEIC/HEIF Import Conversion Flow`
 - Source path: `app/lib/features/import/services/image_import_service.dart`

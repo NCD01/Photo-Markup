@@ -8,6 +8,30 @@ Last Updated: `2026-05-29`
 Purpose: Canonical changelog for project changes.
 Changes: Added Phase 1U compact rail/drawer sidebar field-usability polish entry.
 
+## Unreleased - 2026-05-29 (Phase 1V Canvas View Controls / Zoom + Pan MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: UX / View Controls
+- Reason: Improve field photo inspection workflow with zoom/pan/fit controls while preserving markup/export alignment.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/view/utils/canvas_view_transform_utils.dart`
+  - `app/test/canvas_view_transform_utils_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added canvas view controls (`Zoom -`, `Zoom +`, `Fit`, `100%`, `Pan` toggle) in a compact in-canvas control panel.
+  - Added view transform state using `TransformationController` so image + markup overlay transform together.
+  - Added wheel/trackpad support for zoom with `Ctrl`/`Meta` modifier and scroll-based panning while zoomed.
+  - Added centralized view constants/copy for zoom limits, step sizes, labels, and tooltips.
+  - Added transform utility helper + tests for zoom clamp/step/wheel/percent math.
+  - Preserved existing export crop, markup geometry model, and editable sidecar schema behavior.
+- Validation Evidence:
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+- Risks / Known Gaps:
+  - Optional touch-gesture ergonomics follow-up remains deferred (`TODO-038`).
+
 ## Unreleased - 2026-05-29 (Phase 1U Field Polish / Toolbar Organization)
 - Owner: NCD / M
 - Author: Codex

@@ -52,6 +52,7 @@ Changes: Updated for Phase 1U compact rail/drawer toolbar polish and retained na
 | `TODO-035` | `Data` | `Add advanced sidecar image relink workflow (search-by-name and optional relative path resolution) for missing source image scenarios` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-036` | `Import` | `Investigate why heic_to_png_jpg package path fails on current Windows HEIC sample and decide whether to keep package-first policy or switch fallback-first by default after broader sample reliability checks` | `Medium` | `NCD / M` | `Open` | `DECISION-014, DECISION-015` | `N/A` |
 | `TODO-037` | `UI` | `Evaluate optional ultra-compact action strategy for very short/narrow windows while keeping critical sidebar actions visible` | `Medium` | `NCD / M` | `Open` | `DECISION-016` | `N/A` |
+| `TODO-038` | `Canvas View` | `Evaluate optional gesture-polish follow-up for touch-first pan/zoom ergonomics (for example, pinch+pan behavior tuning while preserving markup-draw gesture safety)` | `Medium` | `NCD / M` | `Open` | `DECISION-018` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -78,6 +79,7 @@ Changes: Updated for Phase 1U compact rail/drawer toolbar polish and retained na
 | `20` | `Export` | `Export default naming/location and duplicate-safe save behavior delivered; unsaved-change guard delivered for open/close flows including native app-exit interception hardening` | `Open` | `Owner manual workflow validation complete for native close guard` | `Tracked in VAL-155 + VAL-163` |
 | `21` | `Data` | `Editable sidecar save/reopen MVP delivered; advanced relink automation remains deferred` | `Open` | `Owner approval for enhanced relink behavior` | `Tracked in TODO-035` |
 | `22` | `UI` | `Compact rail + expandable drawer toolbar polish delivered for field tablet use; ultra-compact short-window behavior remains deferred` | `Open` | `Owner approval for compact-toolbar follow-up` | `Tracked in TODO-037` |
+| `23` | `Canvas View` | `Zoom/pan/fit MVP delivered with transform-layer alignment safeguards; optional touch gesture polish remains deferred` | `Open` | `Owner approval for touch-gesture follow-up` | `Tracked in TODO-038` |
 
 
 

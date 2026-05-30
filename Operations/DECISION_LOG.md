@@ -267,3 +267,18 @@ Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decisio
 - Rollback or Reversal: Revert sidebar icon constants/toggle icon selections to prior mappings.
 - Related Changes: Phase 1U Sidebar Icon Rendering / Modern App Polish Fix (uncommitted workspace)
 - Review Date: N/A
+
+## DECISION-018
+- Date: 2026-05-29
+- Status: Accepted
+- Owner: NCD / M
+- Area: Canvas View Transform
+- Decision: Apply view transforms to the display layer (`InteractiveViewer` with `TransformationController`) so the photo and markup overlay transform together, while keeping export crop logic anchored to the existing untransformed displayed-image rect computation.
+- Alternatives Considered:
+- Transform markup independently from image.
+- Recompute and persist markup coordinates in zoomed viewport space.
+- Rationale: Preserves normalized markup geometry and avoids export/sidecar schema breakage while adding zoom/pan usability.
+- Impact: Zoom/pan/fit controls were added without changing normalized markup storage, export crop math, HEIC workflow, or sidecar schema.
+- Rollback or Reversal: Remove view controls and transform controller wiring; restore static contain-fit canvas rendering.
+- Related Changes: Phase 1V Canvas View Controls / Zoom + Pan MVP (uncommitted workspace)
+- Review Date: N/A

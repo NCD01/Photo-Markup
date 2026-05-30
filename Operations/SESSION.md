@@ -2188,6 +2188,42 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No full-resolution export added.
 - No PDF export added.
 
+# SESSION_2026-05-29_0002_phase1v_canvas_zoom_pan
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add MVP canvas view controls (zoom, pan, fit/100%) while preserving markup coordinate alignment, export crop behavior, and save/reopen behavior.
+
+## Actions
+- Classified clean baseline before edits.
+- Added centralized view-control constants and copy for zoom/pan controls.
+- Added canvas transform utility (`CanvasViewTransformUtils`) with test coverage.
+- Added `TransformationController`-based view transform flow for image + markup overlay together.
+- Added compact in-canvas view controls (`Zoom +/-`, `Fit`, `100%`, `Pan` toggle) and wheel-based zoom/pan support.
+- Kept markup model geometry and export crop logic unchanged.
+
+## Logging/Debug Notes
+- Current coordinate model uses normalized markup geometry mapped against `imageRect`; transform was applied to the render layer only so normalized geometry remains stable.
+- Export crop remains based on displayed photo rect computation and export boundary capture path.
+- Pan mode intentionally disables markup pointer interactions while active to avoid gesture conflicts.
+
+## Validation
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- Remaining full phase validation rerun pending at closeout.
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+
 # SESSION_2026-05-29_0004_phase1u_sidebar_revision3_connected_drawer
 
 ## Context
