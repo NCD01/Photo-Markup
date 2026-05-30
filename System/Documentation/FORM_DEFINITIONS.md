@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\FORM_DEFINITIONS.m
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-28`
+Last Updated: `2026-05-29`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1T-A import performance/memory cleanup and import-progress UI notes.
+Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility notes.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -33,15 +33,17 @@ Changes: Added Phase 1T-A import performance/memory cleanup and import-progress 
 
 #### `Photo Markup Shell`
 - Source path: `app/lib/main.dart`
-- Purpose: `Provide top-level shell with app bar, canvas area, and bottom touch toolbar`
+- Purpose: `Provide top-level shell with app bar, canvas area, and compact left rail/drawer actions`
 - Parent/master form: `Root app`
 - Child components:
 - `Canvas area`
-- `Horizontal touch toolbar`
+- `Left compact sidebar/navigation rail + overlay drawer (File / Markup Tools / Edit)`
+- `Active tool status text`
 - `Dimension overlay interaction layer`
 - `Dimension label prompt flow`
 - Related widgets/components:
-- `_ToolbarPlaceholderButton`
+- `_SidebarActionSection`
+- `_SidebarActionButton`
 - `DimensionLinesOverlay`
 - Related services:
 - `file_selector picker integration`
@@ -53,6 +55,10 @@ Changes: Added Phase 1T-A import performance/memory cleanup and import-progress 
 - Read/write behavior: `MIXED`
 - Notes:
 - `Open Photo + Dimension + Arrow + Rectangle + Circle + Freehand + Text Note + Undo are functional in this phase`
+- `Compact rail groups actions into File/Markup Tools/Edit sections for faster field scanning`
+- `Active tool state is visible through sidebar header status text`
+- `Expanded drawer is anchored directly to rail edge (no gap) and overlays canvas content`
+- `Sidebar action icons use centralized Flutter Material IconData mappings only (no unicode/emoji text glyph icons and no external icon package)`
 - `Style selector supports NCD Blue / Red / Yellow / White / Black presets`
 - `Erase removes currently selected dimension/arrow/rectangle/oval/freehand/text note (+dimension label when applicable)`
 - `Dragging a selected markup moves the whole markup while clamped to displayed photo bounds`
@@ -381,7 +387,7 @@ Changes: Added Phase 1T-A import performance/memory cleanup and import-progress 
 | `Open Photo Action` | `Photo Markup Shell` | `Launch picker and request image file` | `app/lib/main.dart` |
 | `Image Import Service` | `HEIC/HEIF Import Conversion Flow` | `Convert HEIC/HEIF to preview-capped temporary working copy with cache reuse, fallback conversion, and stale-cache cleanup` | `app/lib/features/import/services/image_import_service.dart` |
 | `Canvas Image View` | `Photo Canvas Area` | `Render selected photo with BoxFit.contain` | `app/lib/main.dart` |
-| `Touch Toolbar` | `Photo Markup Shell` | `Expose tool actions with selected/disabled state` | `app/lib/main.dart` |
+| `Touch Toolbar` | `Photo Markup Shell` | `Expose compact left-rail + expanded drawer file/markup/edit actions with selected/disabled state and active-tool visibility` | `app/lib/main.dart` |
 | `Dimension Overlay` | `Dimension Overlay Layer` | `Render and capture dimension line interactions` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` |
 | `Dimension Model` | `Dimension Overlay Layer` | `Store start/end coordinates for each line` | `app/lib/features/markup/models/dimension_line.dart` |
 | `Text Note Model` | `Text Note Overlay Layer` | `Store normalized anchor + text for each note` | `app/lib/features/markup/models/text_note_markup.dart` |

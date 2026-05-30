@@ -4,9 +4,43 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-28`
+Last Updated: `2026-05-29`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1T-A import performance and memory cleanup entry.
+Changes: Added Phase 1U compact rail/drawer sidebar field-usability polish entry.
+
+## Unreleased - 2026-05-29 (Phase 1U Field Polish / Toolbar Organization)
+- Owner: NCD / M
+- Author: Codex
+- Type: UX / Organization
+- Reason: Improve field/tablet usability by reducing toolbar crowding and clarifying action grouping without changing tool behavior.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Replaced the bottom horizontal toolbar with a compact left rail + overlay drawer sidebar.
+  - Fixed connected-navigation seam so drawer opens flush from rail (`drawer left == rail width` in body coordinates, no visual gap strip).
+  - Replaced sidebar icon mappings with conservative built-in Flutter Material icons to resolve square placeholder icon rendering on Windows runtime stacks.
+  - Confirmed `uses-material-design: true` and retained centralized icon mapping in `SidebarConstants` (no external icon package/dependency).
+  - Collapsed rail now uses compact icon actions (`54px` rail width) with no oversized pill/circle buttons.
+  - Expanded drawer now uses compact list-row actions (`42px` rows, `21px` icons, `14px` labels) at `252px` drawer width with vertical scrolling support.
+  - Organized actions into `File`, `Markup Tools`, and `Edit` sections with modern section headers.
+  - Added subtle selected-state visuals (NCD Blue tint + left indicator) and restrained icon color hierarchy.
+  - Kept all existing actions visible and available; no feature removal.
+  - Preserved active-tool visibility and style visibility (`Style: <preset>`).
+  - Centralized sidebar widths, row heights, icon sizes, spacing, section/action labels, and state copy.
+  - Updated widget-test coverage for collapsed/expanded sidebar behavior and action availability.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - `.agent_temp` ignore check: `PASS`
+- Risks / Known Gaps:
+  - Optional compact/overflow behavior for very narrow widths remains deferred (`TODO-037`).
 
 ## Unreleased - 2026-05-28 (Phase 1T-A2 Deeper HEIC Optimization Extension)
 - Owner: NCD / M

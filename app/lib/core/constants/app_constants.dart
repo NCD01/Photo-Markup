@@ -80,6 +80,16 @@ class AppThemeConstants {
   static const Color ncdBlue = Color(0xFF009ADA);
   static const Color toolbarBackground = Color(0xFFF2FAFE);
   static const Color canvasFooterBorder = Color(0xFFD8E5EB);
+  static const Color sidebarBackground = Color(0xFFF6FAFD);
+  static const Color sidebarIconNeutral = Color(0xFF27313A);
+  static const Color sidebarIconMuted = Color(0xFF5B6570);
+  static const Color sidebarFileAccent = Color(0xFF007FB7);
+  static const Color sidebarDestructiveAccent = Color(0xFFC64A4A);
+  static const Color sidebarSelectedTint = Color(0x1A009ADA);
+  static const Color sidebarSelectedIndicator = Color(0xFF009ADA);
+  static const Color sidebarSectionLabel = Color(0xFF4D5A68);
+  static const Color sidebarDivider = Color(0xFFE0E8EE);
+  static const Color sidebarHeaderText = Color(0xFF1D2A33);
   static const Color errorAccent = Colors.redAccent;
 }
 
@@ -105,7 +115,8 @@ class ImageImportConstants {
     'heif',
   };
   static const Set<String> heicExtensionsSet = <String>{'heic', 'heif'};
-  static const String heicPreviewCacheFolderName = 'ncd_photo_markup_heic_cache';
+  static const String heicPreviewCacheFolderName =
+      'ncd_photo_markup_heic_cache';
   static const String heicPreviewCacheKeyVersion = 'v2';
   static const int heicMaxPreviewDimension = 2560;
   static const int heicPreviewJpegQuality = 85;
@@ -120,7 +131,8 @@ class ImageImportConstants {
   static const String heicConvertedOutputExtension = 'jpg';
   static const String heicFallbackConverterCommand = 'magick';
   static const String heicFallbackResizeOption =
-      '$heicMaxPreviewDimension''x$heicMaxPreviewDimension>';
+      '$heicMaxPreviewDimension'
+      'x$heicMaxPreviewDimension>';
   static const String heicFallbackQualityOption = '$heicPreviewJpegQuality';
   static const List<String> heicFallbackConverterOptions = <String>[
     '-auto-orient',
@@ -197,6 +209,19 @@ class UiCopyConstants {
   static const String launchContextSourceLabelPrefix = 'Source';
   static const String launchContextClientLabelPrefix = 'Client';
   static const String launchContextProjectLabelPrefix = 'Project';
+  static const String toolbarActiveToolPrefix = 'Active Tool';
+  static const String toolbarActiveToolNone = 'None';
+  static const String sidebarExpandTooltip = 'Expand Sidebar';
+  static const String sidebarCollapseTooltip = 'Collapse Sidebar';
+  static const String sidebarStylePrefix = 'Style';
+  static const String sidebarTitle = 'Quick Actions';
+}
+
+class ToolbarSectionDefinition {
+  const ToolbarSectionDefinition({required this.title, required this.actions});
+
+  final String title;
+  final List<String> actions;
 }
 
 class ToolbarConstants {
@@ -215,21 +240,59 @@ class ToolbarConstants {
   static const String erase = 'Erase';
   static const String undo = 'Undo';
   static const String export = 'Export';
-  static const List<String> labels = <String>[
+  static const String fileSectionTitle = 'File';
+  static const String markupSectionTitle = 'Markup Tools';
+  static const String editSectionTitle = 'Edit';
+
+  static const List<String> fileActionOrder = <String>[
     openPhoto,
     openMarkup,
     saveMarkup,
-    dimension,
-    arrow,
-    circle,
-    rectangle,
-    freehand,
-    textNote,
-    style,
-    erase,
-    undo,
     export,
   ];
+  static const List<String> markupActionOrder = <String>[
+    dimension,
+    textNote,
+    arrow,
+    rectangle,
+    circle,
+    freehand,
+  ];
+  static const List<String> editActionOrder = <String>[style, undo, erase];
+
+  static const List<ToolbarSectionDefinition>
+  sections = <ToolbarSectionDefinition>[
+    ToolbarSectionDefinition(title: fileSectionTitle, actions: fileActionOrder),
+    ToolbarSectionDefinition(
+      title: markupSectionTitle,
+      actions: markupActionOrder,
+    ),
+    ToolbarSectionDefinition(title: editSectionTitle, actions: editActionOrder),
+  ];
+
+  static const List<String> labels = <String>[
+    ...fileActionOrder,
+    ...markupActionOrder,
+    ...editActionOrder,
+  ];
+}
+
+class SidebarConstants {
+  const SidebarConstants._();
+
+  static const IconData openPhotoIcon = Icons.photo_library;
+  static const IconData openMarkupIcon = Icons.folder_open;
+  static const IconData saveMarkupIcon = Icons.save;
+  static const IconData exportIcon = Icons.upload_file;
+  static const IconData dimensionIcon = Icons.straighten;
+  static const IconData textNoteIcon = Icons.edit_note;
+  static const IconData arrowIcon = Icons.call_made;
+  static const IconData rectangleIcon = Icons.crop_square;
+  static const IconData circleIcon = Icons.panorama_fish_eye;
+  static const IconData freehandIcon = Icons.brush;
+  static const IconData styleIcon = Icons.palette;
+  static const IconData undoIcon = Icons.undo;
+  static const IconData eraseIcon = Icons.delete_outline;
 }
 
 class UiLayoutConstants {
@@ -255,7 +318,42 @@ class UiLayoutConstants {
   static const double canvasBorderWidth = 2;
   static const double toolbarHorizontalPadding = 12;
   static const double toolbarVerticalPadding = 12;
+  static const double toolbarTopStatusBottomGap = 10;
+  static const double toolbarSectionGap = 14;
+  static const double toolbarSectionHeaderBottomGap = 8;
+  static const double toolbarSectionDividerIndent = 6;
+  static const double toolbarSectionDividerEndIndent = 6;
+  static const double toolbarSectionDividerWidth = 1.6;
+  static const double toolbarSectionTitleFontSize = 13;
+  static const double toolbarStatusFontSize = 13;
   static const double toolbarButtonGap = 4;
+  static const double sidebarCollapsedWidth = 54;
+  static const double sidebarExpandedWidth = 252;
+  static const double sidebarMinimumCanvasWidth = 340;
+  static const double sidebarHeaderHorizontalPadding = 6;
+  static const double sidebarHeaderTopPadding = 6;
+  static const double sidebarHeaderBottomPadding = 4;
+  static const double sidebarSectionHorizontalPadding = 6;
+  static const double sidebarSectionBottomPadding = 4;
+  static const double sidebarActionGap = 2;
+  static const double sidebarActionHeight = 42;
+  static const double sidebarActionIconSize = 21;
+  static const double sidebarActionFontSize = 14;
+  static const double sidebarActionLabelGap = 8;
+  static const double sidebarActionRadius = 8;
+  static const double sidebarSelectedIndicatorWidth = 3;
+  static const double sidebarHeaderIconSize = 21;
+  static const double sidebarHeaderTitleFontSize = 12;
+  static const double sidebarStyleSummaryFontSize = 11;
+  static const double sidebarSectionTitleFontSize = 11;
+  static const double sidebarActionSelectedBorderWidth = 1;
+  static const double sidebarActionUnselectedBorderWidth = 1;
+  static const double sidebarSectionHeaderBottomGap = 4;
+  static const double sidebarCollapsedActionHorizontalPadding = 4;
+  static const double sidebarExpandedActionHorizontalPadding = 8;
+  static const double sidebarHeaderChipGap = 4;
+  static const double sidebarHeaderChipVerticalPadding = 3;
+  static const double sidebarHeaderChipHorizontalPadding = 8;
   static const double emptyStateHorizontalPadding = 24;
   static const double emptyStateIconSize = 64;
   static const double emptyStateTitleFontSize = 24;

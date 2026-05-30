@@ -236,3 +236,34 @@ Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decisio
 - Rollback or Reversal: Revert cache-key path logic and output extension/quality constants; restore non-reused timestamped conversion flow.
 - Related Changes: Phase 1T-A2 deeper HEIC optimization pass (uncommitted workspace)
 - Review Date: N/A
+
+## DECISION-016
+- Date: 2026-05-29
+- Status: Accepted
+- Owner: NCD / M
+- Area: Field Toolbar Usability
+- Decision: Replace the crowded bottom horizontal toolbar with a compact always-visible left navigation rail plus expandable overlay drawer-style sidebar (icon rail at rest, labeled list rows when expanded), while retaining all existing actions and behavior.
+- Alternatives Considered:
+- Keep one long flat horizontal button row.
+- Move less-used actions into overflow menu.
+- Rationale: Improves tablet field scanning speed and modern app-like usability without horizontal toolbar scrolling, oversized controls, or hidden critical actions.
+- Impact: File actions, markup tools, and edit actions are visually separated in a compact rail/drawer; active tool remains clear; style preset remains directly visible; icon colors follow neutral + NCD blue hierarchy with restrained destructive accenting; drawer attachment is flush to rail with no gutter seam.
+- Rollback or Reversal: Restore prior flat toolbar action list rendering path.
+- Related Changes: Phase 1U Field Polish / Toolbar Organization (uncommitted workspace)
+- Review Date: N/A
+
+## DECISION-017
+- Date: 2026-05-29
+- Status: Accepted
+- Owner: NCD / M
+- Area: Sidebar Icon Rendering Reliability
+- Decision: Use Flutter built-in Material `IconData` mappings only for sidebar rail/drawer actions and toggles, with conservative icon variants to avoid platform glyph fallback boxes.
+- Alternatives Considered:
+- Keep current icon variants that intermittently render as square placeholders.
+- Add third-party icon dependency/package.
+- Use unicode/emoji/text glyph symbols in place of icons.
+- Rationale: Fixes runtime icon rendering reliability without adding dependencies, internet assets, or behavior changes.
+- Impact: Sidebar icon mapping remains centralized in constants; toggle icons now use `Icons.menu`; no external icon packages added.
+- Rollback or Reversal: Revert sidebar icon constants/toggle icon selections to prior mappings.
+- Related Changes: Phase 1U Sidebar Icon Rendering / Modern App Polish Fix (uncommitted workspace)
+- Review Date: N/A

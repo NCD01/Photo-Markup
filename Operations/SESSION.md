@@ -2187,7 +2187,236 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No auto-export/autosave added.
 - No full-resolution export added.
 - No PDF export added.
+
+# SESSION_2026-05-29_0004_phase1u_sidebar_revision3_connected_drawer
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Fix split/detached drawer appearance so the expanded drawer feels physically connected to the fixed left rail.
+
+## Actions
+- Root cause fixed: drawer overlay was positioned with an extra `left = railWidth` offset inside the right-side content stack, creating a visual split strip.
+- Updated drawer anchor logic:
+  - drawer now starts at `left = 0` in the right-content stack
+  - since the stack starts immediately after the rail, drawer body-position equals rail width
+- Added dynamic seam behavior:
+  - rail right border hides when drawer is expanded to avoid a gray gap strip
+- Kept drawer overlay behavior (no permanent canvas squeeze) and retained compact metrics:
+  - rail width `54`
+  - drawer width `252` (viewport-clamped)
+  - row height `42`
+  - icon size `21`
+  - label size `14`
+- Added subtle right-corner radius and preserved compact chip/header styling.
+- Stabilized widget tests with explicit rail/drawer keys and drawer-targeted action lookup.
+
+## Logging/Debug Notes
+- Split-panel perception came from mixed coordinate spaces (row rail + inner stack drawer offset).
+- Test failures during this revision were due to duplicate tooltip targets and drawer animation visibility; resolved using keyed selectors.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.25`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS` (one transient file-lock retry required earlier in session, rerun succeeded)
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
 - Original source image mutation not introduced.
+
+# SESSION_2026-05-29_0001_phase1u_icon_rendering_fix
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Fix sidebar icon placeholder-box rendering using Flutter Material Icons only, without adding dependencies or changing feature behavior.
+
+## Actions
+- Classified dirty files and confirmed Phase 1U workspace scope.
+- Confirmed `uses-material-design: true` in `app/pubspec.yaml`.
+- Replaced sidebar icon mappings with conservative built-in Material icons in centralized `SidebarConstants`.
+- Replaced `Icons.menu_rounded` with `Icons.menu` for rail/drawer toggles.
+- Re-ran validation suite and captured timeout/retry notes.
+
+## Logging/Debug Notes
+- Root cause: sidebar used icon variants that can render as fallback square placeholders on some Windows Flutter/icon-font stacks.
+- Mitigation: standardized sidebar action/toggle icons to conservative built-in Material `IconData` mappings only, with no emoji/text glyph fallback.
+- No external icon package was added.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.25`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS` (first run timed out; second run PASS)
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `TIMEOUT` (long-running runtime command in this environment)
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (icon mappings remain centralized in `SidebarConstants`)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+
+# SESSION_2026-05-29_0002_phase1u_sidebar_phone_style_revision
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Revise the unapproved Phase 1U sidebar into a compact phone-app-style rail/drawer without changing feature behavior.
+
+## Actions
+- Reworked sidebar visuals from oversized outlined controls to compact rail + compact drawer rows.
+- Set collapsed rail width to `60` and expanded drawer width target to `296` with viewport clamp.
+- Reduced action row height to `46` and removed large outlined/pill button styling.
+- Added subtle selected-state treatment: soft blue tint + slim left indicator.
+- Added restrained icon hierarchy:
+  - File actions: blue accent
+  - Markup actions: neutral charcoal
+  - Undo: muted neutral
+  - Erase: muted red
+  - Style: preset-linked icon color + visible style state
+- Kept active tool status and style visibility in expanded header.
+- Kept vertical scrolling in expanded drawer for short window heights.
+- Updated widget tests for collapsed-default rail and tooltip-driven action targeting.
+
+## Logging/Debug Notes
+- Rejected UI root issues: expanded panel felt oversized, collapsed buttons too large, outlined circles/pills felt non-native.
+- Test stability fix: switched sidebar action test taps to tooltip finder + expanded-state helper to avoid lazy-list visibility flake.
+- Build/run warnings observed from MSBuild `.recipe` file lock during rapid debug runs; non-blocking in this pass.
+
+## Validation
+- `git status --short`: `PASS` (Phase 1U code/docs files only)
+- `verify-version-sync.ps1`: `PASS` (`v0.25`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS` (non-blocking MSBuild file-lock warning)
+- `flutter run -d windows --debug --no-resident`: `PASS` (non-blocking MSBuild file-lock warning)
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (sidebar sizing/labels/tooltips/state copy centralized)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+- No HEIC conversion logic changes.
+- No editable markup schema changes.
+
+# SESSION_2026-05-29_0003_phase1u_sidebar_revision2_phone_drawer
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Revise Phase 1U again to a cleaner phone-app style compact rail + narrower overlay drawer.
+
+## Actions
+- Changed layout to compact always-visible rail + drawer overlay so canvas is not permanently squeezed.
+- Kept collapsed rail as default mode and reduced visual density:
+  - rail width: `54`
+  - drawer width: `252` (viewport-clamped)
+  - row height: `42`
+  - icon size: `21`
+  - label font: `14`
+  - section header font: `11`
+- Removed large header block and replaced with compact active-tool/style chips.
+- Preserved existing action set, action wiring, and behavior.
+- Added stable sidebar action/toggle keys for widget-test targeting in rail/drawer states.
+
+## Logging/Debug Notes
+- Root cause of prior UX rejection: drawer footprint and typographic density still too large for tablet field flow.
+- Test debug root cause: duplicate/hidden drawer controls during transition caused ambiguous tooltip finders; fixed with keyed controls and drawer-specific finders.
+
+## Validation
+- `flutter analyze`: `PASS`
+- `flutter test test/widget_test.dart`: `PASS` after key-based finder fix
+- Full validation sweep rerun pending final closeout block for this revision.
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+
+# SESSION_2026-05-29_0001_phase1u_toolbar_field_polish
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Improve field/tablet usability by replacing the crowded bottom toolbar with a modern left sidebar/navigation rail while preserving all existing behavior.
+
+## Actions
+- Replaced rejected grouped horizontal toolbar with a left sidebar/navigation rail.
+- Added sidebar expand/collapse via hamburger:
+  - collapsed mode: compact icon buttons
+  - expanded mode: icon + text labels
+- Kept grouped sections in sidebar:
+  - `File`: `Open Photo`, `Open Markup`, `Save Markup`, `Export`
+  - `Markup Tools`: `Dimension`, `Text Note`, `Arrow`, `Rectangle`, `Circle`, `Freehand`
+  - `Edit`: `Style`, `Undo`, `Erase`
+- Added persistent active-tool status text in sidebar header.
+- Kept selected style visible on the style action (`Style: <short label>`).
+- Added centralized sidebar labels/order/icons/spacing/width constants to avoid scattered values.
+- Updated widget-test coverage for sidebar section rendering and active-tool visibility/update.
+
+## Logging/Debug Notes
+- Toolbar crowding root cause: single long bottom action row was harder to scan and required horizontal scrolling.
+- Rejected approach replaced: grouped bottom horizontal layout.
+- Chosen layout: left sidebar rail with collapsed/expanded states to keep tools app-like and available without horizontal toolbar scrolling.
+
+## Validation
+- `git status --short`: `PASS` (Phase 1U file set only)
+- `verify-version-sync.ps1`: `PASS` (`v0.25`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS` (after updating sidebar scroll/toggle-aware widget tests)
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (sidebar labels/order/icons/spacing/width/status copy centralized)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+- No HEIC conversion logic changes.
+- No editable markup schema changes.
 
 # SESSION_2026-05-28_0003_phase1t_a2_deeper_heic_optimization
 

@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\VALIDATION_MATRIX.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-28`
+Last Updated: `2026-05-29`
 Purpose: Track required validation activities and outcomes.
-Changes: Added Phase 1T-A import performance measurement and regression validation gates.
+Changes: Added Phase 1U compact sidebar rail/drawer validation gates.
 
 ## Validation Matrix
 | ID | Validation | Command/Method | Trigger | Pass Criteria | Owner | Status | Evidence Path |
@@ -184,3 +184,11 @@ Changes: Added Phase 1T-A import performance measurement and regression validati
 | `VAL-169` | Phase 1T-A2 Windows Build/Run Gate | `flutter build windows --debug` + `flutter run -d windows --debug --no-resident` | Runtime import path changed | Windows debug build/startup still succeeds with cache-enabled HEIC flow | `NCD / M` | `PASS` | `Terminal output 2026-05-28 (Phase 1T-A2)` |
 | `VAL-170` | Phase 1T-A2 Launch-Context Import Gate | `flutter run --dart-entrypoint-args=--launchContextPath=<valid/invalid>` | Launch-context startup + import path coexistence | Valid context launches with source image; invalid source path remains safe/friendly without crash | `NCD / M` | `PASS` | `.agent_temp/diagnostics/phase1r_launch_context_valid.json + phase1r_launch_context_invalid.json` |
 | `VAL-171` | Phase 1T-A2 Temp Artifact Hygiene Gate | `git check-ignore -v .agent_temp .agent_temp/diagnostics` + constants review | New cache/temp behavior added | Temp/cache assets remain ignored and tunables remain centralized in constants | `NCD / M` | `PASS` | `.gitignore + app_constants.dart review (2026-05-28)` |
+| `VAL-172` | Phase 1U Sidebar Static/Unit Gate | `flutter analyze` + `flutter test` | Sidebar rail/drawer organization changes | Analyzer/tests pass and compact rail + expanded drawer widget tests pass with no behavior regression | `NCD / M` | `PASS` | `Terminal output 2026-05-29 (Phase 1U)` |
+| `VAL-173` | Phase 1U Build/Run Gate | `flutter build windows --debug` + `flutter run -d windows --debug --no-resident` | Sidebar compact layout/interaction changed | Windows debug build/startup smoke pass after compact rail + drawer wiring | `NCD / M` | `PASS` | `Terminal output 2026-05-29 (Phase 1U)` |
+| `VAL-174` | Phase 1U Version/Dependency Gate | `verify-version-sync.ps1` + `flutter pub get` | Pre-commit validation rerun | Version sync and dependencies remain healthy after toolbar changes | `NCD / M` | `PASS` | `Terminal output 2026-05-29 (Phase 1U)` |
+| `VAL-175` | Phase 1U Temp Artifact Hygiene Gate | `git check-ignore -v .agent_temp .agent_temp/diagnostics` + tunable constants review | Sidebar constants/layout additions | Temp artifacts remain ignored and sidebar labels/order/icons/spacing remain centralized in constants | `NCD / M` | `PASS` | `.gitignore + app_constants.dart review (2026-05-29)` |
+| `VAL-176` | Phase 1U Icon Rendering Material-Only Gate | `Code review + icon mapping scan` | Sidebar icon rendering fix | Sidebar uses Flutter Material `IconData` mappings only (no emoji/text glyph icon fallbacks) | `NCD / M` | `PASS` | `app/lib/core/constants/app_constants.dart + app/lib/main.dart` |
+| `VAL-177` | Phase 1U Material Icons Enablement Gate | `pubspec.yaml review` | Sidebar icon rendering fix | `uses-material-design: true` remains enabled | `NCD / M` | `PASS` | `app/pubspec.yaml` |
+| `VAL-178` | Phase 1U Revalidation Static/Test Gate | `flutter analyze` + `flutter test` | Icon mapping changes | Analyzer/tests pass after icon remap | `NCD / M` | `PASS` | `Terminal output 2026-05-29 (icon rendering fix)` |
+| `VAL-179` | Phase 1U Revalidation Build/Run Gate | `flutter build windows --debug` + `flutter run -d windows --debug --no-resident` | Icon mapping changes | Build passes; runtime launch command executed (environment timeout documented separately) | `NCD / M` | `PASS_WITH_NOTE` | `Terminal output 2026-05-29 (icon rendering fix)` |

@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\TODO_REGISTER.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-28`
+Last Updated: `2026-05-29`
 Purpose: Track planned and in-progress work items.
-Changes: Updated for Phase 1T-A import performance cleanup and added package-path reliability follow-up.
+Changes: Updated for Phase 1U compact rail/drawer toolbar polish and retained narrow-window follow-up.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -51,6 +51,7 @@ Changes: Updated for Phase 1T-A import performance cleanup and added package-pat
 | `TODO-034` | `Export` | `Harden unsaved-change close interception for native Windows close edge-cases beyond current PopScope guard` | `Medium` | `NCD / M` | `Done` | `N/A` | `2026-05-28` |
 | `TODO-035` | `Data` | `Add advanced sidecar image relink workflow (search-by-name and optional relative path resolution) for missing source image scenarios` | `Medium` | `NCD / M` | `Open` | `N/A` | `N/A` |
 | `TODO-036` | `Import` | `Investigate why heic_to_png_jpg package path fails on current Windows HEIC sample and decide whether to keep package-first policy or switch fallback-first by default after broader sample reliability checks` | `Medium` | `NCD / M` | `Open` | `DECISION-014, DECISION-015` | `N/A` |
+| `TODO-037` | `UI` | `Evaluate optional ultra-compact action strategy for very short/narrow windows while keeping critical sidebar actions visible` | `Medium` | `NCD / M` | `Open` | `DECISION-016` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -76,6 +77,7 @@ Changes: Updated for Phase 1T-A import performance cleanup and added package-pat
 | `19` | `Integration` | `Control Center launch-context adapter delivered with standalone-safe fallback; editable sidecar save/reopen contract delivered in Photo Markup; Control Center launcher/save-return flow remains deferred` | `Open` | `Owner approval for adapter consumption and save-return workflow` | `Tracked in TODO-030/TODO-031/TODO-033` |
 | `20` | `Export` | `Export default naming/location and duplicate-safe save behavior delivered; unsaved-change guard delivered for open/close flows including native app-exit interception hardening` | `Open` | `Owner manual workflow validation complete for native close guard` | `Tracked in VAL-155 + VAL-163` |
 | `21` | `Data` | `Editable sidecar save/reopen MVP delivered; advanced relink automation remains deferred` | `Open` | `Owner approval for enhanced relink behavior` | `Tracked in TODO-035` |
+| `22` | `UI` | `Compact rail + expandable drawer toolbar polish delivered for field tablet use; ultra-compact short-window behavior remains deferred` | `Open` | `Owner approval for compact-toolbar follow-up` | `Tracked in TODO-037` |
 
 
 
@@ -126,7 +128,8 @@ Changes: Updated for Phase 1T-A import performance cleanup and added package-pat
 - Presets apply to new markups and can be applied to selected markup.
 - Advanced style controls remain deferred (see TODO-029).
 5. Better Touch Toolbar / Active Tool UX
-- Improve touch targets, spacing, active-state clarity, and accidental-change prevention.
+- Status: `MVP Done` in Phase 1U for compact left rail + expandable drawer organization (`File` / `Markup Tools` / `Edit`) with active-tool visibility.
+- Future compact/overflow behavior for narrow widths remains deferred (see TODO-037).
 6. Move / Adjust Selected Markup
 - Status: `Done` for whole-markup move (Phase 1M) and endpoint/resize handles for dimension/arrow/rectangle/oval (Phase 1N).
 - Advanced handle work remains deferred (see TODO-028).

@@ -5,9 +5,9 @@ Version: `v0.5`
 Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-28`
+Last Updated: `2026-05-29`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1T-A import performance and memory cleanup architecture/behavior notes.
+Changes: Added Phase 1U compact sidebar rail/drawer field-usability architecture/behavior notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -201,7 +201,12 @@ Required sections are present and updated through Phase 1O.
 - When a photo is loaded and Rectangle is selected, pointer drag creates a rectangle overlay with visible outline and transparent fill.
 - When a photo is loaded and Circle is selected, pointer drag creates an oval overlay with visible outline and transparent fill.
 - When a photo is loaded and Text Note is selected, tapping the image opens a note dialog and saves note chips anchored to the photo.
-- Style toolbar action opens a preset selector and updates active style for subsequent markups.
+- Toolbar is implemented as a compact left navigation rail with an overlay drawer for sections (`File`, `Markup Tools`, `Edit`) so canvas focus remains primary.
+- Drawer anchor is flush to the rail edge (no spacer/gutter strip) and overlays the canvas instead of splitting layout columns.
+- Collapsed mode keeps compact icon actions visible; expanded mode overlays compact icon+label rows and supports vertical scrolling if needed.
+- Sidebar icons are sourced from centralized Flutter Material `IconData` mappings only (no unicode/emoji text glyph icons and no external icon dependency).
+- Toolbar shows active tool status text (`Active Tool: ...`) and style state (`Style: ...`) for quick state awareness.
+- Style action remains in the `Edit` group and updates active style for subsequent markups.
 - New markups store a style preset id at creation, so changing active preset does not recolor existing markups unexpectedly.
 - Dimension drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Arrow drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
@@ -279,6 +284,7 @@ Required sections are present and updated through Phase 1O.
   - editable markup sidecar schema version, extension, dialog labels, and duplicate-name sequence tunables
   - unsaved-change warning copy/action labels
 - Remaining repeated literals in `app/lib/main.dart` are intentional one-off framework/style usages and are tracked in validation notes.
+- Toolbar section labels/order are centralized in `ToolbarConstants.sections`.
 - Splash duration remains tunable through `BrandingAssetConstants.startupSplashDurationMs`.
 - Splash footprint remains tunable through:
   - `UiLayoutConstants.splashImageWidthFactor`
@@ -296,7 +302,8 @@ Required sections are present and updated through Phase 1O.
 - Future Phase: Extended Apple compatibility beyond MVP HEIC/HEIF import (see Operations/TODO_REGISTER.md).
 - Future Phase: NCD Control Center Integration via isolated adapter/service boundaries (see Operations/TODO_REGISTER.md).
 - Post-MVP priorities are now grouped as Critical/High/Medium in `Operations/TODO_REGISTER.md`:
-  - Critical: Editable Save/Reopen, Full-Resolution Export, Touch UX, Undo/Redo, Export Naming, Large-Image Performance.
+  - Critical: Editable Save/Reopen, Full-Resolution Export, Undo/Redo, Export Naming, Large-Image Performance.
+  - Touch UX baseline compact rail + expandable drawer is now delivered in Phase 1U; ultra-compact short-window follow-up is tracked in `TODO-037`.
   - High: Multi-photo sets, Control Center adapter, Samsung/Android validation, Apple review, HEIC fallback hardening, export-quality review.
   - Medium: Icon standard redesign, optional PDF, voice-to-text notes, styling panel, editable schema, error polish, onboarding, touch feedback, z-order, governance icon standard follow-up, advanced handle editing beyond Phase 1N.
 

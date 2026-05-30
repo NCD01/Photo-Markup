@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-27`
+Last Updated: `2026-05-29`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1R editable sidecar save/open UI pattern notes.
+Changes: Added Phase 1U compact rail + expandable drawer field-usability pattern notes.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -15,10 +15,17 @@ Changes: Added Phase 1R editable sidecar save/open UI pattern notes.
 
 ## Foundations
 - Primary brand color: `#009ADA` (NCD Blue)
-- Neutral surface for tool strips: `#F2FAFE`
+- Neutral surface for tool strips: `#F6FAFD`
 - Typography: `Default Flutter Material typography for now`
-- Touch target minimum: `56px` height for primary toolbar buttons
-- Component reuse: `Use shared toolbar action button pattern with selected/disabled states`
+- Touch target minimum: `44px` height for primary rail/drawer actions
+- Component reuse: `Use shared sidebar action pattern with selected/disabled states`
+- Toolbar organization pattern: `Use compact left rail + expandable drawer with File / Markup Tools / Edit sections and clean section headers`
+- Sidebar interaction pattern: `Collapsed icon rail (~52-56 px) + hamburger toggle to expanded labeled drawer (~240-260 px) that overlays canvas content`
+- Drawer attachment rule: `Drawer left edge must align flush to rail right edge with no visible seam/gutter strip`
+- Active tool visibility: `Show active tool status text in the expanded sidebar header`
+- Style visibility: `Show current style short-label directly on Style action`
+- Icon color hierarchy: `Inactive icons use neutral charcoal; active/selected states use NCD Blue accent; erase uses restrained muted-red accent`
+- Sidebar icon source: `Flutter Material Icons only (IconData mapping); do not use unicode/emoji text glyph icons`
 - Dimension line color baseline: `#005C85`
 - Dimension stroke baseline: `3px` with endpoint markers
 - Arrow color baseline: `#006B3F` with visible arrowhead

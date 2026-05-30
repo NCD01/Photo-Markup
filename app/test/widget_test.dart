@@ -13,6 +13,43 @@ import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/main.dart';
 
+Future<void> _expandSidebarIfCollapsed(WidgetTester tester) async {
+  final Finder drawerToggle = find.byKey(
+    const ValueKey<String>('sidebar-drawer-toggle'),
+  );
+  if (drawerToggle.evaluate().isNotEmpty) {
+    return;
+  }
+  final Finder expandButton = find.byKey(
+    const ValueKey<String>('sidebar-rail-toggle'),
+  );
+  if (expandButton.evaluate().isNotEmpty) {
+    await tester.tap(expandButton);
+    await tester.pumpAndSettle();
+  }
+}
+
+ValueKey<String> _drawerActionKey(String actionLabel) =>
+    ValueKey<String>('sidebar-drawer-$actionLabel');
+
+Future<void> _tapSidebarAction(WidgetTester tester, String label) async {
+  await _expandSidebarIfCollapsed(tester);
+  final Finder sidebarScrollable = find.descendant(
+    of: find.byKey(const ValueKey<String>('sidebar-drawer-scroll')),
+    matching: find.byType(Scrollable),
+  );
+  final Finder actionLabel = find.byKey(_drawerActionKey(label));
+  await tester.scrollUntilVisible(
+    actionLabel,
+    220,
+    scrollable: sidebarScrollable,
+  );
+  await tester.ensureVisible(actionLabel);
+  await tester.pumpAndSettle();
+  await tester.tap(actionLabel, warnIfMissed: false);
+  await tester.pump();
+}
+
 void main() {
   testWidgets('renders shell empty-state text and open-photo action', (
     WidgetTester tester,
@@ -22,7 +59,90 @@ void main() {
     expect(find.text(AppConstants.appName), findsOneWidget);
     expect(find.text(AppConstants.appVersion), findsOneWidget);
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
-    expect(find.text(ToolbarConstants.openPhoto), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>('sidebar-rail-${ToolbarConstants.openPhoto}'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('toolbar renders grouped section headers and core actions', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    await _expandSidebarIfCollapsed(tester);
+    final Finder sidebarList = find.descendant(
+      of: find.byKey(const ValueKey<String>('sidebar-drawer-scroll')),
+      matching: find.byType(Scrollable),
+    );
+
+    expect(
+      find.byKey(_drawerActionKey(ToolbarConstants.openPhoto)),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(_drawerActionKey(ToolbarConstants.export)),
+      findsOneWidget,
+    );
+    expect(find.text(ToolbarConstants.fileSectionTitle), findsOneWidget);
+    expect(find.text(ToolbarConstants.markupSectionTitle), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text(ToolbarConstants.editSectionTitle),
+      260,
+      scrollable: sidebarList,
+    );
+    expect(find.text(ToolbarConstants.editSectionTitle), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(_drawerActionKey(ToolbarConstants.erase)),
+      240,
+      scrollable: sidebarList,
+    );
+    expect(
+      find.byKey(_drawerActionKey(ToolbarConstants.erase)),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('sidebar toggles between expanded and collapsed states', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+
+    expect(
+      find.byKey(const ValueKey<String>('sidebar-rail-toggle')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('sidebar-rail-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(ToolbarConstants.fileSectionTitle), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('sidebar-drawer-toggle')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('active tool status stays visible and updates on selection', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    await _expandSidebarIfCollapsed(tester);
+
+    expect(
+      find.textContaining(
+        '${UiCopyConstants.toolbarActiveToolPrefix}: ${UiCopyConstants.toolbarActiveToolNone}',
+      ),
+      findsOneWidget,
+    );
+
+    await _tapSidebarAction(tester, ToolbarConstants.dimension);
+    expect(
+      find.textContaining(
+        '${UiCopyConstants.toolbarActiveToolPrefix}: ${ToolbarConstants.dimension}',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('startup splash shows centralized app version', (
@@ -62,10 +182,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
-    await tester.tap(
-      find.widgetWithText(OutlinedButton, ToolbarConstants.dimension),
-    );
-    await tester.pump();
+    await _tapSidebarAction(tester, ToolbarConstants.dimension);
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
@@ -73,18 +190,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
-    final Finder rectangleButton = find.widgetWithText(
-      OutlinedButton,
-      ToolbarConstants.rectangle,
-    );
-    final Finder toolbarScrollable = find.byType(Scrollable);
-    await tester.scrollUntilVisible(
-      rectangleButton,
-      240,
-      scrollable: toolbarScrollable,
-    );
-    await tester.tap(rectangleButton);
-    await tester.pump();
+    await _tapSidebarAction(tester, ToolbarConstants.rectangle);
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
@@ -92,18 +198,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
-    final Finder circleButton = find.widgetWithText(
-      OutlinedButton,
-      ToolbarConstants.circle,
-    );
-    final Finder toolbarScrollable = find.byType(Scrollable);
-    await tester.scrollUntilVisible(
-      circleButton,
-      240,
-      scrollable: toolbarScrollable,
-    );
-    await tester.tap(circleButton);
-    await tester.pump();
+    await _tapSidebarAction(tester, ToolbarConstants.circle);
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
@@ -111,18 +206,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
-    final Finder freehandButton = find.widgetWithText(
-      OutlinedButton,
-      ToolbarConstants.freehand,
-    );
-    final Finder toolbarScrollable = find.byType(Scrollable);
-    await tester.scrollUntilVisible(
-      freehandButton,
-      240,
-      scrollable: toolbarScrollable,
-    );
-    await tester.tap(freehandButton);
-    await tester.pump();
+    await _tapSidebarAction(tester, ToolbarConstants.freehand);
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
@@ -130,18 +214,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
-    final Finder textNoteButton = find.widgetWithText(
-      OutlinedButton,
-      ToolbarConstants.textNote,
-    );
-    final Finder toolbarScrollable = find.byType(Scrollable);
-    await tester.scrollUntilVisible(
-      textNoteButton,
-      240,
-      scrollable: toolbarScrollable,
-    );
-    await tester.tap(textNoteButton);
-    await tester.pump();
+    await _tapSidebarAction(tester, ToolbarConstants.textNote);
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
@@ -149,23 +222,14 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
-    final Finder styleButton = find.widgetWithText(
-      OutlinedButton,
-      'Style: Blue',
-    );
-    final Finder toolbarScrollable = find.byType(Scrollable);
-    await tester.scrollUntilVisible(
-      styleButton,
-      240,
-      scrollable: toolbarScrollable,
-    );
-    await tester.tap(styleButton);
+    await _expandSidebarIfCollapsed(tester);
+    await _tapSidebarAction(tester, ToolbarConstants.style);
     await tester.pumpAndSettle();
     expect(find.text(UiCopyConstants.styleDialogTitle), findsOneWidget);
 
     await tester.tap(find.text('Red'));
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(OutlinedButton, 'Style: Red'), findsOneWidget);
+    expect(find.text('Style: Red'), findsWidgets);
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
@@ -173,18 +237,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
-    final Finder exportButton = find.widgetWithText(
-      OutlinedButton,
-      ToolbarConstants.export,
-    );
-    final Finder toolbarScrollable = find.byType(Scrollable);
-    await tester.scrollUntilVisible(
-      exportButton,
-      240,
-      scrollable: toolbarScrollable,
-    );
-    await tester.tap(exportButton);
-    await tester.pump();
+    await _tapSidebarAction(tester, ToolbarConstants.export);
 
     expect(find.text(UiCopyConstants.exportNoPhotoMessage), findsOneWidget);
   });
@@ -193,18 +246,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
-    final Finder saveMarkupButton = find.widgetWithText(
-      OutlinedButton,
-      ToolbarConstants.saveMarkup,
-    );
-    final Finder toolbarScrollable = find.byType(Scrollable);
-    await tester.scrollUntilVisible(
-      saveMarkupButton,
-      240,
-      scrollable: toolbarScrollable,
-    );
-    await tester.tap(saveMarkupButton);
-    await tester.pump();
+    await _tapSidebarAction(tester, ToolbarConstants.saveMarkup);
 
     expect(
       find.text(UiCopyConstants.markupDocumentSaveNoPhotoMessage),
@@ -216,18 +258,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
-    final Finder eraseButton = find.widgetWithText(
-      OutlinedButton,
-      ToolbarConstants.erase,
-    );
-    final Finder toolbarScrollable = find.byType(Scrollable);
-    await tester.scrollUntilVisible(
-      eraseButton,
-      240,
-      scrollable: toolbarScrollable,
-    );
-    await tester.tap(eraseButton);
-    await tester.pump();
+    await _tapSidebarAction(tester, ToolbarConstants.erase);
 
     expect(find.text(UiCopyConstants.eraseNoSelectionMessage), findsOneWidget);
   });
