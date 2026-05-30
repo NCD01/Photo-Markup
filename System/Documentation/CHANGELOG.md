@@ -1268,3 +1268,15 @@ Changes: Added Phase 1U compact rail/drawer sidebar field-usability polish entry
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.26 - 2026-05-29
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve sidebar toolbar field usability polish
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
