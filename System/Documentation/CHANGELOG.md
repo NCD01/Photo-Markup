@@ -1409,3 +1409,15 @@ Changes: Added Phase 1U-B production icon-pack finalization entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.29 - 2026-05-31
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve NCD custom sidebar icons
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
