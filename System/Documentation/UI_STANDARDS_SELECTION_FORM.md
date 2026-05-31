@@ -161,6 +161,7 @@ Notes: `Baseline selections applied for Windows-first workflow; can be revised b
 - Card density: `Spacious for tablet`
 - Dashboard density: `Open (future dashboard work)`
 - Navigation direction: `Top navigation for now`
+- Sidebar icon pack production default: `Resolved (NCD custom icon pack approved as production standard in Phase 1U-B)`
 - Button sizing: `Touch-friendly padding`
 - Radius scale: `Approved baseline`
 

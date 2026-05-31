@@ -319,6 +319,22 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - `If markup is selected, preset can restyle the selected markup`
 - `Advanced custom picker/user-default persistence remains deferred`
 
+#### `Sidebar Icon Rendering Standard (Phase 1U-B Production)`
+- Source path: `app/lib/main.dart` + `app/lib/features/sidebar/models/sidebar_icon_pack.dart`
+- Purpose: `Render production sidebar actions with governed NCD custom icon assets`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Collapsed rail icon actions`
+- `Expanded drawer icon + label rows`
+- Related widgets/components:
+- `_SidebarActionButton`
+- `SidebarIconRegistry`
+- Read/write behavior: `READ_ONLY` (visual mode state in-session only)
+- Notes:
+- `Comparison toggle/hotkey is removed from production runtime`
+- `No markup/export/save/reopen behavior changes`
+- `No unicode/emoji raw glyph icons are used`
+
 #### `Export / Save Dialog`
 - Source path: `app/lib/main.dart` + `app/lib/features/export/services/marked_up_image_export_service.dart` + `app/lib/features/export/services/markup_export_path_service.dart`
 - Purpose: `Prompt for output file location and export visible marked canvas PNG`

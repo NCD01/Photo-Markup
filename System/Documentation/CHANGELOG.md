@@ -4,9 +4,71 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-29`
+Last Updated: `2026-05-30`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1U compact rail/drawer sidebar field-usability polish entry.
+Changes: Added Phase 1U-B production icon-pack finalization entry.
+
+## Unreleased - 2026-05-31 (Phase 1U-B Production Cleanup: NCD Icon Pack Winner)
+- Owner: NCD / M
+- Author: Codex
+- Type: UX / Production Cleanup
+- Reason: Finalize sidebar icon standard after owner visual approval of NCD custom pack.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/sidebar/models/sidebar_icon_pack.dart`
+  - `app/pubspec.yaml`
+  - `app/pubspec.lock`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Set production sidebar icon source to governed NCD custom runtime assets.
+  - Removed comparison-only runtime behavior:
+    - removed `Ctrl+Shift+I` icon-pack toggle
+    - removed expanded sidebar `Icon Pack: ...` status label
+  - Removed `lucide_icons_flutter` dependency from runtime dependency set.
+  - Closed TODO-039 with final icon-pack decision.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+- Risks / Known Gaps:
+  - None specific to icon-pack decision; future icon redesign remains under existing branding roadmap.
+
+## Unreleased - 2026-05-30 (Phase 1U-B Sidebar Icon Testing: Lucide vs NCD Custom Pack)
+- Owner: NCD / M
+- Author: Codex
+- Type: UX / Visual QA Harness
+- Reason: Compare Lucide and NCD custom sidebar icon systems in a single governed runtime path before selecting production default icon pack.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/sidebar/models/sidebar_icon_pack.dart`
+  - `app/assets/sidebar_icons/ncd_custom/*`
+  - `app/pubspec.yaml`
+  - `app/pubspec.lock`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added `lucide_icons_flutter` dependency for Lucide icon evaluation.
+  - Added centralized sidebar icon-pack abstraction with `lucide` and `ncdCustom` packs.
+  - Added runtime hotkey `Ctrl+Shift+I` to toggle icon packs for visual QA.
+  - Added expanded sidebar status label: `Icon Pack: Lucide` / `Icon Pack: NCD`.
+  - Added NCD custom runtime asset copies and registration under `app/assets/sidebar_icons/ncd_custom`.
+  - Added widget-test coverage for icon-pack toggle behavior.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+- Risks / Known Gaps:
+  - Final production default icon pack decision remains open (`TODO-039`).
+  - Temporary toggle path should be removed or locked after owner final selection.
 
 ## Unreleased - 2026-05-29 (Phase 1V Canvas View Controls / Zoom + Pan MVP)
 - Owner: NCD / M

@@ -2188,6 +2188,47 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No full-resolution export added.
 - No PDF export added.
 
+# SESSION_2026-05-31_0001_phase1u_b_ncd_winner_cleanup
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Finalize Phase 1U-B for production using NCD custom sidebar icons as the winner and remove comparison-only behavior.
+
+## Actions
+- Set production sidebar icon registry to NCD custom assets only.
+- Removed runtime icon-pack comparison behavior:
+  - removed `Ctrl+Shift+I` icon-pack toggle
+  - removed expanded sidebar `Icon Pack: ...` status chip
+- Removed `lucide_icons_flutter` dependency from `pubspec.yaml` and regenerated `pubspec.lock`.
+- Kept governed runtime NCD icon assets registered under `app/assets/sidebar_icons/ncd_custom/`.
+- Closed TODO-039 and documented final icon standard decision.
+
+## Logging/Debug Notes
+- Root cause for production cleanup request: comparison harness was intentionally temporary and should not ship after owner icon-pack decision.
+- No markup/export/save/reopen/import/HEIC/native-close logic was changed.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.28`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (sidebar icon asset paths/labels remain centralized)
+
+## Constraints Confirmed
+- No commit/push/version bump performed yet in this session block.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+
 # SESSION_2026-05-29_0003_phase1v_a_pan_tool_bugfix
 
 ## Context
@@ -2596,3 +2637,54 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No full-resolution export added.
 - No PDF export added.
 - M-approved documentation/image asset changes were left untouched.
+
+# SESSION_2026-05-30_0002_phase1u_b_sidebar_icon_pack_comparison
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Implement Phase 1U-B icon-pack comparison support for sidebar visual testing between Lucide and local NCD custom icon assets without behavior regressions.
+
+## Actions
+- Added `lucide_icons_flutter: 3.1.14+2` dependency and validated package metadata/license.
+- Added sidebar icon-pack abstraction:
+  - `SidebarIconPackId` (`lucide`, `ncdCustom`)
+  - centralized descriptor mapping for icon font vs image asset paths
+  - centralized registry/default selection
+- Copied local runtime-safe NCD icon assets into:
+  - `app/assets/sidebar_icons/ncd_custom/`
+  - including 12 action icons + 5 style icons
+- Registered runtime assets in `app/pubspec.yaml`.
+- Added temporary visual-test toggle hotkey:
+  - `Ctrl+Shift+I`
+- Added expanded-sidebar label:
+  - `Icon Pack: Lucide` / `Icon Pack: NCD`
+- Updated sidebar action rendering to support either `IconData` or asset-image descriptors.
+- Added widget test coverage for icon-pack toggle label behavior.
+
+## Logging/Debug Notes
+- Sidebar icon rendering failures with placeholder-square glyphs were mitigated by removing raw glyph approaches and standardizing to explicit icon mappings:
+  - Lucide pack uses strongly mapped `LucideIcons.*`
+  - NCD pack uses PNG asset rendering with fallback icon on load error
+- No markup/export/save/reopen/import logic was modified in this phase.
+
+## Validation
+- `verify-version-sync.ps1`: `PASS` (`v0.28`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (icon-pack labels, hotkey copy, and asset paths centralized)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.

@@ -4,7 +4,7 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-29`
+Last Updated: `2026-05-30`
 Purpose: Define baseline UI standards for NCD Photo Markup.
 Changes: Added Phase 1U compact rail + expandable drawer field-usability pattern notes.
 
@@ -28,7 +28,8 @@ Changes: Added Phase 1U compact rail + expandable drawer field-usability pattern
 - Active tool visibility: `Show active tool status text in the expanded sidebar header`
 - Style visibility: `Show current style short-label directly on Style action`
 - Icon color hierarchy: `Inactive icons use neutral charcoal; active/selected states use NCD Blue accent; erase uses restrained muted-red accent`
-- Sidebar icon source: `Flutter Material Icons only (IconData mapping); do not use unicode/emoji text glyph icons`
+- Sidebar icon source: `Centralized governed NCD custom asset mapping only in production; do not use unicode/emoji text glyph icons`
+- Sidebar icon-pack QA pattern: `Comparison-mode runtime toggle is not shipped in production after owner icon-pack decision`
 - Dimension line color baseline: `#005C85`
 - Dimension stroke baseline: `3px` with endpoint markers
 - Arrow color baseline: `#006B3F` with visible arrowhead

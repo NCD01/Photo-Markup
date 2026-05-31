@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\TODO_REGISTER.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-29`
+Last Updated: `2026-05-30`
 Purpose: Track planned and in-progress work items.
-Changes: Updated for Phase 1U compact rail/drawer toolbar polish and retained narrow-window follow-up.
+Changes: Added Phase 1U-B icon-pack comparison follow-up tracking.
 
 ## Quick Rules
 - Keep IDs stable.
@@ -53,6 +53,7 @@ Changes: Updated for Phase 1U compact rail/drawer toolbar polish and retained na
 | `TODO-036` | `Import` | `Investigate why heic_to_png_jpg package path fails on current Windows HEIC sample and decide whether to keep package-first policy or switch fallback-first by default after broader sample reliability checks` | `Medium` | `NCD / M` | `Open` | `DECISION-014, DECISION-015` | `N/A` |
 | `TODO-037` | `UI` | `Evaluate optional ultra-compact action strategy for very short/narrow windows while keeping critical sidebar actions visible` | `Medium` | `NCD / M` | `Open` | `DECISION-016` | `N/A` |
 | `TODO-038` | `Canvas View` | `Evaluate optional gesture-polish follow-up for touch-first pan/zoom ergonomics (for example, pinch+pan behavior tuning and optional smart pan/tool mode transitions beyond Phase 1V-A auto-disable fix)` | `Medium` | `NCD / M` | `Open` | `DECISION-018` | `N/A` |
+| `TODO-039` | `UI` | `Finalize production-default sidebar icon pack after Phase 1U-B comparison (Lucide vs NCD custom) and remove temporary toggle path once approved` | `Medium` | `NCD / M` | `Done` | `DECISION-019, DECISION-020` | `2026-05-31` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -80,6 +81,7 @@ Changes: Updated for Phase 1U compact rail/drawer toolbar polish and retained na
 | `21` | `Data` | `Editable sidecar save/reopen MVP delivered; advanced relink automation remains deferred` | `Open` | `Owner approval for enhanced relink behavior` | `Tracked in TODO-035` |
 | `22` | `UI` | `Compact rail + expandable drawer toolbar polish delivered for field tablet use; ultra-compact short-window behavior remains deferred` | `Open` | `Owner approval for compact-toolbar follow-up` | `Tracked in TODO-037` |
 | `23` | `Canvas View` | `Zoom/pan/fit MVP delivered with transform-layer alignment safeguards; optional touch gesture polish remains deferred` | `Open` | `Owner approval for touch-gesture follow-up` | `Tracked in TODO-038` |
+| `24` | `UI` | `Sidebar icon standard finalized to governed NCD custom assets; comparison-only hotkey/label and Lucide dependency removed from production path` | `Done` | `N/A` | `Phase 1U-B finalization complete` |
 
 
 

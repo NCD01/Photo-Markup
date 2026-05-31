@@ -179,7 +179,7 @@ Required sections are present and updated through Phase 1O.
 | `RISK-013` | `Control Center-side launcher and return/save handoff remain deferred; Phase 1P only adds adapter contract inside Photo Markup` | `NCD / M` | `Future integration phase` | `Tracked in TODO-030/TODO-031/TODO-032/TODO-033` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.21`.
+- App bar shows `NCD Photo Markup` and `v0.28`.
 - Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
@@ -209,7 +209,10 @@ Required sections are present and updated through Phase 1O.
 - Toolbar is implemented as a compact left navigation rail with an overlay drawer for sections (`File`, `Markup Tools`, `Edit`) so canvas focus remains primary.
 - Drawer anchor is flush to the rail edge (no spacer/gutter strip) and overlays the canvas instead of splitting layout columns.
 - Collapsed mode keeps compact icon actions visible; expanded mode overlays compact icon+label rows and supports vertical scrolling if needed.
-- Sidebar icons are sourced from centralized Flutter Material `IconData` mappings only (no unicode/emoji text glyph icons and no external icon dependency).
+- Sidebar icons are sourced from centralized icon-pack mappings only (no unicode/emoji text glyph icons).
+- Sidebar production icon standard is governed local NCD custom PNG assets (`app/assets/sidebar_icons/ncd_custom/*`).
+- Comparison-only icon-pack toggle/status UI has been removed after owner approval.
+- No unicode/emoji/raw text-glyph icons are used in sidebar action rendering.
 - Toolbar shows active tool status text (`Active Tool: ...`) and style state (`Style: ...`) for quick state awareness.
 - Style action remains in the `Edit` group and updates active style for subsequent markups.
 - New markups store a style preset id at creation, so changing active preset does not recolor existing markups unexpectedly.
@@ -268,6 +271,7 @@ Required sections are present and updated through Phase 1O.
 - Tunable Flutter/Dart values are centralized in `app/lib/core/constants/app_constants.dart`.
 - Grouped domains:
   - app metadata/version
+  - sidebar icon asset paths and sidebar action labels
   - theme/colors
   - image import (picker labels, supported extensions, HEIC preview cache/output/quality/cap/timeout, fallback args, temp cleanup limits, and friendly import error/progress copy)
   - UI copy strings

@@ -306,20 +306,48 @@ class ToolbarConstants {
 
 class SidebarConstants {
   const SidebarConstants._();
+}
 
-  static const IconData openPhotoIcon = Icons.photo_library;
-  static const IconData openMarkupIcon = Icons.folder_open;
-  static const IconData saveMarkupIcon = Icons.save;
-  static const IconData exportIcon = Icons.upload_file;
-  static const IconData dimensionIcon = Icons.straighten;
-  static const IconData textNoteIcon = Icons.edit_note;
-  static const IconData arrowIcon = Icons.call_made;
-  static const IconData rectangleIcon = Icons.crop_square;
-  static const IconData circleIcon = Icons.panorama_fish_eye;
-  static const IconData freehandIcon = Icons.brush;
-  static const IconData styleIcon = Icons.palette;
-  static const IconData undoIcon = Icons.undo;
-  static const IconData eraseIcon = Icons.delete_outline;
+class SidebarAssetConstants {
+  const SidebarAssetConstants._();
+
+  static const String ncdSidebarAssetDirectory = 'assets/sidebar_icons/ncd_custom';
+
+  static const String ncdSidebarOpenPhotoAssetPath =
+      '$ncdSidebarAssetDirectory/open_photo.png';
+  static const String ncdSidebarOpenMarkupAssetPath =
+      '$ncdSidebarAssetDirectory/open_markup.png';
+  static const String ncdSidebarSaveMarkupAssetPath =
+      '$ncdSidebarAssetDirectory/save_markup.png';
+  static const String ncdSidebarExportAssetPath =
+      '$ncdSidebarAssetDirectory/export.png';
+  static const String ncdSidebarDimensionAssetPath =
+      '$ncdSidebarAssetDirectory/dimension.png';
+  static const String ncdSidebarTextNoteAssetPath =
+      '$ncdSidebarAssetDirectory/text_note.png';
+  static const String ncdSidebarArrowAssetPath =
+      '$ncdSidebarAssetDirectory/arrow.png';
+  static const String ncdSidebarRectangleAssetPath =
+      '$ncdSidebarAssetDirectory/rectangle.png';
+  static const String ncdSidebarCircleAssetPath =
+      '$ncdSidebarAssetDirectory/circle.png';
+  static const String ncdSidebarFreehandAssetPath =
+      '$ncdSidebarAssetDirectory/freehand.png';
+  static const String ncdSidebarUndoAssetPath =
+      '$ncdSidebarAssetDirectory/undo.png';
+  static const String ncdSidebarEraseAssetPath =
+      '$ncdSidebarAssetDirectory/erase.png';
+
+  static const String ncdSidebarStyleNcdBlueAssetPath =
+      '$ncdSidebarAssetDirectory/style_ncd_blue.png';
+  static const String ncdSidebarStyleRedAssetPath =
+      '$ncdSidebarAssetDirectory/style_red.png';
+  static const String ncdSidebarStyleYellowAssetPath =
+      '$ncdSidebarAssetDirectory/style_yellow.png';
+  static const String ncdSidebarStyleWhiteAssetPath =
+      '$ncdSidebarAssetDirectory/style_white.png';
+  static const String ncdSidebarStyleBlackAssetPath =
+      '$ncdSidebarAssetDirectory/style_black.png';
 }
 
 class UiLayoutConstants {

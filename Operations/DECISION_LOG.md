@@ -282,3 +282,33 @@ Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decisio
 - Rollback or Reversal: Remove view controls and transform controller wiring; restore static contain-fit canvas rendering.
 - Related Changes: Phase 1V Canvas View Controls / Zoom + Pan MVP (uncommitted workspace)
 - Review Date: N/A
+
+## DECISION-019
+- Date: 2026-05-30
+- Status: Accepted
+- Owner: NCD / M
+- Area: Sidebar Icon Strategy Evaluation
+- Decision: Add a temporary dual-pack sidebar icon abstraction supporting `lucide` and `ncdCustom` with a runtime visual toggle (`Ctrl+Shift+I`) and expanded-sidebar status label for side-by-side field QA before locking the production default.
+- Alternatives Considered:
+- Keep one fixed icon source and defer all visual/icon QA until a future redesign.
+- Replace Material mapping directly without keeping a governed comparison harness.
+- Rationale: Enables owner visual validation against real workflows without introducing additional behavior risk, and keeps icon-source selection centralized and reversible.
+- Impact: Sidebar action rendering now accepts either `IconData` or asset-backed icons via a single descriptor model; Lucide dependency and custom asset registrations are documented and test-covered.
+- Rollback or Reversal: Remove dual-pack registry + hotkey and keep only the owner-approved pack mapping.
+- Related Changes: Phase 1U-B Sidebar Icon Testing: Lucide vs NCD Custom Pack (uncommitted workspace)
+- Review Date: N/A
+
+## DECISION-020
+- Date: 2026-05-31
+- Status: Accepted
+- Owner: NCD / M
+- Area: Sidebar Icon Production Standard
+- Decision: Select NCD custom sidebar icon assets as the production/default icon system and remove comparison-only runtime behavior (`Ctrl+Shift+I` pack toggle, sidebar icon-pack status label, and Lucide runtime dependency).
+- Alternatives Considered:
+- Keep dual-pack comparison mode in production.
+- Retain Lucide as a runtime fallback.
+- Rationale: Owner visual validation selected NCD custom assets as winner and requested production cleanup without comparison-mode UI.
+- Impact: Sidebar now renders from governed local NCD asset mappings only; no runtime icon-pack switching remains.
+- Rollback or Reversal: Re-introduce a documented dev-only comparison harness in a separate approved follow-up.
+- Related Changes: Phase 1U-B final production cleanup (uncommitted workspace)
+- Review Date: N/A

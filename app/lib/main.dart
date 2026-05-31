@@ -29,6 +29,7 @@ import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart'
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/unsaved_changes_tracker.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
+import 'package:ncd_photo_markup/features/sidebar/models/sidebar_icon_pack.dart';
 import 'package:ncd_photo_markup/features/view/utils/canvas_view_transform_utils.dart';
 
 typedef OpenFileCallback = Future<XFile?> Function();
@@ -1269,6 +1270,29 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   String _sidebarStyleSummary() =>
       '${UiCopyConstants.sidebarStylePrefix}: ${_selectedStylePreset.shortLabel}';
 
+  String _currentNcdStyleIconAssetPath() {
+    switch (_selectedStylePresetId) {
+      case MarkupStylePresetId.red:
+        return SidebarAssetConstants.ncdSidebarStyleRedAssetPath;
+      case MarkupStylePresetId.yellow:
+        return SidebarAssetConstants.ncdSidebarStyleYellowAssetPath;
+      case MarkupStylePresetId.white:
+        return SidebarAssetConstants.ncdSidebarStyleWhiteAssetPath;
+      case MarkupStylePresetId.black:
+        return SidebarAssetConstants.ncdSidebarStyleBlackAssetPath;
+      case MarkupStylePresetId.ncdBlue:
+        return SidebarAssetConstants.ncdSidebarStyleNcdBlueAssetPath;
+    }
+  }
+
+  SidebarIconDescriptor _toolbarActionIconDescriptor(String label) {
+    if (label == ToolbarConstants.style) {
+      return SidebarIconDescriptor.asset(_currentNcdStyleIconAssetPath());
+    }
+    return SidebarIconRegistry.actionIcons[label] ??
+        const SidebarIconDescriptor.icon(Icons.help_outline);
+  }
+
   String _sidebarToggleTooltip() => _isSidebarExpanded
       ? UiCopyConstants.sidebarCollapseTooltip
       : UiCopyConstants.sidebarExpandTooltip;
@@ -1330,39 +1354,6 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       (label == ToolbarConstants.saveMarkup && _isSavingMarkupDocument) ||
       (label == ToolbarConstants.undo && !_isUndoEnabled()) ||
       (label == ToolbarConstants.export && _isExporting);
-
-  IconData _toolbarActionIcon(String label) {
-    switch (label) {
-      case ToolbarConstants.openPhoto:
-        return SidebarConstants.openPhotoIcon;
-      case ToolbarConstants.openMarkup:
-        return SidebarConstants.openMarkupIcon;
-      case ToolbarConstants.saveMarkup:
-        return SidebarConstants.saveMarkupIcon;
-      case ToolbarConstants.export:
-        return SidebarConstants.exportIcon;
-      case ToolbarConstants.dimension:
-        return SidebarConstants.dimensionIcon;
-      case ToolbarConstants.textNote:
-        return SidebarConstants.textNoteIcon;
-      case ToolbarConstants.arrow:
-        return SidebarConstants.arrowIcon;
-      case ToolbarConstants.rectangle:
-        return SidebarConstants.rectangleIcon;
-      case ToolbarConstants.circle:
-        return SidebarConstants.circleIcon;
-      case ToolbarConstants.freehand:
-        return SidebarConstants.freehandIcon;
-      case ToolbarConstants.style:
-        return SidebarConstants.styleIcon;
-      case ToolbarConstants.undo:
-        return SidebarConstants.undoIcon;
-      case ToolbarConstants.erase:
-        return SidebarConstants.eraseIcon;
-      default:
-        return Icons.help_outline;
-    }
-  }
 
   double _sidebarDrawerWidthForViewport(double viewportWidth) {
     final double maxExpandedWidth = math.max(
@@ -1466,7 +1457,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                 tooltipLabel: label == ToolbarConstants.style
                                     ? _buildToolbarStyleLabel()
                                     : label,
-                                icon: _toolbarActionIcon(label),
+                                iconDescriptor: _toolbarActionIconDescriptor(
+                                  label,
+                                ),
                                 iconColor: _toolbarActionIconColor(
                                   label,
                                   isSelected: _isToolbarActionSelected(label),
@@ -1627,7 +1620,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                         label == ToolbarConstants.style
                                         ? _buildToolbarStyleLabel()
                                         : label,
-                                    icon: _toolbarActionIcon(label),
+                                    iconDescriptor:
+                                        _toolbarActionIconDescriptor(label),
                                     iconColor: _toolbarActionIconColor(
                                       label,
                                       isSelected: _isToolbarActionSelected(
@@ -4098,7 +4092,7 @@ class _SidebarActionButton extends StatelessWidget {
     required this.actionKey,
     required this.label,
     required this.tooltipLabel,
-    required this.icon,
+    required this.iconDescriptor,
     required this.iconColor,
     required this.isExpanded,
     required this.onPressed,
@@ -4109,7 +4103,7 @@ class _SidebarActionButton extends StatelessWidget {
   final String actionKey;
   final String label;
   final String tooltipLabel;
-  final IconData icon;
+  final SidebarIconDescriptor iconDescriptor;
   final Color iconColor;
   final bool isExpanded;
   final VoidCallback onPressed;
@@ -4135,6 +4129,10 @@ class _SidebarActionButton extends StatelessWidget {
           ? AppThemeConstants.ncdBlue.withValues(alpha: 0.30)
           : Colors.transparent,
       width: UiLayoutConstants.sidebarActionSelectedBorderWidth,
+    );
+    final Widget iconWidget = _buildIconWidget(
+      resolvedIconColor: resolvedIconColor,
+      isDisabled: isDisabled,
     );
 
     return Padding(
@@ -4175,11 +4173,7 @@ class _SidebarActionButton extends StatelessWidget {
                           )
                         else
                           const SizedBox(width: 8),
-                        Icon(
-                          icon,
-                          size: UiLayoutConstants.sidebarActionIconSize,
-                          color: resolvedIconColor,
-                        ),
+                        iconWidget,
                         const SizedBox(
                           width: UiLayoutConstants.sidebarActionLabelGap,
                         ),
@@ -4216,11 +4210,7 @@ class _SidebarActionButton extends StatelessWidget {
                             ),
                           ),
                         Center(
-                          child: Icon(
-                            icon,
-                            size: UiLayoutConstants.sidebarActionIconSize,
-                            color: resolvedIconColor,
-                          ),
+                          child: iconWidget,
                         ),
                       ],
                     ),
@@ -4228,6 +4218,52 @@ class _SidebarActionButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildIconWidget({
+    required Color resolvedIconColor,
+    required bool isDisabled,
+  }) {
+    final IconData? iconData = iconDescriptor.iconData;
+    if (iconData != null) {
+      return Icon(
+        iconData,
+        size: UiLayoutConstants.sidebarActionIconSize,
+        color: resolvedIconColor,
+      );
+    }
+
+    final String? assetPath = iconDescriptor.assetPath;
+    if (assetPath != null) {
+      final Color? tintedColor = iconDescriptor.allowTint
+          ? resolvedIconColor
+          : null;
+      return Image.asset(
+        assetPath,
+        width: UiLayoutConstants.sidebarActionIconSize,
+        height: UiLayoutConstants.sidebarActionIconSize,
+        color: tintedColor,
+        filterQuality: FilterQuality.high,
+        errorBuilder:
+            (
+              BuildContext context,
+              Object error,
+              StackTrace? stackTrace,
+            ) => Icon(
+              Icons.broken_image_outlined,
+              size: UiLayoutConstants.sidebarActionIconSize,
+              color: isDisabled
+                  ? AppThemeConstants.sidebarIconMuted.withValues(alpha: 0.55)
+                  : AppThemeConstants.sidebarDestructiveAccent,
+            ),
+      );
+    }
+
+    return Icon(
+      Icons.help_outline,
+      size: UiLayoutConstants.sidebarActionIconSize,
+      color: resolvedIconColor,
     );
   }
 }
