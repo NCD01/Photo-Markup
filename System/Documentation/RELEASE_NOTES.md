@@ -434,3 +434,20 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.30 - 2026-06-17
+
+Linked changelog entries:
+- $newVersion - 2026-06-17
+
+Scope:
+  - Updated release version.
+
+Validation:
+  - Automated version bump script: PASS
+
+Rollback:
+  - Revert the version bump commit and delete the matching tag.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.

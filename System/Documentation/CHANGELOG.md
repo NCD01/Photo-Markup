@@ -1466,3 +1466,15 @@ Changes: Added Phase 1U-B production icon-pack finalization entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.30 - 2026-06-17
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve DWG preview import handling
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
