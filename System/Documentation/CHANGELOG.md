@@ -1521,3 +1521,15 @@ Changes: Added Phase 1X measurement-label usability and typography entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.31 - 2026-06-18
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve measurement label and import error visibility improvements
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
