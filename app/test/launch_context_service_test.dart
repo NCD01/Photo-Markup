@@ -55,6 +55,31 @@ void main() {
     },
   );
 
+  test('resolveBootstrap accepts valid DWG launch source path', () async {
+    final Directory tempDir = await Directory.systemTemp.createTemp(
+      'launch_context_dwg_test_',
+    );
+    addTearDown(() => tempDir.delete(recursive: true));
+    final File sourceFile = File('${tempDir.path}\\drawing1.dwg');
+    await sourceFile.writeAsString('placeholder');
+
+    final LaunchContextService service = LaunchContextService();
+    final bootstrap = await service.resolveBootstrap(
+      args: <String>[
+        '--${LaunchContextConstants.argLaunchedFromControlCenter}',
+        'true',
+        '--${LaunchContextConstants.argSourceImagePath}',
+        sourceFile.path,
+      ],
+      startupImagePathFromEnv: null,
+    );
+
+    expect(bootstrap.launchContext, isNotNull);
+    expect(bootstrap.launchContext!.sourceImagePath, sourceFile.path);
+    expect(bootstrap.initialImagePath, sourceFile.path);
+    expect(bootstrap.launchErrorMessage, isNull);
+  });
+
   test('resolveBootstrap ignores unknown args safely', () async {
     final LaunchContextService service = LaunchContextService();
     final bootstrap = await service.resolveBootstrap(

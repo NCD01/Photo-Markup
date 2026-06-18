@@ -312,3 +312,19 @@ Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decisio
 - Rollback or Reversal: Re-introduce a documented dev-only comparison harness in a separate approved follow-up.
 - Related Changes: Phase 1U-B final production cleanup (uncommitted workspace)
 - Review Date: N/A
+
+## DECISION-021
+- Date: 2026-06-17
+- Status: Accepted
+- Owner: NCD / M
+- Area: DWG Import Safety
+- Decision: Open DWG files by extracting an embedded raster preview (`PNG` preferred, `BMP` fallback) into an internal cache only when that embedded preview passes governed usability checks, and otherwise show the approved offline-converter fallback message.
+- Alternatives Considered:
+- Depend on a governed external converter before shipping any DWG support.
+- Pretend `magick` supports DWG and ship unverified conversion logic.
+- Add a cloud/online DWG conversion dependency.
+- Rationale: Real local DWG samples on this machine already contain embedded raster preview bytes that can be extracted safely without mutating the DWG, without cloud upload, and without introducing a new converter dependency. However, the owner sample proved some embedded previews are only tiny/partial dark thumbnails, so extraction alone is not an acceptable success criterion. Local Office/Visio preview-host attempts were not reliable enough for production capture, and ImageMagick still does not advertise `DWG`/`DXF` decoding support.
+- Impact: `.dwg` is now accepted by picker/launch validation and export/sidecar naming helpers, many DWGs can open immediately through cached embedded preview extraction, and obviously unusable embedded thumbnails are rejected honestly instead of being shown as if full DWG rendering succeeded.
+- Rollback or Reversal: Remove `dwg` from supported extensions and delete the dedicated DWG preview service if owner later prefers to hide DWG until real conversion is approved.
+- Related Changes: Phase 1W DWG Preview Import MVP (uncommitted workspace)
+- Review Date: N/A

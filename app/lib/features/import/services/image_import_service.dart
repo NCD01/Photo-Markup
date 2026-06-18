@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:heic_to_png_jpg/heic_to_png_jpg.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/features/import/services/dwg_preview_conversion_service.dart';
 
 typedef HeicFileConverter =
     Future<bool> Function({
@@ -32,21 +33,37 @@ class ImageImportService {
   ImageImportService({
     HeicFileConverter? heicFileConverter,
     ExternalHeicConverter? externalHeicConverter,
+    DwgPreviewConversionService? dwgPreviewConversionService,
     String? tempDirectoryPath,
   }) : _heicFileConverter = heicFileConverter ?? _defaultHeicFileConverter,
        _externalHeicConverter =
            externalHeicConverter ?? _defaultExternalHeicConverter,
+       _dwgPreviewConversionService =
+           dwgPreviewConversionService ??
+               DwgPreviewConversionService(tempDirectoryPath: tempDirectoryPath),
        _cacheDirectoryPath =
            '${tempDirectoryPath ?? Directory.systemTemp.path}${Platform.pathSeparator}${ImageImportConstants.heicPreviewCacheFolderName}';
 
   final HeicFileConverter _heicFileConverter;
   final ExternalHeicConverter _externalHeicConverter;
+  final DwgPreviewConversionService _dwgPreviewConversionService;
   final String _cacheDirectoryPath;
 
   Future<ImageImportResult> prepareDisplayableImage({
     required String sourcePath,
   }) async {
     final String extension = _fileExtension(sourcePath);
+    if (ImageImportConstants.dwgExtensionsSet.contains(extension)) {
+      final String previewPath = await _dwgPreviewConversionService
+          .prepareDisplayablePreview(
+        sourcePath: sourcePath,
+      );
+      return ImageImportResult(
+        sourcePath: sourcePath,
+        displayPath: previewPath,
+        usedTemporaryConvertedCopy: true,
+      );
+    }
     if (!ImageImportConstants.heicExtensionsSet.contains(extension)) {
       return ImageImportResult(
         sourcePath: sourcePath,
@@ -87,7 +104,8 @@ class ImageImportService {
     if (displayPath == null || displayPath.isEmpty) {
       return;
     }
-    if (_isHeicPreviewCachePath(displayPath)) {
+    if (_isHeicPreviewCachePath(displayPath) ||
+        _dwgPreviewConversionService.isManagedPreviewPath(displayPath)) {
       return;
     }
     try {
@@ -204,13 +222,13 @@ class ImageImportService {
             outputPath: outputPath,
           );
     if (!conversionSucceeded) {
-      throw const ConversionFailedException(
+      throw const ImageImportFailure(
         ImageImportConstants.heicConversionFailedMessage,
       );
     }
 
     if (!await outputFile.exists() || await outputFile.length() == 0) {
-      throw const ConversionFailedException(
+      throw const ImageImportFailure(
         ImageImportConstants.heicConversionFailedMessage,
       );
     }

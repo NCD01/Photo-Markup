@@ -18,6 +18,7 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - `Freehand Overlay Layer` (implemented)
 - `Text Note Overlay Layer` (implemented)
 - `HEIC/HEIF Import Conversion Flow` (implemented)
+- `DWG Preview Import Gate` (implemented with embedded-preview extraction + friendly fallback path)
 - `Dimension Label Dialog` (implemented)
 - `Text Note Dialog` (implemented)
 - `Export / Save Dialog` (implemented for PNG)
@@ -63,7 +64,7 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - `Erase removes currently selected dimension/arrow/rectangle/oval/freehand/text note (+dimension label when applicable)`
 - `Dragging a selected markup moves the whole markup while clamped to displayed photo bounds`
 - `Preset selection updates new-markup style and can apply style to selected markup`
-- `Open Photo supports jpg/jpeg/png/webp/heic/heif`
+- `Open Photo supports jpg/jpeg/png/webp/heic/heif/dwg`
 - `Optional launch context is parsed at startup and can show a non-intrusive context banner`
 - `Native Windows title-bar close requests are intercepted and routed to the unsaved guard dialog when markup state is dirty`
 - `Startup splash uses approved v1.5 asset with centralized duration (2200 ms)`
@@ -87,6 +88,8 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - `Original selected source file is not modified`
 - `Shows safe error message if image cannot be opened`
 - `HEIC/HEIF source files are converted to preview-capped temporary working copies for display/markup (current policy: JPEG cache output)`
+- `DWG source files are accepted for open/launch flows and load through embedded PNG/BMP preview extraction only when that preview passes the governed usability gate`
+- `DWG files without a usable embedded raster preview, or only with a tiny/partial dark embedded thumbnail, still show the converter-required fallback message`
 - `Import progress message ('Opening photo...') is shown while import/conversion is active`
 - `Dimension overlay is constrained to displayed photo bounds (BoxFit.contain rect)`
 - `View controls adjust render transform only; underlying markup geometry model stays normalized to displayed image rect`
@@ -113,6 +116,30 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - `Conversion attempts package file-based path first (with preview cap), then external fallback`
 - `Image replacement path performs best-effort file-image cache eviction`
 - `Conversion failure returns friendly field-safe HEIC message if both paths fail`
+
+#### `DWG Preview Import Gate`
+- Source path: `app/lib/features/import/services/dwg_preview_conversion_service.dart`
+- Purpose: `Extract embedded DWG raster previews into internal cache paths and keep fallback handling explicit/safe when a drawing has no usable preview`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `DWG extension detection`
+- `Embedded PNG preview extraction`
+- `Embedded BMP preview extraction`
+- `Preview usability validation`
+- `Deterministic preview cache reuse`
+- `Friendly converter-required fallback path`
+- Related widgets/components:
+- `PhotoMarkupShellScreen import path`
+- `ImageImportService`
+- Read/write behavior: `READ_WRITE` (temp/cache preview write only)
+- Notes:
+- `Original DWG file remains unchanged`
+- `Extracted DWG preview files are internal temp/cache artifacts only`
+- `Current MVP does not perform fake/online/cloud conversion`
+- `Embedded preview must pass governed usability checks before it is treated as a successful open`
+- `Current usability gate rejects obviously unusable previews such as very small thumbnails, mostly-dark previews with too little drawing area, and extreme-margin/partial-looking previews`
+- `Fallback failure message remains: Could not create a usable DWG preview. This DWG needs an approved offline DWG converter.`
+- `Original DWG basename still drives default export and editable sidecar naming`
 
 #### `Launch Context Adapter`
 - Source path: `app/lib/features/integration/services/launch_context_service.dart`

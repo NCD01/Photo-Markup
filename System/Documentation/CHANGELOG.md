@@ -38,6 +38,51 @@ Changes: Added Phase 1U-B production icon-pack finalization entry.
 - Risks / Known Gaps:
   - None specific to icon-pack decision; future icon redesign remains under existing branding roadmap.
 
+## Unreleased - 2026-06-17 (Phase 1W DWG Preview Import MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Import / Safety
+- Reason: Open DWG sources through embedded offline preview extraction when possible while preserving original-file safety and keeping honest fallback behavior for drawings without a usable preview.
+- Scope:
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/import/services/image_import_service.dart`
+  - `app/lib/features/import/services/dwg_preview_conversion_service.dart`
+  - `app/lib/main.dart`
+  - `app/test/image_import_service_test.dart`
+  - `app/test/launch_context_service_test.dart`
+  - `app/test/markup_export_path_service_test.dart`
+  - `app/test/editable_markup_document_service_test.dart`
+  - `app/test/dwg_preview_conversion_service_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added `.dwg` to supported source extension handling for picker and launch-context validation.
+  - Added dedicated `DwgPreviewConversionService` with deterministic internal cache reuse for extracted DWG previews.
+  - Implemented offline embedded-preview extraction:
+    - prefer embedded `PNG` preview data when present
+    - fall back to embedded `BMP` preview data when present
+    - keep extracted previews in ignored temp/cache storage only
+  - Added governed embedded-preview quality validation so the app does not treat obviously unusable DWG thumbnails as success:
+    - reject previews below minimum usable dimensions
+    - reject previews that are mostly dark background with too little drawing area
+    - reject previews with extreme empty margins that appear partial
+  - Updated the required DWG fallback message for drawings that do not expose a usable embedded raster preview:
+    - `Could not create a usable DWG preview. This DWG needs an approved offline DWG converter.`
+  - Preserved original DWG basename behavior for default export naming (`Drawing1 - Markup.png`) and editable sidecar naming (`Drawing1 - Markup.ncdmarkup.json`).
+  - Kept current MVP honest: local converter audit still found no governed DWG converter on this machine, so no-preview/unsupported-preview DWGs stay on the explicit fallback error path instead of pretending full DWG rendering works.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS` (`v0.29`)
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+  - targeted DWG/import/naming tests: `PASS`
+  - local converter audit: `PASS` (`magick` present but no `DWG`/`DXF` decode support listed; no ODA/Teigha/LibreCAD/Autodesk-class CLI found)
+  - embedded-preview extraction probe: `PASS` (local DWG sample exposed embedded `PNG` preview bytes)
+  - embedded-preview quality gate probe: `PASS` (known owner sample was rejected because its extracted preview was too small/unusable)
+- Risks / Known Gaps:
+  - Fallback handling for older/no-preview DWGs remains deferred until a governed offline converter path is approved (`TODO-040`).
+
 ## Unreleased - 2026-05-30 (Phase 1U-B Sidebar Icon Testing: Lucide vs NCD Custom Pack)
 - Owner: NCD / M
 - Author: Codex

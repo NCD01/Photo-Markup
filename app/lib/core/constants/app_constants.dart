@@ -109,6 +109,7 @@ class ImageImportConstants {
     'webp',
     'heic',
     'heif',
+    'dwg',
   ];
   static const Set<String> supportedExtensionsSet = <String>{
     'jpg',
@@ -117,13 +118,26 @@ class ImageImportConstants {
     'webp',
     'heic',
     'heif',
+    'dwg',
   };
   static const Set<String> heicExtensionsSet = <String>{'heic', 'heif'};
+  static const Set<String> dwgExtensionsSet = <String>{'dwg'};
   static const String heicPreviewCacheFolderName =
       'ncd_photo_markup_heic_cache';
+  static const String dwgPreviewCacheFolderName =
+      'ncd_photo_markup_dwg_cache';
   static const String heicPreviewCacheKeyVersion = 'v2';
+  static const String dwgPreviewCacheKeyVersion = 'v2';
   static const int heicMaxPreviewDimension = 2560;
   static const int heicPreviewJpegQuality = 85;
+  static const int dwgPreviewSearchByteLimit = 262144;
+  static const int dwgPreviewMinimumWidth = 384;
+  static const int dwgPreviewMinimumHeight = 216;
+  static const int dwgPreviewDarkPixelThreshold = 16;
+  static const int dwgPreviewOpaqueAlphaThreshold = 32;
+  static const double dwgPreviewMaximumDarkPixelRatio = 0.88;
+  static const double dwgPreviewMaximumDarkAreaRatio = 0.18;
+  static const double dwgPreviewMaximumDominantMarginRatio = 0.35;
   static const bool heicPreferFallbackConverterFirst = false;
   static const Duration heicPackageConversionTimeout = Duration(seconds: 3);
   static const Duration heicFallbackConversionTimeout = Duration(seconds: 20);
@@ -131,6 +145,28 @@ class ImageImportConstants {
   static const int tempConvertedFileMaxCount = 25;
   static const String heicConversionFailedMessage =
       'Could not open this HEIC image. Please convert it to JPG/PNG or try another photo.';
+  static const String dwgPreviewUnavailableMessage =
+      'Could not create a usable DWG preview. This DWG needs an approved offline DWG converter.';
+  static const String dwgPreviewRejectedTooSmallReason =
+      'preview dimensions are below the minimum usable size';
+  static const String dwgPreviewRejectedEmptyReason =
+      'preview does not contain visible drawing content';
+  static const String dwgPreviewRejectedMostlyDarkReason =
+      'preview is mostly dark background with too little drawing area';
+  static const String dwgPreviewRejectedMarginReason =
+      'preview has extreme empty margins and appears partial';
+  static const String dwgPreviewRejectedDecodeReason =
+      'preview could not be decoded for quality validation';
+  static const List<String> dwgConverterCommandCandidates = <String>[
+    'ODAFileConverter',
+    'TeighaFileConverter',
+    'dwgread',
+    'LibreCAD',
+  ];
+  static const List<String> dwgPreviewCacheExtensions = <String>[
+    'png',
+    'bmp',
+  ];
   static const String heicTempSuffix = '_heic_converted';
   static const String heicConvertedOutputExtension = 'jpg';
   static const String heicFallbackConverterCommand = 'magick';
@@ -147,7 +183,7 @@ class ImageImportConstants {
   ];
   static const String importDiagnosticsPrefix = '[ImageImport]';
   static const String openErrorMessage =
-      'Could not open this image. Please choose a JPG, PNG, WEBP, or HEIC/HEIF file.';
+      'Could not open this image. Please choose a JPG, PNG, WEBP, HEIC/HEIF, or DWG file.';
   static const String loadedPhotoPrefix = 'Loaded photo: ';
   static const String unknownLoadedPhotoName = 'Unknown';
 

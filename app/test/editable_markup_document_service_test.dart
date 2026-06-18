@@ -32,6 +32,13 @@ void main() {
       expect(name, 'Kitchen Before - Markup.ncdmarkup.json');
     });
 
+    test('builds default sidecar name from DWG path', () {
+      final String name = service.buildDefaultMarkupFileName(
+        sourcePathOrFileName: r'C:\plans\Drawing1.dwg',
+      );
+      expect(name, 'Drawing1 - Markup.ncdmarkup.json');
+    });
+
     test('ensures .ncdmarkup.json extension from bare and .json names', () {
       expect(
         service.ensureEditableMarkupExtension(r'C:\tmp\save_here'),

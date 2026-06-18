@@ -38,6 +38,7 @@ Required sections are present and updated through Phase 1O.
 | Editable Markup Model | `Typed sidecar schema model for persisted editable markup sessions` | `app/lib/features/markup/models/editable_markup_document.dart` | `NCD / M` |
 | Editable Markup Service | `Builds safe sidecar paths and reads/writes .ncdmarkup.json documents` | `app/lib/features/markup/services/editable_markup_document_service.dart` | `NCD / M` |
 | Import Service | `Converts HEIC/HEIF source files into preview-capped temporary working copies (cache-reused JPEG in current policy), applies fallback conversion, and cleans stale cache artifacts` | `app/lib/features/import/services/image_import_service.dart` | `NCD / M` |
+| DWG Preview Service | `Extracts embedded DWG raster previews into internal cache paths, validates preview usability, and preserves friendly fallback behavior for no-preview/unusable-preview drawings` | `app/lib/features/import/services/dwg_preview_conversion_service.dart` | `NCD / M` |
 | View Transform Utility | `Provides centralized zoom clamp/step/wheel transform helpers for canvas view controls` | `app/lib/features/view/utils/canvas_view_transform_utils.dart` | `NCD / M` |
 | Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
 | Export Path Service | `Builds default export name/folder and duplicate-safe output path` | `app/lib/features/export/services/markup_export_path_service.dart` | `NCD / M` |
@@ -49,8 +50,9 @@ Required sections are present and updated through Phase 1O.
 ## Core Features
 | Feature | Behavior | Primary Module | Test Evidence |
 |---|---|---|---|
-| `Open Photo` | `Opens Windows-compatible file picker and loads JPG/JPEG/PNG/WEBP/HEIC/HEIF into canvas` | `app/lib/main.dart` + `app/lib/features/import/services/image_import_service.dart` | `flutter analyze/test/build + runtime smoke` |
+| `Open Photo` | `Opens Windows-compatible file picker and loads JPG/JPEG/PNG/WEBP/HEIC/HEIF into canvas; for DWG, extracts an embedded preview image only when it passes the governed usability gate and otherwise shows friendly fallback guidance` | `app/lib/main.dart` + `app/lib/features/import/services/image_import_service.dart` | `flutter analyze/test/build + runtime smoke` |
 | `HEIC/HEIF Conversion` | `Converts HEIC/HEIF to preview-capped temporary working copy (current policy: JPEG cache), preserves original file, and retains fallback conversion safety` | `app/lib/features/import/services/image_import_service.dart` | `Service tests + runtime smoke` |
+| `DWG Import Recognition` | `Accepts .dwg for picker/launch/naming flows, preserves original DWG path/basename, extracts embedded PNG/BMP preview data into temp cache when present, validates preview usability, and falls back to the required converter-needed message when no usable preview is available` | `app/lib/features/import/services/dwg_preview_conversion_service.dart` + `app/lib/features/import/services/image_import_service.dart` | `Service tests + launch-context tests` |
 | `Import Progress Feedback` | `Shows user-friendly progress copy while photo import/conversion is in progress` | `app/lib/main.dart` | `Runtime smoke + widget/runtime observation` |
 | `Canvas Image Display` | `Shows selected image centered with BoxFit.contain (no default cropping)` | `app/lib/main.dart` | `Loaded-image screenshot` |
 | `Canvas Zoom Controls` | `In-canvas controls support zoom in/out with configured min/max clamping and zoom-percent status` | `app/lib/main.dart` + `app/lib/features/view/utils/canvas_view_transform_utils.dart` | `Utility tests + runtime smoke` |
@@ -102,6 +104,7 @@ Required sections are present and updated through Phase 1O.
 ## Data and Persistence Boundaries
 - Canonical data source: `User-selected local image file path at runtime`
 - HEIC/HEIF working-copy policy: `Converted JPEG preview working copy is temporary/internal, preview-capped for display performance, and original source file remains unchanged`
+- DWG working-copy policy: `If the drawing contains an embedded raster preview that passes the governed usability gate, that preview is extracted into an ignored temp cache path and used as the display working copy; original DWG path is still preserved for export/sidecar naming`
 - Launch-context policy: `Client/project/source context can be passed in, but app remains standalone and has no direct Control Center code dependency`
 - Local cache policy: `Best-effort FileImage cache eviction on image replacement; stale HEIC preview cache files are pruned by age/count guardrails`
 - Migration policy: `N/A`
@@ -134,8 +137,9 @@ Required sections are present and updated through Phase 1O.
 - Log schema: `Governance/LOGGING_AND_ERROR_POLICY.md`
 - Error handling: `Shows field-safe load message for unsupported/unreadable images and HEIC conversion failures`
 - User-safe error behavior:
-  - Generic: `Could not open this image. Please choose a JPG, PNG, WEBP, or HEIC/HEIF file.`
+  - Generic: `Could not open this image. Please choose a JPG, PNG, WEBP, HEIC/HEIF, or DWG file.`
   - HEIC/HEIF conversion failure: `Could not open this HEIC image. Please convert it to JPG/PNG or try another photo.`
+  - DWG preview unavailable: `Could not create a usable DWG preview. This DWG needs an approved offline DWG converter.`
 
 ## Privacy and Sensitive Data Controls
 - Data classification: `Internal`
@@ -179,7 +183,7 @@ Required sections are present and updated through Phase 1O.
 | `RISK-013` | `Control Center-side launcher and return/save handoff remain deferred; Phase 1P only adds adapter contract inside Photo Markup` | `NCD / M` | `Future integration phase` | `Tracked in TODO-030/TODO-031/TODO-032/TODO-033` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.28`.
+- App bar shows `NCD Photo Markup` and `v0.29`.
 - Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
@@ -193,11 +197,13 @@ Required sections are present and updated through Phase 1O.
   - taskbar readability/design optimization is deferred to a future icon standard/redesign phase.
   - splash asset/behavior remains unchanged.
 - If no image loaded, canvas shows: `Open or import a photo to start marking it up.`
-- Open Photo launches picker for `jpg`, `jpeg`, `png`, `webp`, `heic`, and `heif`.
+- Open Photo launches picker for `jpg`, `jpeg`, `png`, `webp`, `heic`, `heif`, and `dwg`.
 - App accepts optional launch context (`--sourceImagePath`, client/project fields, or `--launchContextPath`) and still runs standalone when absent.
 - Launch context can display a non-intrusive client/project/source banner when provided.
 - Invalid or unsupported launch source image paths show a friendly message and do not block normal app usage.
 - HEIC/HEIF files are converted to preview-capped temporary working copies for display/markup (current policy: JPEG cache output), with fallback conversion when package conversion fails.
+- DWG files are recognized as valid source inputs for launch/open and naming flows; when they contain an embedded PNG/BMP preview that passes the governed usability gate, the app extracts and loads that preview into the normal markup canvas workflow.
+- DWG files without a usable embedded raster preview, or only with a tiny/partial dark embedded thumbnail, still show the converter-required message until a governed offline fallback path is approved.
 - Original HEIC/HEIF source files are not modified, moved, overwritten, or deleted.
 - Loaded photo is displayed in-canvas with preserved aspect ratio and contain fit.
 - Dimension tool can be selected before photo load without crash.

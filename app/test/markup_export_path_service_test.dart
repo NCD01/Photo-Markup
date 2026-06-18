@@ -20,6 +20,15 @@ void main() {
     expect(name, 'IMG 3000 - Markup.png');
   });
 
+  test('buildDefaultMarkupExportName keeps DWG basename', () {
+    const MarkupExportPathService service = MarkupExportPathService();
+    final String name = service.buildDefaultMarkupExportName(
+      sourcePathOrFileName: r'C:\Plans\Drawing1.dwg',
+    );
+
+    expect(name, 'Drawing1 - Markup.png');
+  });
+
   test('resolveDefaultExportDirectory prioritizes valid suggested folder', () {
     final Set<String> existingDirs = <String>{
       r'C:\Suggested Folder',

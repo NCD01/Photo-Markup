@@ -13,6 +13,7 @@ import 'package:ncd_photo_markup/features/export/services/markup_export_path_ser
 import 'package:ncd_photo_markup/features/export/services/marked_up_image_export_service.dart';
 import 'package:ncd_photo_markup/features/integration/models/photo_markup_launch_context.dart';
 import 'package:ncd_photo_markup/features/integration/services/launch_context_service.dart';
+import 'package:ncd_photo_markup/features/import/services/dwg_preview_conversion_service.dart';
 import 'package:ncd_photo_markup/features/import/services/image_import_service.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
@@ -352,9 +353,6 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
 
     final String extension = _fileExtension(path);
-    final bool isHeicSource = ImageImportConstants.heicExtensionsSet.contains(
-      extension,
-    );
     if (!ImageImportConstants.supportedExtensionsSet.contains(extension)) {
       if (showErrorForFailure) {
         _setLoadError();
@@ -377,13 +375,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       importResult = await _imageImportService.prepareDisplayableImage(
         sourcePath: path,
       );
-    } catch (_) {
+    } catch (error) {
       if (showErrorForFailure) {
-        _setLoadError(
-          message: isHeicSource
-              ? ImageImportConstants.heicConversionFailedMessage
-              : ImageImportConstants.openErrorMessage,
-        );
+        _setLoadError(message: _importFailureMessage(extension, error));
       }
       _logImportDebug('prepareDisplayableImage failed for path=$path');
       return false;
@@ -399,11 +393,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         );
       }
       if (showErrorForFailure) {
-        _setLoadError(
-          message: isHeicSource
-              ? ImageImportConstants.heicConversionFailedMessage
-              : ImageImportConstants.openErrorMessage,
-        );
+        _setLoadError(message: _fallbackImportFailureMessage(extension));
       }
       _logImportDebug(
         'image decode failed for displayPath=${importResult.displayPath}',
@@ -513,6 +503,23 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _errorMessage = message ?? ImageImportConstants.openErrorMessage;
       _isPickingFile = false;
     });
+  }
+
+  String _importFailureMessage(String extension, Object error) {
+    if (error is ImageImportFailure) {
+      return error.message;
+    }
+    return _fallbackImportFailureMessage(extension);
+  }
+
+  String _fallbackImportFailureMessage(String extension) {
+    if (ImageImportConstants.heicExtensionsSet.contains(extension)) {
+      return ImageImportConstants.heicConversionFailedMessage;
+    }
+    if (ImageImportConstants.dwgExtensionsSet.contains(extension)) {
+      return ImageImportConstants.dwgPreviewUnavailableMessage;
+    }
+    return ImageImportConstants.openErrorMessage;
   }
 
   double get _normalizedViewScale =>

@@ -6,6 +6,70 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track concise session history and handoff state.
+
+# SESSION_2026-06-17_0001_phase1w_dwg_preview_import
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Add Phase 1W DWG preview import MVP without modifying original DWG files and without relying on unapproved cloud or CAD-editor dependencies.
+
+## Actions
+- Confirmed clean preflight state before edits.
+- Audited the current import pipeline and local converter availability.
+- Verified ImageMagick is installed but does not advertise `DWG`/`DXF` decode support on this machine.
+- Verified no governed local DWG converter tooling (ODA/Teigha/LibreCAD/Autodesk-class CLI) is currently available.
+- Added `.dwg` recognition to supported import/launch extension sets.
+- Added dedicated `DwgPreviewConversionService` with deterministic cache reuse under an ignored temp cache folder.
+- Probed local DWG samples and confirmed they contain embedded raster preview data near the file header.
+- Implemented embedded preview extraction support:
+  - prefer embedded `PNG` preview when present
+  - fall back to embedded `BMP` preview when present
+  - reuse cached extracted preview on repeated open
+- Added governed preview-quality validation before treating an extracted DWG preview as success:
+  - reject previews below minimum usable dimensions
+  - reject previews that are mostly dark background with too little drawing area
+  - reject previews with extreme empty margins that look partial/unusable
+- Updated the friendly fallback message for missing/unusable previews:
+  - `Could not create a usable DWG preview. This DWG needs an approved offline DWG converter.`
+- Added test coverage for DWG preview extraction/cache behavior, launch-context acceptance, and DWG-driven export/sidecar basename naming.
+
+## Logging/Debug Notes
+- Local converter audit result:
+  - `magick` found at `C:\Program Files\ImageMagick-7.1.2-Q16-HDRI\magick.exe`
+  - `magick -list format` showed `PDF`/`SVG` support but no `DWG`/`DXF`
+  - no ODA/Teigha/LibreCAD/Autodesk converter CLI was found in the local install paths checked
+- Embedded-preview probe result:
+  - sample DWGs exposed embedded `PNG` preview bytes starting near file offset `567`
+  - the owner sample extracted to `256x142` with a mostly black background and was correctly classified as unusable by the new quality gate
+  - Windows shell/Visio live-preview paths remained unreliable for production use on this machine, so the MVP continues to rely only on embedded-preview extraction plus honest rejection when that preview is not usable
+
+## Validation
+- `git status --short`: `PASS` (clean before edits)
+- `verify-version-sync.ps1`: `PASS` (`v0.29`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test test/dwg_preview_conversion_service_test.dart`: `PASS`
+- `flutter test test/image_import_service_test.dart`: `PASS`
+- `flutter test`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- real DWG sample quality-gate probe: `PASS` (embedded `PNG` found and rejected with governed fallback message because preview was too small/unusable)
+- Targeted DWG/import/naming tests: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (DWG preview thresholds, cache versioning, and fallback copy centralized)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+- Original DWG/source file mutation not introduced.
 Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 
 # SESSION_2026-05-22_0001_bootstrap_phase0

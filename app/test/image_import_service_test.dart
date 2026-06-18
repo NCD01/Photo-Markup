@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/features/import/services/dwg_preview_conversion_service.dart';
 import 'package:ncd_photo_markup/features/import/services/image_import_service.dart';
 
 void main() {
@@ -35,6 +37,69 @@ void main() {
       expect(result.sourcePath, jpgFile.path);
       expect(result.displayPath, jpgFile.path);
       expect(result.usedTemporaryConvertedCopy, isFalse);
+    });
+
+    test('extracts cached preview for DWG source files', () async {
+      final File dwgFile = File('${tempDir.path}/drawing1.dwg');
+      await dwgFile.writeAsBytes(
+        _buildFakeDwgWithPngPreview(_buildUsablePngPreviewBytes()),
+      );
+
+      final ImageImportService service = ImageImportService(
+        tempDirectoryPath: tempDir.path,
+      );
+
+      final ImageImportResult result = await service.prepareDisplayableImage(
+        sourcePath: dwgFile.path,
+      );
+
+      expect(result.sourcePath, dwgFile.path);
+      expect(result.usedTemporaryConvertedCopy, isTrue);
+      expect(result.displayPath, isNot(dwgFile.path));
+      expect(result.displayPath.endsWith('.png'), isTrue);
+      expect(await File(result.displayPath).exists(), isTrue);
+    });
+
+    test('rejects low-quality DWG embedded previews with friendly error', () async {
+      final File dwgFile = File('${tempDir.path}/drawing1.dwg');
+      await dwgFile.writeAsBytes(
+        _buildFakeDwgWithPngPreview(_buildLowQualityPngPreviewBytes()),
+      );
+
+      final ImageImportService service = ImageImportService(
+        tempDirectoryPath: tempDir.path,
+      );
+
+      expect(
+        () => service.prepareDisplayableImage(sourcePath: dwgFile.path),
+        throwsA(
+          isA<ImageImportFailure>().having(
+            (ImageImportFailure error) => error.message,
+            'message',
+            ImageImportConstants.dwgPreviewUnavailableMessage,
+          ),
+        ),
+      );
+    });
+
+    test('reports friendly error for DWG source files with no preview', () async {
+      final File dwgFile = File('${tempDir.path}/drawing1.dwg');
+      await dwgFile.writeAsBytes(<int>[1, 2, 3, 4]);
+
+      final ImageImportService service = ImageImportService(
+        tempDirectoryPath: tempDir.path,
+      );
+
+      expect(
+        () => service.prepareDisplayableImage(sourcePath: dwgFile.path),
+        throwsA(
+          isA<ImageImportFailure>().having(
+            (ImageImportFailure error) => error.message,
+            'message',
+            ImageImportConstants.dwgPreviewUnavailableMessage,
+          ),
+        ),
+      );
     });
 
     test('converts HEIC to temporary working copy', () async {
@@ -231,4 +296,24 @@ void main() {
       expect(await convertedFile.exists(), isFalse);
     });
   });
+}
+
+Uint8List _buildFakeDwgWithPngPreview(Uint8List pngBytes) {
+  final BytesBuilder builder = BytesBuilder(copy: false);
+  builder.add(Uint8List.fromList(List<int>.filled(567, 0)));
+  builder.add(pngBytes);
+  builder.add(Uint8List.fromList(List<int>.filled(64, 0)));
+  return builder.toBytes();
+}
+
+Uint8List _buildLowQualityPngPreviewBytes() {
+  return base64Decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAQAAAACOCAAAAAD71ImmAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAACYktHRAD/h4/MvwAAAAd0SU1FB+oGEgMbKJCeJckAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjYtMDYtMThUMDM6Mjc6NDArMDA6MDCUNKPhAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI2LTA2LTE4VDAzOjI3OjQwKzAwOjAw5WkbXQAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNi0wNi0xOFQwMzoyNzo0MCswMDowMLJ8OoIAAAFASURBVHja7dwhDoBQDMBQPgHuf14UCo8geWKtmphomumtc5vNrgU0BdACmgJoAU0BtICmAFpAUwAtoCmAFtAUQAtoCqAFNAXQApoCaAFNAbSApgBaQFMALaApgBbQFEALaAqgBTQF0AKaAmgBTQG0gKYAWkBTAC2gKYAW0BRAC2gKoAU0BdACmkML/M/9Zel6h/EXUAAtoCmAFtAUQAtoCqAFNAXQApoCaAFNAbSApgBaQFMALaApgBbQFEALaAqgBTQF0AKaAmgBTQG0gKYAWkBTAC2gGR9g9Vh5OAXQApoCaAFNAbSApgBaQFMALaApgBbQFEALaAqgBTQF0AKaAmgBTQG0gKYAWkBTAC2gKYAW0BRAC2gKoAU0BdACmgJoAU0BtICmAFpAUwAtoCmAFtAUQAtoCqAFNAXQAprxAR6D2wInNgXPqgAAAABJRU5ErkJggg==',
+  );
+}
+
+Uint8List _buildUsablePngPreviewBytes() {
+  return base64Decode(
+    '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',
+  );
 }
