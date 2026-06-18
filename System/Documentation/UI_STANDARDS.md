@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-30`
+Last Updated: `2026-06-18`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1U compact rail + expandable drawer field-usability pattern notes.
+Changes: Added Phase 1X select-mode drawing priority, movable measurement-label, and governed typography notes.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -25,6 +25,8 @@ Changes: Added Phase 1U compact rail + expandable drawer field-usability pattern
 - Canvas view-control pattern: `Use compact in-canvas control surface for zoom in/out, fit, actual-size, and pan toggle without horizontal overflow`
 - Canvas transform rule: `Apply transforms to image + markup overlay together; do not rewrite stored markup coordinates during zoom/pan`
 - Pan/tool interaction rule: `When a markup drawing tool is selected while Pan mode is active, auto-disable Pan mode to restore immediate draw/select behavior`
+- Draw-vs-select rule: `Drawing tools own pointer intent while armed; selecting the same tool again returns the shell to Select mode for markup editing`
+- Select-mode hit priority rule: `Prefer visible selected handles first, then dimension label bubble, then dimension line body, then other markup handles/bodies so dense measurement areas stay editable without reintroducing draw-mode selection stealing`
 - Active tool visibility: `Show active tool status text in the expanded sidebar header`
 - Style visibility: `Show current style short-label directly on Style action`
 - Icon color hierarchy: `Inactive icons use neutral charcoal; active/selected states use NCD Blue accent; erase uses restrained muted-red accent`
@@ -42,8 +44,13 @@ Changes: Added Phase 1U compact rail + expandable drawer field-usability pattern
 - Minimum MVP preset set: `NCD Blue`, `Red`, `Yellow`, `White`, `Black`.
 - Preset changes should apply to new markups without recoloring existing markups unexpectedly.
 - Dimension label chips: high-contrast text with semi-opaque light background and border
+- Dimension labels may be moved independently from the measured line; moved labels should render a restrained leader line back to the line midpoint/anchor
 - Dimension label entry: touch-friendly dialog with explicit Save/Skip actions
 - Dimension label entry should also support Enter/Done keyboard submit for fast field entry on desktop tablets.
+- Typography governance:
+  - allowed font list: `Default/System`, `Segoe UI`, `Arial`, `Calibri`
+  - allowed font size range: `10-72`
+  - typography controls should live in a centralized dialog/surface, not scattered per tool
 - Selected markup state must be visually obvious (stroke color/weight contrast from non-selected lines).
 - Erase interaction must be safe: no-selection click should be gentle guidance, never crash.
 - Dragging a selected markup should move the whole markup with a movement threshold to avoid accidental tap/edit conflicts.

@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\FORM_DEFINITIONS.m
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-29`
+Last Updated: `2026-06-18`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility notes.
+Changes: Added Phase 1X select-mode label editing/movement and typography-control notes.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -181,6 +181,8 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - `Line labels render near midpoint with readable chip styling`
 - `Tap-near-line can trigger label edit flow`
 - `Single tap selects line; second tap on selected line re-opens label edit`
+- `In Select mode, pointer-down on an unselected existing dimension can promote it to selected state and continue handle-drag or whole-line move in the same gesture`
+- `Line-body hits away from the label bubble should select/move the line; label-bubble hits remain label edit/label drag targets`
 - `Selected line visual state is highlighted`
 - `Delete/Backspace keyboard keys erase selected line`
 - `Dragging a selected line moves the line + label together`
@@ -304,11 +306,13 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - Read/write behavior: `MIXED`
 - Notes:
 - `Shown automatically after line creation`
-- `Can be opened by tapping near an existing line`
+- `Can be reopened in Select mode by tapping a selected dimension label or pressing Enter with a selected dimension`
+- `Line-body selection and label-bubble edit targets are intentionally separate so dense nearby measurements remain editable without breaking draw-first behavior`
 - `Skips are allowed; labels are optional`
 - `Enter/Done key submits label as Save`
 - `Dialog owns/disposes its own TextEditingController to avoid disposed-controller crashes during close/rebuild`
 - `Saved label repaint is immediate (no next-action refresh required)`
+- `Dimension labels can be moved independently in Select mode; moved labels render with a leader line and persist offset in sidecar data`
 
 #### `Text Note Dialog`
 - Source path: `app/lib/main.dart`
@@ -328,14 +332,17 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - `Skip/Cancel closes dialog without creating/updating a note`
 - `Enter/Done key submits note as Save`
 - `Dialog owns/disposes its own TextEditingController to avoid disposed-controller crashes`
+- `New notes inherit current governed font family/font size defaults`
 
 #### `Style Preset Selector`
 - Source path: `app/lib/main.dart` + `app/lib/features/markup/models/markup_style_preset.dart`
-- Purpose: `Allow touch-friendly selection of centralized markup style presets`
+- Purpose: `Allow touch-friendly selection of centralized markup style presets plus governed text typography defaults`
 - Parent/master form: `Photo Markup Shell`
 - Child components:
 - `Style toolbar button`
 - `Preset picker dialog/list`
+- `Font family dropdown`
+- `Font size slider`
 - `Optional apply-to-selected behavior`
 - Related widgets/components:
 - `_ToolbarActionButton`
@@ -343,7 +350,9 @@ Changes: Added Phase 1U compact sidebar rail/drawer and active-tool visibility n
 - Read/write behavior: `MIXED`
 - Notes:
 - `Preset updates style for new markups`
-- `If markup is selected, preset can restyle the selected markup`
+- `Current text defaults are governed here for dimension labels and text notes`
+- `If a dimension or text note is selected, font family/font size apply to that selected markup and future new text markup`
+- `If a non-text markup is selected, preset restyle still applies while typography controls continue to govern future new labels/notes`
 - `Advanced custom picker/user-default persistence remains deferred`
 
 #### `Sidebar Icon Rendering Standard (Phase 1U-B Production)`

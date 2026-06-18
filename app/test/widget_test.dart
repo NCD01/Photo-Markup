@@ -235,6 +235,8 @@ void main() {
 
     await tester.tap(find.text('Red'));
     await _pumpFrames(tester, frames: 16);
+    await tester.tap(find.text(UiCopyConstants.styleDialogApplyButton));
+    await _pumpFrames(tester, frames: 16);
     expect(find.text('Style: Red'), findsWidgets);
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
@@ -369,5 +371,58 @@ void main() {
       );
       expect(stateAfter.debugIsPanModeEnabled, isFalse);
     }
+  });
+
+  testWidgets('tapping the active markup tool returns to select mode', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    await _pumpFrames(tester, frames: 12);
+    await _expandSidebarIfCollapsed(tester);
+
+    await _tapSidebarAction(tester, ToolbarConstants.dimension);
+    expect(
+      find.textContaining(
+        '${UiCopyConstants.toolbarActiveToolPrefix}: ${ToolbarConstants.dimension}',
+      ),
+      findsOneWidget,
+    );
+
+    await _tapSidebarAction(tester, ToolbarConstants.dimension);
+    expect(
+      find.textContaining(
+        '${UiCopyConstants.toolbarActiveToolPrefix}: ${UiCopyConstants.toolbarActiveToolNone}',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('active tool stays selected when pan mode is turned off from it', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    await _pumpFrames(tester, frames: 12);
+    await _expandSidebarIfCollapsed(tester);
+
+    await _tapSidebarAction(tester, ToolbarConstants.dimension);
+
+    final dynamic stateBefore = tester.state(
+      find.byType(PhotoMarkupShellScreen),
+    );
+    stateBefore.debugSetPanModeEnabled(true);
+    await _pumpFrames(tester, frames: 4);
+
+    await _tapSidebarAction(tester, ToolbarConstants.dimension);
+
+    final dynamic stateAfter = tester.state(
+      find.byType(PhotoMarkupShellScreen),
+    );
+    expect(stateAfter.debugIsPanModeEnabled, isFalse);
+    expect(
+      find.textContaining(
+        '${UiCopyConstants.toolbarActiveToolPrefix}: ${ToolbarConstants.dimension}',
+      ),
+      findsOneWidget,
+    );
   });
 }

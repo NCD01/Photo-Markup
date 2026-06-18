@@ -11,6 +11,7 @@ import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
+import 'package:ncd_photo_markup/features/markup/utils/markup_text_layout_utils.dart';
 
 class DimensionLinesOverlay extends StatefulWidget {
   const DimensionLinesOverlay({
@@ -253,6 +254,7 @@ class _DimensionLinesPainter extends CustomPainter {
         end: end,
         labelBackgroundPaint: labelBackgroundPaint,
         labelBorderPaint: _dimensionLabelBorderPaint(preset),
+        leaderPaint: _dimensionLabelLeaderPaint(preset, isSelected: isSelected),
       );
     }
 
@@ -501,6 +503,19 @@ class _DimensionLinesPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
   }
 
+  Paint _dimensionLabelLeaderPaint(
+    MarkupStylePreset preset, {
+    required bool isSelected,
+  }) {
+    return Paint()
+      ..color = isSelected
+          ? preset.dimensionSelectedLineColor
+          : preset.dimensionLineColor
+      ..strokeWidth = DimensionLineConstants.labelLeaderStrokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+  }
+
   Paint _arrowPaint(MarkupStylePreset preset, {required bool isSelected}) {
     return Paint()
       ..color = isSelected
@@ -603,25 +618,12 @@ class _DimensionLinesPainter extends CustomPainter {
       return;
     }
 
-    final TextPainter textPainter =
-        TextPainter(
-          text: TextSpan(
-            text: text,
-            style: TextStyle(
-              color: stylePreset.textNoteTextColor,
-              fontSize: TextNoteMarkupConstants.fontSize,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-          maxLines: 4,
-          ellipsis: '...',
-        )..layout(
-          maxWidth: imageRect.width * TextNoteMarkupConstants.maxWidthFactor,
-        );
-
-    final Offset anchor = note.anchorInRect(imageRect);
-    final Rect chipRect = _layoutNoteRect(anchor, textPainter);
+    final TextNoteLayout layout = MarkupTextLayoutUtils.layoutTextNote(
+      note: note,
+      imageRect: imageRect,
+      preset: stylePreset,
+    );
+    final Rect chipRect = layout.chipRect;
     final RRect chip = RRect.fromRectAndRadius(
       chipRect,
       const Radius.circular(TextNoteMarkupConstants.borderRadius),
@@ -641,36 +643,7 @@ class _DimensionLinesPainter extends CustomPainter {
 
     canvas.drawRRect(chip, fillPaint);
     canvas.drawRRect(chip, borderPaint);
-    textPainter.paint(
-      canvas,
-      Offset(
-        chipRect.left + TextNoteMarkupConstants.horizontalPadding,
-        chipRect.top + TextNoteMarkupConstants.verticalPadding,
-      ),
-    );
-  }
-
-  Rect _layoutNoteRect(Offset anchor, TextPainter textPainter) {
-    final double width =
-        textPainter.width + (TextNoteMarkupConstants.horizontalPadding * 2);
-    final double height =
-        textPainter.height + (TextNoteMarkupConstants.verticalPadding * 2);
-
-    double left = anchor.dx;
-    double top = anchor.dy;
-
-    final double minLeft =
-        imageRect.left + TextNoteMarkupConstants.clampPadding;
-    final double maxLeft =
-        imageRect.right - width - TextNoteMarkupConstants.clampPadding;
-    final double minTop = imageRect.top + TextNoteMarkupConstants.clampPadding;
-    final double maxTop =
-        imageRect.bottom - height - TextNoteMarkupConstants.clampPadding;
-
-    left = left.clamp(minLeft, maxLeft >= minLeft ? maxLeft : minLeft);
-    top = top.clamp(minTop, maxTop >= minTop ? maxTop : minTop);
-
-    return Rect.fromLTWH(left, top, width, height);
+    layout.textPainter.paint(canvas, layout.textOffset);
   }
 
   void _drawOval(
@@ -779,82 +752,43 @@ class _DimensionLinesPainter extends CustomPainter {
     required Offset end,
     required Paint labelBackgroundPaint,
     required Paint labelBorderPaint,
+    required Paint leaderPaint,
   }) {
-    final String label = line.label?.trim() ?? '';
-    if (label.isEmpty) {
+    final DimensionLabelLayout? layout =
+        MarkupTextLayoutUtils.layoutDimensionLabel(
+          line: line,
+          imageRect: imageRect,
+          start: start,
+          end: end,
+        );
+    if (layout == null) {
       return;
     }
-
-    final TextPainter textPainter = TextPainter(
-      text: TextSpan(
-        text: label,
-        style: const TextStyle(
-          color: DimensionLineConstants.labelTextColor,
-          fontSize: UiLayoutConstants.dimensionLabelFontSize,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-      maxLines: 2,
-      ellipsis: '...',
-    )..layout(maxWidth: imageRect.width * 0.8);
-
-    final Offset midpoint = Offset(
-      (start.dx + end.dx) / 2,
-      (start.dy + end.dy) / 2,
-    );
-    final Offset direction = end - start;
-    Offset perpendicular = Offset(-direction.dy, direction.dx);
-    if (perpendicular.distance == 0) {
-      perpendicular = const Offset(0, -1);
-    } else {
-      perpendicular = perpendicular / perpendicular.distance;
-    }
-
-    Offset labelCenter =
-        midpoint +
-        (perpendicular * UiLayoutConstants.dimensionLabelOffsetFromLine);
-
-    final double boxWidth =
-        textPainter.width +
-        (UiLayoutConstants.dimensionLabelHorizontalPadding * 2);
-    final double boxHeight =
-        textPainter.height +
-        (UiLayoutConstants.dimensionLabelVerticalPadding * 2);
-
-    double left = labelCenter.dx - (boxWidth / 2);
-    double top = labelCenter.dy - (boxHeight / 2);
-
-    final double minLeft =
-        imageRect.left + UiLayoutConstants.dimensionLabelClampPadding;
-    final double maxLeft =
-        imageRect.right -
-        boxWidth -
-        UiLayoutConstants.dimensionLabelClampPadding;
-    final double minTop =
-        imageRect.top + UiLayoutConstants.dimensionLabelClampPadding;
-    final double maxTop =
-        imageRect.bottom -
-        boxHeight -
-        UiLayoutConstants.dimensionLabelClampPadding;
-    left = left.clamp(minLeft, maxLeft >= minLeft ? maxLeft : minLeft);
-    top = top.clamp(minTop, maxTop >= minTop ? maxTop : minTop);
-
-    final Rect labelRect = Rect.fromLTWH(left, top, boxWidth, boxHeight);
+    final TextPainter textPainter =
+        TextPainter(
+          text: TextSpan(
+            text: line.label?.trim(),
+            style: MarkupTextLayoutUtils.dimensionLabelTextStyle(line),
+          ),
+          textDirection: TextDirection.ltr,
+          maxLines: 2,
+          ellipsis: '...',
+        )..layout(
+          maxWidth:
+              imageRect.width * DimensionLineConstants.labelTextMaxWidthFactor,
+        );
+    final Rect labelRect = layout.labelRect;
     final RRect rrect = RRect.fromRectAndRadius(
       labelRect,
       const Radius.circular(UiLayoutConstants.dimensionLabelBorderRadius),
     );
 
+    if (layout.showLeader) {
+      canvas.drawLine(layout.leaderStart, layout.leaderEnd, leaderPaint);
+    }
     canvas.drawRRect(rrect, labelBackgroundPaint);
     canvas.drawRRect(rrect, labelBorderPaint);
-    textPainter.paint(
-      canvas,
-      Offset(
-        labelRect.left + UiLayoutConstants.dimensionLabelHorizontalPadding,
-        labelRect.top + UiLayoutConstants.dimensionLabelVerticalPadding,
-      ),
-    );
+    textPainter.paint(canvas, layout.textOffset);
   }
 
   @override

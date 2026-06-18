@@ -4,9 +4,52 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-30`
+Last Updated: `2026-06-18`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1U-B production icon-pack finalization entry.
+Changes: Added Phase 1X measurement-label usability and typography entry.
+
+## Unreleased - 2026-06-18 (Phase 1X Measurement Label Usability + Text Typography)
+- Owner: NCD / M
+- Author: Codex
+- Type: UX / Markup Persistence
+- Reason: Improve dimension-label drawing/editing behavior and add governed text typography controls without changing export crop or import behavior.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/dimension_line.dart`
+  - `app/lib/features/markup/models/text_note_markup.dart`
+  - `app/lib/features/markup/models/editable_markup_document.dart`
+  - `app/lib/features/markup/utils/markup_interaction_policy.dart`
+  - `app/lib/features/markup/utils/markup_text_layout_utils.dart`
+  - `app/lib/features/markup/utils/markup_typography_utils.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/test/dimension_line_test.dart`
+  - `app/test/markup_interaction_policy_test.dart`
+  - `app/test/text_note_markup_test.dart`
+  - `app/test/editable_markup_document_service_test.dart`
+  - `app/test/widget_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Limited selection/edit hit-testing to Select mode and made active-tool taps toggle back to Select mode.
+  - Prevented nearby existing dimensions from stealing new-dimension creation intent while drawing tools are active.
+  - Restored Select-mode pointer-down promotion so unselected existing dimensions/arrows can enter move/handle/edit flows without requiring a separate pre-selection gesture.
+  - Added editable, independently movable dimension labels with persisted normalized offset and leader-line rendering.
+  - Added governed typography controls for dimension labels and text notes:
+    - fonts: `Default/System`, `Segoe UI`, `Arial`, `Calibri`
+    - size range: `10-72`
+  - Persisted per-item font family/font size and legacy-safe defaults in `.ncdmarkup.json`.
+  - Added deterministic interaction/persistence/widget coverage for the new behavior.
+- Validation Evidence:
+  - `verify-version-sync.ps1`: `PASS`
+  - `flutter pub get`: `PASS`
+  - `flutter analyze`: `PASS`
+  - `flutter test test/phase1x_interaction_regression_test.dart -r expanded`: `PASS`
+  - `flutter test test/load_error_visibility_policy_test.dart -r expanded`: `PASS`
+  - `flutter test`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS`
+- Risks / Known Gaps:
+  - Governed offline DWG converter support remains deferred under `TODO-040`.
 
 ## Unreleased - 2026-05-31 (Phase 1U-B Production Cleanup: NCD Icon Pack Winner)
 - Owner: NCD / M

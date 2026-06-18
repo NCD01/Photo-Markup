@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 class DimensionLine {
@@ -7,6 +8,9 @@ class DimensionLine {
     required this.startNormalized,
     required this.endNormalized,
     this.label,
+    this.labelOffsetNormalized,
+    this.fontFamily = MarkupTypographyConstants.defaultFontFamily,
+    this.fontSize = MarkupTypographyConstants.defaultFontSize,
     this.stylePresetId = MarkupStylePresets.defaultPresetId,
   });
 
@@ -14,6 +18,9 @@ class DimensionLine {
   final Offset startNormalized;
   final Offset endNormalized;
   final String? label;
+  final Offset? labelOffsetNormalized;
+  final String fontFamily;
+  final double fontSize;
   final MarkupStylePresetId stylePresetId;
 
   factory DimensionLine.fromCanvasPoints({
@@ -42,14 +49,23 @@ class DimensionLine {
     Offset? startNormalized,
     Offset? endNormalized,
     String? label,
+    Offset? labelOffsetNormalized,
+    String? fontFamily,
+    double? fontSize,
     MarkupStylePresetId? stylePresetId,
     bool clearLabel = false,
+    bool clearLabelOffset = false,
   }) {
     return DimensionLine(
       id: id ?? this.id,
       startNormalized: startNormalized ?? this.startNormalized,
       endNormalized: endNormalized ?? this.endNormalized,
       label: clearLabel ? null : (label ?? this.label),
+      labelOffsetNormalized: clearLabelOffset
+          ? null
+          : (labelOffsetNormalized ?? this.labelOffsetNormalized),
+      fontFamily: fontFamily ?? this.fontFamily,
+      fontSize: fontSize ?? this.fontSize,
       stylePresetId: stylePresetId ?? this.stylePresetId,
     );
   }
@@ -133,10 +149,21 @@ class DimensionLine {
         other.startNormalized == startNormalized &&
         other.endNormalized == endNormalized &&
         other.label == label &&
+        other.labelOffsetNormalized == labelOffsetNormalized &&
+        other.fontFamily == fontFamily &&
+        other.fontSize == fontSize &&
         other.stylePresetId == stylePresetId;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, startNormalized, endNormalized, label, stylePresetId);
+  int get hashCode => Object.hash(
+    id,
+    startNormalized,
+    endNormalized,
+    label,
+    labelOffsetNormalized,
+    fontFamily,
+    fontSize,
+    stylePresetId,
+  );
 }

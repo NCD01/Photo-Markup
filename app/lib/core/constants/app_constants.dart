@@ -124,8 +124,7 @@ class ImageImportConstants {
   static const Set<String> dwgExtensionsSet = <String>{'dwg'};
   static const String heicPreviewCacheFolderName =
       'ncd_photo_markup_heic_cache';
-  static const String dwgPreviewCacheFolderName =
-      'ncd_photo_markup_dwg_cache';
+  static const String dwgPreviewCacheFolderName = 'ncd_photo_markup_dwg_cache';
   static const String heicPreviewCacheKeyVersion = 'v2';
   static const String dwgPreviewCacheKeyVersion = 'v2';
   static const int heicMaxPreviewDimension = 2560;
@@ -163,10 +162,7 @@ class ImageImportConstants {
     'dwgread',
     'LibreCAD',
   ];
-  static const List<String> dwgPreviewCacheExtensions = <String>[
-    'png',
-    'bmp',
-  ];
+  static const List<String> dwgPreviewCacheExtensions = <String>['png', 'bmp'];
   static const String heicTempSuffix = '_heic_converted';
   static const String heicConvertedOutputExtension = 'jpg';
   static const String heicFallbackConverterCommand = 'magick';
@@ -209,9 +205,15 @@ class UiCopyConstants {
   static const String textNoteSaveButton = 'Save';
   static const String textNoteSkipButton = 'Skip';
   static const String importInProgressMessage = 'Opening photo...';
-  static const String styleDialogTitle = 'Markup Style Preset';
+  static const String styleDialogTitle = 'Markup Style & Text';
+  static const String styleDialogPresetsSectionTitle = 'Color Preset';
+  static const String styleDialogTypographySectionTitle = 'Text Typography';
+  static const String styleDialogFontFamilyLabel = 'Font';
+  static const String styleDialogFontSizeLabel = 'Size';
+  static const String styleDialogApplyButton = 'Apply';
+  static const String styleDialogCancelButton = 'Cancel';
   static const String styleApplyToSelectedMessage =
-      'Style applied to selection.';
+      'Style and text settings applied to selection.';
   static const String markupDocumentOpenFailureMessage =
       'Could not open this markup file. Please choose a valid .ncdmarkup.json file.';
   static const String markupDocumentMissingSourceTitle = 'Source Photo Needed';
@@ -250,7 +252,7 @@ class UiCopyConstants {
   static const String launchContextClientLabelPrefix = 'Client';
   static const String launchContextProjectLabelPrefix = 'Project';
   static const String toolbarActiveToolPrefix = 'Active Tool';
-  static const String toolbarActiveToolNone = 'None';
+  static const String toolbarActiveToolNone = 'Select';
   static const String sidebarExpandTooltip = 'Expand Sidebar';
   static const String sidebarCollapseTooltip = 'Collapse Sidebar';
   static const String sidebarStylePrefix = 'Style';
@@ -278,6 +280,22 @@ class ViewControlConstants {
   static const double panStepMultiplier = 1.0;
   static const double scaleEpsilon = 0.001;
   static const EdgeInsets boundaryMargin = EdgeInsets.all(1200);
+}
+
+class MarkupTypographyConstants {
+  const MarkupTypographyConstants._();
+
+  static const String defaultFontFamily = 'Default/System';
+  static const List<String> allowedFontFamilies = <String>[
+    defaultFontFamily,
+    'Segoe UI',
+    'Arial',
+    'Calibri',
+  ];
+  static const double defaultFontSize = 15;
+  static const double minFontSize = 10;
+  static const double maxFontSize = 72;
+  static const double fontSizeStep = 1;
 }
 
 class ToolbarSectionDefinition {
@@ -347,7 +365,8 @@ class SidebarConstants {
 class SidebarAssetConstants {
   const SidebarAssetConstants._();
 
-  static const String ncdSidebarAssetDirectory = 'assets/sidebar_icons/ncd_custom';
+  static const String ncdSidebarAssetDirectory =
+      'assets/sidebar_icons/ncd_custom';
 
   static const String ncdSidebarOpenPhotoAssetPath =
       '$ncdSidebarAssetDirectory/open_photo.png';
@@ -500,8 +519,13 @@ class DimensionLineConstants {
   static const Color labelBackgroundColor = Color(0xD9FFFFFF);
   static const Color labelBorderColor = Color(0xFF005C85);
   static const double labelBorderWidth = 1;
+  static const double labelLeaderStrokeWidth = 1.6;
+  static const double labelLeaderVisibilityThreshold = 12;
+  static const double labelHitDistance = 18;
+  static const double labelTextMaxWidthFactor = 0.8;
   static const double selectionTapDistance = 26;
   static const double tapMoveThreshold = 8;
+  static const double defaultLabelOffsetFromLine = 14;
 }
 
 class ArrowMarkupConstants {
@@ -561,7 +585,7 @@ class TextNoteMarkupConstants {
   static const Color selectedBorderColor = AppThemeConstants.ncdBlue;
   static const double borderWidth = 1.2;
   static const double selectedBorderWidth = 2.2;
-  static const double fontSize = 15;
+  static const double fontSize = MarkupTypographyConstants.defaultFontSize;
   static const double horizontalPadding = 10;
   static const double verticalPadding = 6;
   static const double borderRadius = 8;

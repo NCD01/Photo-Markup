@@ -69,6 +69,8 @@ void main() {
         sourceImageFileName: 'Kitchen Before.HEIC',
         imagePixelSize: const Size(3024, 4032),
         activeStylePresetId: MarkupStylePresetId.yellow,
+        activeFontFamily: 'Segoe UI',
+        activeFontSize: 18,
         nextMarkupId: 99,
         dimensionLines: const <DimensionLine>[
           DimensionLine(
@@ -76,6 +78,9 @@ void main() {
             startNormalized: Offset(0.1, 0.2),
             endNormalized: Offset(0.4, 0.5),
             label: '72"',
+            labelOffsetNormalized: Offset(0.08, -0.04),
+            fontFamily: 'Arial',
+            fontSize: 24,
             stylePresetId: MarkupStylePresetId.red,
           ),
         ],
@@ -119,6 +124,8 @@ void main() {
             id: 6,
             anchorNormalized: Offset(0.4, 0.4),
             text: 'Replace drywall here',
+            fontFamily: 'Calibri',
+            fontSize: 22,
             stylePresetId: MarkupStylePresetId.yellow,
           ),
         ],
@@ -131,6 +138,8 @@ void main() {
 
       expect(reopened.schemaVersion, EditableMarkupConstants.schemaVersion);
       expect(reopened.activeStylePresetId, MarkupStylePresetId.yellow);
+      expect(reopened.activeFontFamily, 'Segoe UI');
+      expect(reopened.activeFontSize, 18);
       expect(
         reopened.dimensionLines.single.stylePresetId,
         MarkupStylePresetId.red,
@@ -147,9 +156,92 @@ void main() {
         MarkupStylePresetId.yellow,
       );
       expect(reopened.dimensionLines.single.label, '72"');
+      expect(
+        reopened.dimensionLines.single.labelOffsetNormalized,
+        const Offset(0.08, -0.04),
+      );
+      expect(reopened.dimensionLines.single.fontFamily, 'Arial');
+      expect(reopened.dimensionLines.single.fontSize, 24);
+      expect(reopened.textNotes.single.fontFamily, 'Calibri');
+      expect(reopened.textNotes.single.fontSize, 22);
       expect(reopened.nextMarkupId, 99);
       expect(reopened.sourceImagePath, r'C:\photos\Kitchen Before.HEIC');
       expect(reopened.imagePixelSize, const Size(3024, 4032));
+    });
+
+    test('reads legacy markup files with default typography values', () async {
+      final Directory dir = await Directory.systemTemp.createTemp(
+        'ncd_markup_doc_legacy_',
+      );
+      final File legacyFile = File('${dir.path}\\legacy.ncdmarkup.json');
+      addTearDown(() async {
+        if (await dir.exists()) {
+          await dir.delete(recursive: true);
+        }
+      });
+
+      await legacyFile.writeAsString('''
+{
+  "schemaVersion": "1.0",
+  "appVersion": "v0.20",
+  "savedAtUtc": "2026-05-27T00:00:00Z",
+  "sourceImagePath": "C:\\\\photos\\\\legacy.jpg",
+  "sourceImageFileName": "legacy.jpg",
+  "image": {
+    "pixelWidth": 1200,
+    "pixelHeight": 800
+  },
+  "activeStylePresetId": "ncdBlue",
+  "nextMarkupId": 2,
+  "dimensionLines": [
+    {
+      "id": 1,
+      "startNormalized": {"x": 0.1, "y": 0.2},
+      "endNormalized": {"x": 0.6, "y": 0.2},
+      "label": "48\\"",
+      "stylePresetId": "red"
+    }
+  ],
+  "textNotes": [
+    {
+      "id": 2,
+      "anchorNormalized": {"x": 0.3, "y": 0.4},
+      "text": "Legacy note",
+      "stylePresetId": "yellow"
+    }
+  ]
+}
+''');
+
+      final EditableMarkupDocument reopened = await service.readDocument(
+        legacyFile.path,
+      );
+
+      expect(
+        reopened.activeFontFamily,
+        MarkupTypographyConstants.defaultFontFamily,
+      );
+      expect(
+        reopened.activeFontSize,
+        MarkupTypographyConstants.defaultFontSize,
+      );
+      expect(
+        reopened.dimensionLines.single.fontFamily,
+        MarkupTypographyConstants.defaultFontFamily,
+      );
+      expect(
+        reopened.dimensionLines.single.fontSize,
+        MarkupTypographyConstants.defaultFontSize,
+      );
+      expect(reopened.dimensionLines.single.labelOffsetNormalized, isNull);
+      expect(
+        reopened.textNotes.single.fontFamily,
+        MarkupTypographyConstants.defaultFontFamily,
+      );
+      expect(
+        reopened.textNotes.single.fontSize,
+        MarkupTypographyConstants.defaultFontSize,
+      );
     });
 
     test('throws on corrupt json and unsupported schema', () async {

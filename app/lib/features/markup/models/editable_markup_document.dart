@@ -18,6 +18,8 @@ class EditableMarkupDocument {
     required this.sourceImageFileName,
     required this.imagePixelSize,
     required this.activeStylePresetId,
+    required this.activeFontFamily,
+    required this.activeFontSize,
     required this.nextMarkupId,
     required this.dimensionLines,
     required this.arrows,
@@ -34,6 +36,8 @@ class EditableMarkupDocument {
   final String sourceImageFileName;
   final Size? imagePixelSize;
   final MarkupStylePresetId activeStylePresetId;
+  final String activeFontFamily;
+  final double activeFontSize;
   final int nextMarkupId;
   final List<DimensionLine> dimensionLines;
   final List<ArrowMarkup> arrows;
@@ -67,6 +71,8 @@ class EditableMarkupDocument {
           ? Size(pixelWidth, pixelHeight)
           : null,
       activeStylePresetId: _stylePresetFromValue(json['activeStylePresetId']),
+      activeFontFamily: _fontFamilyFromValue(json['activeFontFamily']),
+      activeFontSize: _fontSizeFromValue(json['activeFontSize']),
       nextMarkupId: _asInt(json['nextMarkupId']) ?? 1,
       dimensionLines: _readDimensionLines(json['dimensionLines']),
       arrows: _readArrows(json['arrows']),
@@ -89,6 +95,8 @@ class EditableMarkupDocument {
         if (imagePixelSize != null) 'pixelHeight': imagePixelSize!.height,
       },
       'activeStylePresetId': activeStylePresetId.name,
+      'activeFontFamily': activeFontFamily,
+      'activeFontSize': activeFontSize,
       'nextMarkupId': nextMarkupId,
       'dimensionLines': dimensionLines
           .map(
@@ -97,6 +105,12 @@ class EditableMarkupDocument {
               'startNormalized': _offsetToJson(line.startNormalized),
               'endNormalized': _offsetToJson(line.endNormalized),
               'label': line.label,
+              if (line.labelOffsetNormalized != null)
+                'labelOffsetNormalized': _offsetToJson(
+                  line.labelOffsetNormalized!,
+                ),
+              'fontFamily': line.fontFamily,
+              'fontSize': line.fontSize,
               'stylePresetId': line.stylePresetId.name,
             },
           )
@@ -148,6 +162,8 @@ class EditableMarkupDocument {
               'id': note.id,
               'anchorNormalized': _offsetToJson(note.anchorNormalized),
               'text': note.text,
+              'fontFamily': note.fontFamily,
+              'fontSize': note.fontSize,
               'stylePresetId': note.stylePresetId.name,
             },
           )
@@ -177,6 +193,9 @@ class EditableMarkupDocument {
           startNormalized: start,
           endNormalized: end,
           label: map['label']?.toString(),
+          labelOffsetNormalized: _offsetFromJson(map['labelOffsetNormalized']),
+          fontFamily: _fontFamilyFromValue(map['fontFamily']),
+          fontSize: _fontSizeFromValue(map['fontSize']),
           stylePresetId: _stylePresetFromValue(map['stylePresetId']),
         ),
       );
@@ -323,6 +342,8 @@ class EditableMarkupDocument {
           id: id,
           anchorNormalized: anchor,
           text: (map['text'] ?? '').toString(),
+          fontFamily: _fontFamilyFromValue(map['fontFamily']),
+          fontSize: _fontSizeFromValue(map['fontSize']),
           stylePresetId: _stylePresetFromValue(map['stylePresetId']),
         ),
       );
@@ -394,5 +415,25 @@ class EditableMarkupDocument {
       }
     }
     return MarkupStylePresets.defaultPresetId;
+  }
+
+  static String _fontFamilyFromValue(dynamic value) {
+    final String normalized = (value ?? '').toString().trim();
+    for (final String allowed
+        in MarkupTypographyConstants.allowedFontFamilies) {
+      if (allowed == normalized) {
+        return allowed;
+      }
+    }
+    return MarkupTypographyConstants.defaultFontFamily;
+  }
+
+  static double _fontSizeFromValue(dynamic value) {
+    final double raw =
+        _asDouble(value) ?? MarkupTypographyConstants.defaultFontSize;
+    return raw.clamp(
+      MarkupTypographyConstants.minFontSize,
+      MarkupTypographyConstants.maxFontSize,
+    );
   }
 }

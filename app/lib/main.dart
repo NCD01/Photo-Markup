@@ -15,6 +15,7 @@ import 'package:ncd_photo_markup/features/integration/models/photo_markup_launch
 import 'package:ncd_photo_markup/features/integration/services/launch_context_service.dart';
 import 'package:ncd_photo_markup/features/import/services/dwg_preview_conversion_service.dart';
 import 'package:ncd_photo_markup/features/import/services/image_import_service.dart';
+import 'package:ncd_photo_markup/features/import/utils/load_error_visibility_policy.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/editable_markup_document.dart';
@@ -27,7 +28,10 @@ import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart';
+import 'package:ncd_photo_markup/features/markup/utils/markup_interaction_policy.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
+import 'package:ncd_photo_markup/features/markup/utils/markup_text_layout_utils.dart';
+import 'package:ncd_photo_markup/features/markup/utils/markup_typography_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/unsaved_changes_tracker.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/features/sidebar/models/sidebar_icon_pack.dart';
@@ -249,6 +253,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   double _viewScale = ViewControlConstants.defaultScale;
   MarkupStylePresetId _selectedStylePresetId =
       MarkupStylePresets.defaultPresetId;
+  String _selectedFontFamily = MarkupTypographyConstants.defaultFontFamily;
+  double _selectedFontSize = MarkupTypographyConstants.defaultFontSize;
   final List<DimensionLine> _dimensionLines = <DimensionLine>[];
   final List<ArrowMarkup> _arrows = <ArrowMarkup>[];
   final List<RectangleMarkup> _rectangles = <RectangleMarkup>[];
@@ -268,6 +274,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   _MoveSession? _activeMoveSession;
   _HandleDragSession? _activeHandleDragSession;
   bool _didMoveSelectedMarkup = false;
+  bool _suppressTapActionAfterPointerDownSelection = false;
 
   @override
   void initState() {
@@ -499,10 +506,20 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   void _setLoadError({String? message}) {
+    final String resolvedMessage =
+        message ?? ImageImportConstants.openErrorMessage;
     setState(() {
-      _errorMessage = message ?? ImageImportConstants.openErrorMessage;
+      _errorMessage = resolvedMessage;
       _isPickingFile = false;
     });
+    if (LoadErrorVisibilityPolicy.shouldShowSnackBar(imagePath: _imagePath)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _showSnack(resolvedMessage);
+      });
+    }
   }
 
   String _importFailureMessage(String extension, Object error) {
@@ -619,6 +636,94 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   @visibleForTesting
   bool get debugIsPanModeEnabled => _isPanModeEnabled;
 
+  @visibleForTesting
+  MarkupTool get debugSelectedTool => _selectedTool;
+
+  @visibleForTesting
+  int? get debugSelectedDimensionId => _selectedDimensionId;
+
+  @visibleForTesting
+  List<DimensionLine> get debugDimensionLinesSnapshot =>
+      List<DimensionLine>.unmodifiable(_dimensionLines);
+
+  @visibleForTesting
+  List<ArrowMarkup> get debugArrowsSnapshot =>
+      List<ArrowMarkup>.unmodifiable(_arrows);
+
+  @visibleForTesting
+  void debugSeedLoadedImageState({
+    String path = 'debug.png',
+    Size pixelSize = const Size(1200, 900),
+  }) {
+    setState(() {
+      _imagePath = path;
+      _loadedSourceImagePath = path;
+      _loadedFileName = _fileNameFromPath(path);
+      _loadedImagePixelSize = pixelSize;
+      _errorMessage = null;
+    });
+  }
+
+  @visibleForTesting
+  void debugSetDimensionLines(List<DimensionLine> lines, {int? selectedId}) {
+    setState(() {
+      _dimensionLines
+        ..clear()
+        ..addAll(lines);
+      if (selectedId != null) {
+        _selectDimensionById(selectedId);
+      } else if (_selectedDimensionId != null &&
+          !_dimensionLines.any(
+            (DimensionLine line) => line.id == _selectedDimensionId,
+          )) {
+        _clearMarkupSelection();
+      }
+    });
+  }
+
+  @visibleForTesting
+  void debugSetArrows(List<ArrowMarkup> arrows, {int? selectedId}) {
+    setState(() {
+      _arrows
+        ..clear()
+        ..addAll(arrows);
+      if (selectedId != null) {
+        _selectArrowById(selectedId);
+      } else if (_selectedArrowId != null &&
+          !_arrows.any((ArrowMarkup arrow) => arrow.id == _selectedArrowId)) {
+        _clearMarkupSelection();
+      }
+    });
+  }
+
+  @visibleForTesting
+  Rect? debugCurrentImageRect() => _computeExportCropRect();
+
+  @visibleForTesting
+  Future<void> debugCanvasTap(Offset point) async {
+    final Rect? imageRect = _computeExportCropRect();
+    if (imageRect == null) {
+      return;
+    }
+    _onDimensionStart(point, imageRect);
+    await _onDimensionEnd(imageRect);
+    await _onDimensionTap(point, imageRect);
+  }
+
+  @visibleForTesting
+  Future<void> debugCanvasDrag({
+    required Offset start,
+    required Offset end,
+  }) async {
+    final Rect? imageRect = _computeExportCropRect();
+    if (imageRect == null) {
+      return;
+    }
+    _onDimensionStart(start, imageRect);
+    _onDimensionUpdate(end, imageRect);
+    await _onDimensionEnd(imageRect);
+  }
+
   void _onCanvasInteractionUpdate(ScaleUpdateDetails details) {
     _syncViewScaleFromController();
   }
@@ -722,7 +827,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   void _selectMarkupTool(MarkupTool tool) {
     setState(() {
-      _selectedTool = tool;
+      _selectedTool = _isPanModeEnabled && _selectedTool == tool
+          ? tool
+          : MarkupInteractionPolicy.resolveRequestedTool(
+              currentTool: _selectedTool,
+              requestedTool: tool,
+            );
       if (_isPanModeEnabled) {
         _isPanModeEnabled = false;
       }
@@ -956,6 +1066,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       sourceImageFileName: _loadedFileName ?? '',
       imagePixelSize: _loadedImagePixelSize,
       activeStylePresetId: _selectedStylePresetId,
+      activeFontFamily: _selectedFontFamily,
+      activeFontSize: _selectedFontSize,
       nextMarkupId: _nextMarkupId,
       dimensionLines: List<DimensionLine>.unmodifiable(_dimensionLines),
       arrows: List<ArrowMarkup>.unmodifiable(_arrows),
@@ -968,6 +1080,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   void _applyEditableMarkupDocument(EditableMarkupDocument document) {
     _selectedStylePresetId = document.activeStylePresetId;
+    _selectedFontFamily = document.activeFontFamily;
+    _selectedFontSize = document.activeFontSize;
     _clearMarkupSelection();
     _selectedTool = MarkupTool.none;
     _activeDimensionStart = null;
@@ -1263,13 +1377,31 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   MarkupStylePreset get _selectedStylePreset =>
       MarkupStylePresets.byId(_selectedStylePresetId);
 
-  bool get _hasSelectedMarkup =>
-      _selectedDimensionId != null ||
-      _selectedArrowId != null ||
-      _selectedRectangleId != null ||
-      _selectedOvalId != null ||
-      _selectedFreehandId != null ||
-      _selectedTextNoteId != null;
+  DimensionLine? get _selectedDimensionLine {
+    final int? selectedDimensionId = _selectedDimensionId;
+    if (selectedDimensionId == null) {
+      return null;
+    }
+    for (final DimensionLine line in _dimensionLines) {
+      if (line.id == selectedDimensionId) {
+        return line;
+      }
+    }
+    return null;
+  }
+
+  TextNoteMarkup? get _selectedTextNote {
+    final int? selectedTextNoteId = _selectedTextNoteId;
+    if (selectedTextNoteId == null) {
+      return null;
+    }
+    for (final TextNoteMarkup note in _textNotes) {
+      if (note.id == selectedTextNoteId) {
+        return note;
+      }
+    }
+    return null;
+  }
 
   String _buildToolbarStyleLabel() =>
       '${ToolbarConstants.style}: ${_selectedStylePreset.shortLabel}';
@@ -1378,9 +1510,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       width: UiLayoutConstants.sidebarCollapsedWidth,
       decoration: BoxDecoration(
         color: AppThemeConstants.sidebarBackground,
-        border: Border(
-          right: seamBorder,
-        ),
+        border: Border(right: seamBorder),
       ),
       child: SafeArea(
         child: Column(
@@ -1704,7 +1834,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     return Material(
       elevation: 3,
       color: AppThemeConstants.viewControlSurface,
-      borderRadius: BorderRadius.circular(UiLayoutConstants.viewControlPanelRadius),
+      borderRadius: BorderRadius.circular(
+        UiLayoutConstants.viewControlPanelRadius,
+      ),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(
@@ -1715,7 +1847,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
             width: UiLayoutConstants.viewControlPanelBorderWidth,
           ),
         ),
-        padding: const EdgeInsets.all(UiLayoutConstants.viewControlPanelPadding),
+        padding: const EdgeInsets.all(
+          UiLayoutConstants.viewControlPanelPadding,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -1800,33 +1934,129 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   Future<void> _showStylePresetDialog() async {
-    final MarkupStylePresetId? selected = await showDialog<MarkupStylePresetId>(
+    final DimensionLine? selectedDimension = _selectedDimensionLine;
+    final TextNoteMarkup? selectedTextNote = _selectedTextNote;
+    final _StyleDialogResult? selected = await showDialog<_StyleDialogResult>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(UiCopyConstants.styleDialogTitle),
-          content: SizedBox(
-            width: 320,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final MarkupStylePreset preset in MarkupStylePresets.all)
-                  ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      radius: 12,
-                      backgroundColor: preset.dimensionLineColor,
-                    ),
-                    title: Text(preset.label),
-                    trailing: preset.id == _selectedStylePresetId
-                        ? const Icon(Icons.check, size: 18)
-                        : null,
-                    onTap: () => Navigator.of(context).pop(preset.id),
+        MarkupStylePresetId pendingPresetId = _selectedStylePresetId;
+        String pendingFontFamily =
+            selectedDimension?.fontFamily ??
+            selectedTextNote?.fontFamily ??
+            _selectedFontFamily;
+        double pendingFontSize =
+            selectedDimension?.fontSize ??
+            selectedTextNote?.fontSize ??
+            _selectedFontSize;
+
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              title: const Text(UiCopyConstants.styleDialogTitle),
+              content: SizedBox(
+                width: 360,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      const Text(
+                        UiCopyConstants.styleDialogPresetsSectionTitle,
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      for (final MarkupStylePreset preset
+                          in MarkupStylePresets.all)
+                        ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            radius: 12,
+                            backgroundColor: preset.dimensionLineColor,
+                          ),
+                          title: Text(preset.label),
+                          trailing: preset.id == pendingPresetId
+                              ? const Icon(Icons.check, size: 18)
+                              : null,
+                          onTap: () {
+                            setDialogState(() {
+                              pendingPresetId = preset.id;
+                            });
+                          },
+                        ),
+                      const Divider(height: 20),
+                      const Text(
+                        UiCopyConstants.styleDialogTypographySectionTitle,
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        initialValue: pendingFontFamily,
+                        decoration: const InputDecoration(
+                          labelText: UiCopyConstants.styleDialogFontFamilyLabel,
+                        ),
+                        items: MarkupTypographyConstants.allowedFontFamilies
+                            .map(
+                              (String family) => DropdownMenuItem<String>(
+                                value: family,
+                                child: Text(family),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onChanged: (String? value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setDialogState(() {
+                            pendingFontFamily = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '${UiCopyConstants.styleDialogFontSizeLabel}: '
+                        '${pendingFontSize.toStringAsFixed(0)}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      Slider(
+                        min: MarkupTypographyConstants.minFontSize,
+                        max: MarkupTypographyConstants.maxFontSize,
+                        divisions:
+                            (MarkupTypographyConstants.maxFontSize -
+                                    MarkupTypographyConstants.minFontSize)
+                                .round(),
+                        value: pendingFontSize.clamp(
+                          MarkupTypographyConstants.minFontSize,
+                          MarkupTypographyConstants.maxFontSize,
+                        ),
+                        onChanged: (double value) {
+                          setDialogState(() {
+                            pendingFontSize = value.roundToDouble();
+                          });
+                        },
+                      ),
+                    ],
                   ),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text(UiCopyConstants.styleDialogCancelButton),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(
+                    _StyleDialogResult(
+                      presetId: pendingPresetId,
+                      fontFamily: pendingFontFamily,
+                      fontSize: pendingFontSize,
+                    ),
+                  ),
+                  child: const Text(UiCopyConstants.styleDialogApplyButton),
+                ),
               ],
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -1835,19 +2065,34 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
+    final bool appliedToSelection = _applyTypographyAndStyleToSelection(
+      presetId: selected.presetId,
+      fontFamily: selected.fontFamily,
+      fontSize: selected.fontSize,
+    );
     setState(() {
-      _selectedStylePresetId = selected;
-      _applyStylePresetToSelectedMarkup(selected);
-      if (_hasSelectedMarkup) {
+      _selectedStylePresetId = selected.presetId;
+      _selectedFontFamily = MarkupTypographyUtils.normalizeFontFamily(
+        selected.fontFamily,
+      );
+      _selectedFontSize = MarkupTypographyUtils.normalizeFontSize(
+        selected.fontSize,
+      );
+      if (appliedToSelection) {
         _unsavedChangesTracker.markDirty();
       }
     });
-    if (_hasSelectedMarkup) {
+    if (appliedToSelection) {
       _showSnack(UiCopyConstants.styleApplyToSelectedMessage);
     }
   }
 
-  void _applyStylePresetToSelectedMarkup(MarkupStylePresetId stylePresetId) {
+  bool _applyTypographyAndStyleToSelection({
+    required MarkupStylePresetId presetId,
+    required String fontFamily,
+    required double fontSize,
+  }) {
+    bool applied = false;
     final int? selectedDimensionId = _selectedDimensionId;
     if (selectedDimensionId != null) {
       final int index = _dimensionLines.indexWhere(
@@ -1855,10 +2100,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       );
       if (index != -1) {
         _dimensionLines[index] = _dimensionLines[index].copyWith(
-          stylePresetId: stylePresetId,
+          stylePresetId: presetId,
+          fontFamily: fontFamily,
+          fontSize: fontSize,
         );
+        applied = true;
       }
-      return;
+      return applied;
     }
 
     final int? selectedArrowId = _selectedArrowId;
@@ -1867,9 +2115,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         (ArrowMarkup arrow) => arrow.id == selectedArrowId,
       );
       if (index != -1) {
-        _arrows[index] = _arrows[index].copyWith(stylePresetId: stylePresetId);
+        _arrows[index] = _arrows[index].copyWith(stylePresetId: presetId);
+        applied = true;
       }
-      return;
+      return applied;
     }
 
     final int? selectedRectangleId = _selectedRectangleId;
@@ -1879,10 +2128,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       );
       if (index != -1) {
         _rectangles[index] = _rectangles[index].copyWith(
-          stylePresetId: stylePresetId,
+          stylePresetId: presetId,
         );
+        applied = true;
       }
-      return;
+      return applied;
     }
 
     final int? selectedOvalId = _selectedOvalId;
@@ -1891,9 +2141,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         (OvalMarkup oval) => oval.id == selectedOvalId,
       );
       if (index != -1) {
-        _ovals[index] = _ovals[index].copyWith(stylePresetId: stylePresetId);
+        _ovals[index] = _ovals[index].copyWith(stylePresetId: presetId);
+        applied = true;
       }
-      return;
+      return applied;
     }
 
     final int? selectedFreehandId = _selectedFreehandId;
@@ -1902,11 +2153,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         (FreehandMarkup freehand) => freehand.id == selectedFreehandId,
       );
       if (index != -1) {
-        _freehands[index] = _freehands[index].copyWith(
-          stylePresetId: stylePresetId,
-        );
+        _freehands[index] = _freehands[index].copyWith(stylePresetId: presetId);
+        applied = true;
       }
-      return;
+      return applied;
     }
 
     final int? selectedTextNoteId = _selectedTextNoteId;
@@ -1916,10 +2166,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       );
       if (index != -1) {
         _textNotes[index] = _textNotes[index].copyWith(
-          stylePresetId: stylePresetId,
+          stylePresetId: presetId,
+          fontFamily: fontFamily,
+          fontSize: fontSize,
         );
+        applied = true;
       }
     }
+    return applied;
   }
 
   int _allocateMarkupId() {
@@ -1936,6 +2190,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     _selectedFreehandId = null;
     _selectedTextNoteId = null;
     _activeHandleDragSession = null;
+    _suppressTapActionAfterPointerDownSelection = false;
   }
 
   void _selectDimensionById(int id) {
@@ -2175,11 +2430,24 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
     _didMoveSelectedMarkup = false;
-    if (_tryStartHandleDrag(startPoint, imageRect)) {
-      return;
-    }
-    if (_tryStartMoveSelectedMarkup(startPoint, imageRect)) {
-      return;
+    if (MarkupInteractionPolicy.allowsTapSelection(_selectedTool)) {
+      if (_tryStartHandleDrag(startPoint, imageRect)) {
+        return;
+      }
+      if (_tryStartMoveSelectedMarkup(startPoint, imageRect)) {
+        return;
+      }
+      if (_selectMarkupAtPointForEditing(startPoint, imageRect)) {
+        if (_tryStartHandleDrag(startPoint, imageRect)) {
+          _suppressTapActionAfterPointerDownSelection = false;
+          return;
+        }
+        if (_tryStartMoveSelectedMarkup(startPoint, imageRect)) {
+          _suppressTapActionAfterPointerDownSelection = false;
+          return;
+        }
+        return;
+      }
     }
     if (!_canDrawMarkup(imageRect)) {
       return;
@@ -2227,10 +2495,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   Future<void> _onDimensionEnd(Rect imageRect) async {
     if (_activeHandleDragSession != null) {
       _activeHandleDragSession = null;
+      _suppressTapActionAfterPointerDownSelection = false;
       return;
     }
     if (_activeMoveSession != null) {
       _activeMoveSession = null;
+      _suppressTapActionAfterPointerDownSelection = false;
       return;
     }
 
@@ -2354,7 +2624,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         endPoint: end,
         imageRect: imageRect,
         stylePresetId: _selectedStylePresetId,
-      );
+      ).copyWith(fontFamily: _selectedFontFamily, fontSize: _selectedFontSize);
 
       int? newLineId;
       setState(() {
@@ -2401,7 +2671,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     final String normalized = DimensionLabelFormatter.format(updatedLabel);
     setState(() {
       _dimensionLines[refreshIndex] = normalized.isEmpty
-          ? _dimensionLines[refreshIndex].copyWith(clearLabel: true)
+          ? _dimensionLines[refreshIndex].copyWith(
+              clearLabel: true,
+              clearLabelOffset: true,
+            )
           : _dimensionLines[refreshIndex].copyWith(label: normalized);
       _selectDimensionById(dimensionId);
       _unsavedChangesTracker.markDirty();
@@ -2436,7 +2709,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       text: trimmed,
       imageRect: imageRect,
       stylePresetId: _selectedStylePresetId,
-    );
+    ).copyWith(fontFamily: _selectedFontFamily, fontSize: _selectedFontSize);
     setState(() {
       _textNotes.add(note);
       _selectTextNoteById(note.id);
@@ -2517,6 +2790,27 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
             markupId: selectedDimensionId,
             handleKind: _HandleKind.dimensionEnd,
             startPoint: point,
+          );
+          return true;
+        }
+        final DimensionLabelLayout? labelLayout =
+            MarkupTextLayoutUtils.layoutDimensionLabel(
+              line: line,
+              imageRect: imageRect,
+              start: start,
+              end: end,
+            );
+        if (labelLayout != null &&
+            MarkupTextLayoutUtils.distanceToRect(
+                  labelLayout.labelRect,
+                  point,
+                ) <=
+                DimensionLineConstants.labelHitDistance) {
+          _activeHandleDragSession = _HandleDragSession(
+            markupId: selectedDimensionId,
+            handleKind: _HandleKind.dimensionLabel,
+            startPoint: point,
+            referenceOffset: labelLayout.labelCenter - point,
           );
           return true;
         }
@@ -2637,6 +2931,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           point: clampedPoint,
         );
         break;
+      case _HandleKind.dimensionLabel:
+        changed = _moveDimensionLabel(
+          markupId: handleSession.markupId,
+          imageRect: imageRect,
+          point: clampedPoint,
+          referenceOffset: handleSession.referenceOffset ?? Offset.zero,
+        );
+        break;
       case _HandleKind.arrowStart:
         changed = _adjustArrowEndpoint(
           markupId: handleSession.markupId,
@@ -2690,13 +2992,72 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     final DimensionLine line = _dimensionLines[index];
     final Offset start = moveStart ? point : line.startInRect(imageRect);
     final Offset end = moveStart ? line.endInRect(imageRect) : point;
-    final DimensionLine updated = DimensionLine.fromCanvasPoints(
-      id: line.id,
-      startPoint: start,
-      endPoint: end,
-      imageRect: imageRect,
-      stylePresetId: line.stylePresetId,
-    ).copyWith(label: line.label);
+    final DimensionLine updated =
+        DimensionLine.fromCanvasPoints(
+          id: line.id,
+          startPoint: start,
+          endPoint: end,
+          imageRect: imageRect,
+          stylePresetId: line.stylePresetId,
+        ).copyWith(
+          label: line.label,
+          labelOffsetNormalized: line.labelOffsetNormalized,
+          fontFamily: line.fontFamily,
+          fontSize: line.fontSize,
+        );
+    if (updated == line) {
+      return false;
+    }
+    setState(() {
+      _dimensionLines[index] = updated;
+      _unsavedChangesTracker.markDirty();
+    });
+    return true;
+  }
+
+  bool _moveDimensionLabel({
+    required int markupId,
+    required Rect imageRect,
+    required Offset point,
+    required Offset referenceOffset,
+  }) {
+    final int index = _dimensionLines.indexWhere(
+      (DimensionLine line) => line.id == markupId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final DimensionLine line = _dimensionLines[index];
+    final Offset start = line.startInRect(imageRect);
+    final Offset end = line.endInRect(imageRect);
+    final Offset midpoint = line.midpointInRect(imageRect);
+    final Offset requestedCenter = point + referenceOffset;
+    final Offset requestedNormalizedOffset =
+        MarkupTextLayoutUtils.normalizedOffsetFromCenter(
+          center: requestedCenter,
+          midpoint: midpoint,
+          imageRect: imageRect,
+        );
+    final DimensionLabelLayout? layout =
+        MarkupTextLayoutUtils.layoutDimensionLabel(
+          line: line,
+          imageRect: imageRect,
+          start: start,
+          end: end,
+          overrideLabelOffsetNormalized: requestedNormalizedOffset,
+        );
+    if (layout == null) {
+      return false;
+    }
+    final Offset actualNormalizedOffset =
+        MarkupTextLayoutUtils.normalizedOffsetFromCenter(
+          center: layout.labelCenter,
+          midpoint: midpoint,
+          imageRect: imageRect,
+        );
+    final DimensionLine updated = line.copyWith(
+      labelOffsetNormalized: actualNormalizedOffset,
+    );
     if (updated == line) {
       return false;
     }
@@ -2838,6 +3199,61 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     return true;
   }
 
+  bool _selectMarkupAtPointForEditing(Offset point, Rect imageRect) {
+    final _NearestMarkupHit nearestHit = _findNearestMarkupHit(
+      point,
+      imageRect,
+    );
+    if (!nearestHit.found) {
+      return false;
+    }
+
+    final bool alreadySelected =
+        (nearestHit.markupTool == MarkupTool.dimension &&
+            _selectedDimensionId == nearestHit.markupId) ||
+        (nearestHit.markupTool == MarkupTool.arrow &&
+            _selectedArrowId == nearestHit.markupId) ||
+        (nearestHit.markupTool == MarkupTool.rectangle &&
+            _selectedRectangleId == nearestHit.markupId) ||
+        (nearestHit.markupTool == MarkupTool.oval &&
+            _selectedOvalId == nearestHit.markupId) ||
+        (nearestHit.markupTool == MarkupTool.freehand &&
+            _selectedFreehandId == nearestHit.markupId) ||
+        (nearestHit.markupTool == MarkupTool.textNote &&
+            _selectedTextNoteId == nearestHit.markupId);
+
+    if (alreadySelected) {
+      return true;
+    }
+
+    setState(() {
+      switch (nearestHit.markupTool) {
+        case MarkupTool.dimension:
+          _selectDimensionById(nearestHit.markupId);
+          break;
+        case MarkupTool.arrow:
+          _selectArrowById(nearestHit.markupId);
+          break;
+        case MarkupTool.rectangle:
+          _selectRectangleById(nearestHit.markupId);
+          break;
+        case MarkupTool.oval:
+          _selectOvalById(nearestHit.markupId);
+          break;
+        case MarkupTool.freehand:
+          _selectFreehandById(nearestHit.markupId);
+          break;
+        case MarkupTool.textNote:
+          _selectTextNoteById(nearestHit.markupId);
+          break;
+        case MarkupTool.none:
+          break;
+      }
+      _suppressTapActionAfterPointerDownSelection = true;
+    });
+    return true;
+  }
+
   _SelectedMarkup? _selectedMarkup() {
     if (_selectedDimensionId != null) {
       return _SelectedMarkup(
@@ -2926,7 +3342,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         if (index == -1) {
           return double.infinity;
         }
-        return _dimensionLines[index].distanceToPointInRect(point, imageRect);
+        return math.min(
+          _dimensionLines[index].distanceToPointInRect(point, imageRect),
+          MarkupTextLayoutUtils.distanceToDimensionLabel(
+            line: _dimensionLines[index],
+            point: point,
+            imageRect: imageRect,
+          ),
+        );
       case MarkupTool.arrow:
         final int index = _arrows.indexWhere(
           (ArrowMarkup arrow) => arrow.id == selectedMarkup.markupId,
@@ -3055,13 +3478,19 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       points,
       appliedDelta,
     );
-    final DimensionLine movedLine = DimensionLine.fromCanvasPoints(
-      id: line.id,
-      startPoint: moved.first,
-      endPoint: moved.last,
-      imageRect: imageRect,
-      stylePresetId: line.stylePresetId,
-    ).copyWith(label: line.label);
+    final DimensionLine movedLine =
+        DimensionLine.fromCanvasPoints(
+          id: line.id,
+          startPoint: moved.first,
+          endPoint: moved.last,
+          imageRect: imageRect,
+          stylePresetId: line.stylePresetId,
+        ).copyWith(
+          label: line.label,
+          labelOffsetNormalized: line.labelOffsetNormalized,
+          fontFamily: line.fontFamily,
+          fontSize: line.fontSize,
+        );
     setState(() {
       _dimensionLines[index] = movedLine;
       _unsavedChangesTracker.markDirty();
@@ -3242,7 +3671,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       text: note.text,
       imageRect: imageRect,
       stylePresetId: note.stylePresetId,
-    );
+    ).copyWith(fontFamily: note.fontFamily, fontSize: note.fontSize);
     setState(() {
       _textNotes[index] = movedNote;
       _unsavedChangesTracker.markDirty();
@@ -3258,8 +3687,18 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (_imagePath == null) {
       return;
     }
-    if (_selectedTool != MarkupTool.textNote &&
-        _dimensionLines.isEmpty &&
+    if (MarkupInteractionPolicy.allowsTextNoteCreation(_selectedTool)) {
+      await _createTextNoteAt(point, imageRect);
+      return;
+    }
+    if (!MarkupInteractionPolicy.allowsTapSelection(_selectedTool)) {
+      return;
+    }
+    if (_suppressTapActionAfterPointerDownSelection) {
+      _suppressTapActionAfterPointerDownSelection = false;
+      return;
+    }
+    if (_dimensionLines.isEmpty &&
         _arrows.isEmpty &&
         _rectangles.isEmpty &&
         _ovals.isEmpty &&
@@ -3273,10 +3712,6 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       imageRect,
     );
     if (!nearestHit.found) {
-      if (_selectedTool == MarkupTool.textNote) {
-        await _createTextNoteAt(point, imageRect);
-        return;
-      }
       if (_selectedDimensionId != null ||
           _selectedArrowId != null ||
           _selectedRectangleId != null ||
@@ -3302,7 +3737,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         });
         return;
       }
-      await _promptForDimensionLabelById(nearestHit.markupId);
+      final DimensionLine? selectedLine = _selectedDimensionLine;
+      if (selectedLine != null &&
+          (MarkupTextLayoutUtils.isDimensionLabelHit(
+                line: selectedLine,
+                point: point,
+                imageRect: imageRect,
+              ) ||
+              (selectedLine.label?.trim().isEmpty ?? true))) {
+        await _promptForDimensionLabelById(nearestHit.markupId);
+      }
       return;
     }
 
@@ -3380,7 +3824,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     double bestDistance = double.infinity;
 
     for (final DimensionLine line in _dimensionLines) {
-      final double distance = line.distanceToPointInRect(point, imageRect);
+      final double distance = math.min(
+        line.distanceToPointInRect(point, imageRect),
+        MarkupTextLayoutUtils.distanceToDimensionLabel(
+          line: line,
+          point: point,
+          imageRect: imageRect,
+        ),
+      );
       if (distance < bestDistance) {
         bestDistance = distance;
         bestMarkupId = line.id;
@@ -3459,68 +3910,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     Offset point,
     Rect imageRect,
   ) {
-    final String text = note.text.trim();
-    if (text.isEmpty) {
-      return double.infinity;
-    }
-
-    final TextPainter textPainter =
-        TextPainter(
-          text: TextSpan(
-            text: text,
-            style: const TextStyle(
-              color: TextNoteMarkupConstants.textColor,
-              fontSize: TextNoteMarkupConstants.fontSize,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-          maxLines: 4,
-          ellipsis: '...',
-        )..layout(
-          maxWidth: imageRect.width * TextNoteMarkupConstants.maxWidthFactor,
-        );
-
-    final Rect chipRect = _layoutTextNoteRect(
-      note.anchorInRect(imageRect),
-      textPainter,
-      imageRect,
+    return MarkupTextLayoutUtils.distanceToTextNote(
+      note: note,
+      point: point,
+      imageRect: imageRect,
+      preset: MarkupStylePresets.byId(note.stylePresetId),
     );
-    if (chipRect.contains(point)) {
-      return 0;
-    }
-    final Offset nearest = Offset(
-      point.dx.clamp(chipRect.left, chipRect.right),
-      point.dy.clamp(chipRect.top, chipRect.bottom),
-    );
-    return (point - nearest).distance;
-  }
-
-  Rect _layoutTextNoteRect(
-    Offset anchor,
-    TextPainter textPainter,
-    Rect imageRect,
-  ) {
-    final double width =
-        textPainter.width + (TextNoteMarkupConstants.horizontalPadding * 2);
-    final double height =
-        textPainter.height + (TextNoteMarkupConstants.verticalPadding * 2);
-
-    double left = anchor.dx;
-    double top = anchor.dy;
-
-    final double minLeft =
-        imageRect.left + TextNoteMarkupConstants.clampPadding;
-    final double maxLeft =
-        imageRect.right - width - TextNoteMarkupConstants.clampPadding;
-    final double minTop = imageRect.top + TextNoteMarkupConstants.clampPadding;
-    final double maxTop =
-        imageRect.bottom - height - TextNoteMarkupConstants.clampPadding;
-
-    left = left.clamp(minLeft, maxLeft >= minLeft ? maxLeft : minLeft);
-    top = top.clamp(minTop, maxTop >= minTop ? maxTop : minTop);
-
-    return Rect.fromLTWH(left, top, width, height);
   }
 
   KeyEventResult _onShellKeyEvent(FocusNode node, KeyEvent event) {
@@ -3550,6 +3945,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (event.logicalKey == LogicalKeyboardKey.delete ||
         event.logicalKey == LogicalKeyboardKey.backspace) {
       _eraseSelectedMarkup();
+      return KeyEventResult.handled;
+    }
+    if ((event.logicalKey == LogicalKeyboardKey.enter ||
+            event.logicalKey == LogicalKeyboardKey.numpadEnter) &&
+        _selectedTool == MarkupTool.none &&
+        _selectedDimensionId != null) {
+      unawaited(_promptForDimensionLabelById(_selectedDimensionId!));
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -3884,14 +4286,19 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                   File(_imagePath!),
                                   fit: BoxFit.contain,
                                   errorBuilder:
-                                      (_, Object error, StackTrace? stackTrace) {
+                                      (
+                                        _,
+                                        Object error,
+                                        StackTrace? stackTrace,
+                                      ) {
                                         return const Text(
                                           ImageImportConstants.openErrorMessage,
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
-                                            color: AppThemeConstants.errorAccent,
-                                            fontSize:
-                                                UiLayoutConstants.messageFontSize,
+                                            color:
+                                                AppThemeConstants.errorAccent,
+                                            fontSize: UiLayoutConstants
+                                                .messageFontSize,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         );
@@ -3930,9 +4337,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                               ),
                               if (_isPickingFile)
                                 Container(
-                                  color:
-                                      AppThemeConstants.toolbarBackground
-                                          .withAlpha(200),
+                                  color: AppThemeConstants.toolbarBackground
+                                      .withAlpha(200),
                                   alignment: Alignment.center,
                                   child: const Column(
                                     mainAxisSize: MainAxisSize.min,
@@ -4030,6 +4436,7 @@ class _MoveSession {
 enum _HandleKind {
   dimensionStart,
   dimensionEnd,
+  dimensionLabel,
   arrowStart,
   arrowEnd,
   rectangleCorner,
@@ -4042,13 +4449,27 @@ class _HandleDragSession {
     required this.handleKind,
     required this.startPoint,
     this.cornerIndex,
+    this.referenceOffset,
   });
 
   final int markupId;
   final _HandleKind handleKind;
   final Offset startPoint;
   final int? cornerIndex;
+  final Offset? referenceOffset;
   bool isDragActive = false;
+}
+
+class _StyleDialogResult {
+  const _StyleDialogResult({
+    required this.presetId,
+    required this.fontFamily,
+    required this.fontSize,
+  });
+
+  final MarkupStylePresetId presetId;
+  final String fontFamily;
+  final double fontSize;
 }
 
 class _SidebarActionSection extends StatelessWidget {
@@ -4216,9 +4637,7 @@ class _SidebarActionButton extends StatelessWidget {
                               ),
                             ),
                           ),
-                        Center(
-                          child: iconWidget,
-                        ),
+                        Center(child: iconWidget),
                       ],
                     ),
             ),
@@ -4253,17 +4672,16 @@ class _SidebarActionButton extends StatelessWidget {
         color: tintedColor,
         filterQuality: FilterQuality.high,
         errorBuilder:
-            (
-              BuildContext context,
-              Object error,
-              StackTrace? stackTrace,
-            ) => Icon(
-              Icons.broken_image_outlined,
-              size: UiLayoutConstants.sidebarActionIconSize,
-              color: isDisabled
-                  ? AppThemeConstants.sidebarIconMuted.withValues(alpha: 0.55)
-                  : AppThemeConstants.sidebarDestructiveAccent,
-            ),
+            (BuildContext context, Object error, StackTrace? stackTrace) =>
+                Icon(
+                  Icons.broken_image_outlined,
+                  size: UiLayoutConstants.sidebarActionIconSize,
+                  color: isDisabled
+                      ? AppThemeConstants.sidebarIconMuted.withValues(
+                          alpha: 0.55,
+                        )
+                      : AppThemeConstants.sidebarDestructiveAccent,
+                ),
       );
     }
 

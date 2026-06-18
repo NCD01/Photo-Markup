@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 
@@ -31,6 +32,8 @@ void main() {
       expect(updated.id, original.id);
       expect(updated.anchorNormalized, original.anchorNormalized);
       expect(updated.text, 'New');
+      expect(updated.fontFamily, MarkupTypographyConstants.defaultFontFamily);
+      expect(updated.fontSize, MarkupTypographyConstants.defaultFontSize);
       expect(updated.stylePresetId, MarkupStylePresets.defaultPresetId);
     });
 
@@ -45,6 +48,22 @@ void main() {
       );
 
       expect(updated.stylePresetId, MarkupStylePresetId.red);
+    });
+
+    test('copyWith can update typography fields', () {
+      const TextNoteMarkup original = TextNoteMarkup(
+        id: 4,
+        anchorNormalized: Offset(0.1, 0.2),
+        text: 'Typography',
+      );
+      final TextNoteMarkup updated = original.copyWith(
+        fontFamily: 'Calibri',
+        fontSize: 22,
+      );
+
+      expect(updated.fontFamily, 'Calibri');
+      expect(updated.fontSize, 22);
+      expect(updated.text, original.text);
     });
   });
 }

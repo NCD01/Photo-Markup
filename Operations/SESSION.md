@@ -2702,6 +2702,188 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No PDF export added.
 - M-approved documentation/image asset changes were left untouched.
 
+# SESSION_2026-06-18_phase1x_measurement_label_typography
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / `C:\apps\NCD_Photo_Markup`
+- Baseline: `v0.30` at `35b5512f88559c408130a67d090be53f0eca7f66`
+
+## Goal
+- Improve measurement-label usability and text typography without changing export crop, HEIC import behavior, DWG converter scope, or Control Center integration boundaries.
+
+## Actions
+- Centralized creation-vs-selection policy in `MarkupInteractionPolicy`:
+  - selection taps now resolve only in Select mode (`MarkupTool.none`)
+  - tapping the active markup tool again returns the shell to Select mode
+- Extended dimension-label behavior:
+  - new dimensions no longer let nearby existing dimensions steal tap intent while the Dimension tool is active
+  - selected dimension labels can be edited from Select mode
+  - `Enter` now reopens label edit for a selected dimension in Select mode
+  - dimension labels can be dragged independently from the line
+  - moved labels persist a normalized offset and render a leader line back to the measured line midpoint
+- Added shared typography support for dimension labels and text notes:
+  - governed font list: `Default/System`, `Segoe UI`, `Arial`, `Calibri`
+  - governed font size range: `10-72`
+  - style dialog now applies preset color + text font family/size in one place
+  - selected dimensions/text notes receive font updates; new dimensions/text notes inherit current defaults
+- Extended editable sidecar persistence:
+  - stores active font defaults
+  - stores per-dimension font family, font size, and optional label offset
+  - stores per-text-note font family and font size
+  - missing legacy fields fall back to governed defaults for backward compatibility
+- Added deterministic automated coverage for:
+  - select-mode-only tap selection policy
+  - tool toggle back to Select mode
+  - typography copy/persistence on dimension lines and text notes
+  - legacy `.ncdmarkup.json` default fallback behavior
+
+## Logging/Debug Notes
+- Root interaction issue was broader than the original Dimension complaint: generic tap hit-testing remained live while drawing tools were active, so nearby markups could still steal pointer intent after Phase 1V view work.
+- Independent label movement was integrated through the existing handle-drag path instead of adding a second drag subsystem, which keeps move/resize/label-drag priority predictable.
+- Shared label/text-note layout math was extracted so render, hit-test, and persistence behavior all use the same geometry rules.
+
+## Validation
+- `git status --short`: `PASS` (Phase 1X working set only at time of entry)
+- `verify-version-sync.ps1`: `PASS` (`v0.30`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test` targeted (`markup_interaction_policy_test.dart`, `dimension_line_test.dart`, `text_note_markup_test.dart`, `editable_markup_document_service_test.dart`, `widget_test.dart`): `PASS`
+- `flutter test` full suite: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS`
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS` (interaction policy, typography list/range, leader thresholds, and persisted text fields are centralized)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No DWG converter work started; TODO-040 remains open.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+
+# SESSION_2026-06-18_phase1x_validation_guardrail
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / `C:\apps\NCD_Photo_Markup`
+- Baseline: `v0.30` at `35b5512f88559c408130a67d090be53f0eca7f66`
+- Active dirty scopes:
+  - Phase 1X measurement/text-label usability + typography work
+  - Small DWG user-facing error visibility fix on top of Phase 1W behavior
+
+## Goal
+- Add and enforce a non-hanging validation guardrail before any further Phase 1X validation or manual-support work.
+
+## Actions
+- Adopted bounded validation policy for all remaining commands in this phase:
+  - `flutter pub get`: max 3 minutes
+  - `flutter analyze`: max 5 minutes
+  - targeted `flutter test`: max 3 minutes
+  - full `flutter test`: max 8 minutes unless owner explicitly approves longer
+  - `flutter build windows --debug`: max 10 minutes
+  - `flutter run -d windows --debug --no-resident`: max 2 minutes for startup smoke only, then stop/close
+- Adopted rerun ceiling:
+  - one rerun only for environmental lock/detached-process issues
+  - stop/report after second failure or timeout unless M explicitly approves more
+- Added closeout requirement to always report:
+  - timeout commands
+  - rerun commands
+  - environmental vs code-related classification
+  - any process/app kills
+  - detached-process cleanup status
+- Audited currently running Flutter/Dart processes before continuing.
+
+## Logging/Debug Notes
+- Current process inventory showed no active `flutter.exe` or `ncd_photo_markup.exe` process from agent validation.
+- Running `dart.exe` processes present at audit time were IDE-managed language-server/tooling-daemon/devtools sessions, not an agent-started detached Photo Markup app run.
+- Guardrail intent is to prevent indefinite waits on validation commands without disrupting user-owned editor/runtime processes.
+
+## Validation
+- `git status --short`: `PASS` (dirty state matches active Phase 1X + DWG UI-fix scopes)
+- `git branch --show-current`: `PASS` (`main`)
+- `VERSION`: `PASS` (`v0.30`)
+- `git rev-parse HEAD`: `PASS` (`35b5512f88559c408130a67d090be53f0eca7f66`)
+- `Get-Process flutter,dart,ncd_photo_markup`: `PASS_WITH_NOTE` (no active `flutter.exe` or `ncd_photo_markup.exe`; IDE-managed `dart.exe` processes observed and intentionally left untouched)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No validation command will be allowed to wait indefinitely going forward in this phase.
+- No agent-started detached Flutter or app process is currently left running.
+- `.agent_temp` remains ignored.
+
+# SESSION_2026-06-18_phase1x_select_mode_restore
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / `C:\apps\NCD_Photo_Markup`
+- Baseline: `v0.30` at `35b5512f88559c408130a67d090be53f0eca7f66`
+- Active dirty scopes:
+  - Phase 1X measurement/text-label usability + typography work
+  - Small DWG user-facing error visibility fix on top of Phase 1W behavior
+
+## Goal
+- Restore reliable Select-mode dimension/markup selection, move, handle drag, and label edit behavior without losing the new creation-first Dimension-tool behavior.
+
+## Actions
+- Stopped the active Photo Markup validation app process before continuing and verified no detached app run remained.
+- Cleaned orphaned Photo Markup `flutter test` child processes left by earlier timeout runs before rerunning validation.
+- Restored Select-mode pointer-down editing flow in `app/lib/main.dart` by:
+  - selecting an unselected markup immediately on pointer-down in Select mode
+  - retrying handle-drag and whole-markup move logic in the same gesture after that selection promotion
+  - suppressing accidental follow-up tap actions only when the gesture was selection-promotion-only
+- Added focused debug hooks to support deterministic widget coverage for:
+  - dimension creation near existing dimensions
+  - line-body select + move
+  - dimension label edit
+  - endpoint adjustment
+  - independent label move with leader-line persistence
+  - arrow select + move
+- Moved the fragile Phase 1X interaction coverage into a dedicated test file:
+  - `app/test/phase1x_interaction_regression_test.dart`
+- Fixed the hanging regression tests by separating line-body hits from label-bubble hits and by using bounded pump cycles instead of waiting on dialog-producing helpers.
+
+## Logging/Debug Notes
+- Root cause of the manual-validation regression: the Phase 1X creation-first interaction change limited editing to already-selected markups on pointer-down, so dragging an unselected existing dimension/arrow could do nothing until a later tap path ran.
+- Additional test-harness root cause: midpoint taps on a dimension overlapped the default centered label bubble, which opened the label-edit dialog and caused deterministic test hangs when the test awaited the full tap helper.
+- The fix keeps draw tools creation-first while restoring same-gesture Select-mode edit/move/handle behavior for existing markups.
+
+## Validation
+- `Get-Process ncd_photo_markup` + Photo Markup-specific Flutter/Dart process audit: `PASS`
+- Owner manual validation on the real plan image: `PASS`
+  - dense nearby dimension creation
+  - Select-mode dimension line select/move
+  - endpoint/handle adjust
+  - dimension label edit + independent move with leader line
+  - typography changes for dimension labels and text notes
+  - save/reopen/export
+  - known-bad DWG friendly message / preview rejection
+- `verify-version-sync.ps1`: `PASS` (`v0.30`)
+- `flutter pub get`: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test test/widget_test.dart -r expanded`: `PASS`
+- `flutter test test/phase1x_interaction_regression_test.dart -r expanded`: `PASS`
+- `flutter test test/load_error_visibility_policy_test.dart -r expanded`: `PASS`
+- `flutter test --timeout 20m -r expanded`: `PASS`
+- `flutter build windows --debug`: `PASS`
+- `flutter run -d windows --debug --no-resident`: `PASS` (startup smoke only; app process stopped immediately afterward)
+- `.agent_temp` ignore check: `PASS`
+- Tunable constants gate: `PASS`
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No detached Photo Markup app or test process was left running after validation.
+- No Control Center code changes.
+- No export/import/save/reopen behavior changes outside the active Phase 1X + DWG visibility scopes.
+- TODO-040 remains open; no DWG converter work started.
+
 # SESSION_2026-05-30_0002_phase1u_b_sidebar_icon_pack_comparison
 
 ## Context

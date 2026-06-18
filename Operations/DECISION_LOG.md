@@ -328,3 +328,34 @@ Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decisio
 - Rollback or Reversal: Remove `dwg` from supported extensions and delete the dedicated DWG preview service if owner later prefers to hide DWG until real conversion is approved.
 - Related Changes: Phase 1W DWG Preview Import MVP (uncommitted workspace)
 - Review Date: N/A
+
+## DECISION-022
+- Date: 2026-06-18
+- Status: Accepted
+- Owner: NCD / M
+- Area: Measurement Label Editing / Text Typography
+- Decision: Keep selection/edit/move behavior in Select mode (`MarkupTool.none`) and make drawing tools creation-first, while persisting dimension-label offsets and shared governed typography settings per markup item.
+- Alternatives Considered:
+- Keep generic tap-hit selection active even while draw tools are armed.
+- Add a second standalone label-drag subsystem outside the existing handle-drag flow.
+- Store screen-space label offsets or runtime-only font settings.
+- Rationale: Prevents nearby dimensions from stealing new-draw intent, keeps label drag priority predictable, and preserves save/reopen/export alignment by storing normalized label offsets and per-item font settings.
+- Impact: Users can tap an active tool again to return to Select mode, edit/move dimension labels safely, and persist label/text-note font family and size through `.ncdmarkup.json` without breaking older files.
+- Rollback or Reversal: Restore always-on tap hit-testing for draw tools, remove typography/label-offset fields from sidecar handling, and return label rendering to fixed midpoint placement.
+- Related Changes: Phase 1X Measurement Label Usability + Text Typography (uncommitted workspace)
+- Review Date: N/A
+
+## DECISION-023
+- Date: 2026-06-18
+- Status: Accepted
+- Owner: NCD / M
+- Area: Select-Mode Pointer Interaction
+- Decision: In Select mode, pointer-down on an unselected existing markup may immediately promote that markup to selected state and then retry handle-drag or whole-markup move logic within the same gesture, while drawing tools remain creation-first and do not re-enable generic tap selection.
+- Alternatives Considered:
+- Require a first tap only for selection and a second gesture for every move/handle edit.
+- Re-enable generic hit-test selection while draw tools are armed.
+- Rationale: Restores reliable move/edit behavior for existing dimensions and other markups without bringing back accidental selection stealing when users are trying to draw nearby new dimensions.
+- Impact: Select mode now supports same-gesture promotion into move/handle workflows for existing markups, and dedicated regression tests cover the restored dimension/arrow interactions without hanging on dialog-producing tap paths.
+- Rollback or Reversal: Remove the pointer-down selection promotion helper and return to select-then-second-gesture editing behavior.
+- Related Changes: Phase 1X Select/Edit/Move restoration on top of measurement-label usability work (uncommitted workspace)
+- Review Date: N/A

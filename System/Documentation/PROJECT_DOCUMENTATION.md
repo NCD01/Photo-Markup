@@ -5,9 +5,9 @@ Version: `v0.5`
 Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-05-29`
+Last Updated: `2026-06-18`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1U compact sidebar rail/drawer field-usability architecture/behavior notes.
+Changes: Added Phase 1X select-mode interaction, movable dimension-label, and typography persistence notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -15,7 +15,7 @@ Changes: Added Phase 1U compact sidebar rail/drawer field-usability architecture
 - Structure/governance cleanup must not change runtime behavior.
 
 ## Required Contract
-Required sections are present and updated through Phase 1O.
+Required sections are present and updated through Phase 1W with Phase 1X working notes.
 
 ## Overview
 - App Name: `NCD Photo Markup`
@@ -32,6 +32,9 @@ Required sections are present and updated through Phase 1O.
 | Style Model | `Markup style preset definitions and preset-id based style registry` | `app/lib/features/markup/models/markup_style_preset.dart` | `NCD / M` |
 | Markup Widget | `Dimension lines overlay input capture, selection hit-testing, and custom rendering` | `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `NCD / M` |
 | Markup Utility | `Lightweight normalization for common measurement label formats` | `app/lib/features/markup/utils/dimension_label_formatter.dart` | `NCD / M` |
+| Interaction Utility | `Centralized tool-toggle and Select-mode tap policy for draw-vs-select behavior` | `app/lib/features/markup/utils/markup_interaction_policy.dart` | `NCD / M` |
+| Text Layout Utility | `Shared dimension-label/text-note layout, hit-test, leader, and typography geometry helpers` | `app/lib/features/markup/utils/markup_text_layout_utils.dart` | `NCD / M` |
+| Typography Utility | `Normalize governed font-family/font-size values and map them safely into Flutter text styles` | `app/lib/features/markup/utils/markup_typography_utils.dart` | `NCD / M` |
 | Move Utility | `Whole-markup move translation/clamp helpers used by drag-selected move workflow` | `app/lib/features/markup/utils/markup_move_utils.dart` | `NCD / M` |
 | Handle Utility | `Endpoint/corner handle hit-testing and resize math helpers` | `app/lib/features/markup/utils/markup_handle_utils.dart` | `NCD / M` |
 | Unsaved State Utility | `Tracks markup dirty/saved state for guard prompts before replace/close actions` | `app/lib/features/markup/utils/unsaved_changes_tracker.dart` | `NCD / M` |
@@ -183,7 +186,7 @@ Required sections are present and updated through Phase 1O.
 | `RISK-013` | `Control Center-side launcher and return/save handoff remain deferred; Phase 1P only adds adapter contract inside Photo Markup` | `NCD / M` | `Future integration phase` | `Tracked in TODO-030/TODO-031/TODO-032/TODO-033` |
 
 ## Visual and Runtime Behavior
-- App bar shows `NCD Photo Markup` and `v0.29`.
+- App bar shows `NCD Photo Markup` and `v0.30`.
 - Startup splash renders version text from `AppConstants.appVersion` (same source as app bar version text).
 - Startup splash gate uses `splash_v1_5.png` for `2200 ms` before shell handoff.
 - Windows app window now opens maximized to match startup-screen size.
@@ -220,14 +223,21 @@ Required sections are present and updated through Phase 1O.
 - Comparison-only icon-pack toggle/status UI has been removed after owner approval.
 - No unicode/emoji/raw text-glyph icons are used in sidebar action rendering.
 - Toolbar shows active tool status text (`Active Tool: ...`) and style state (`Style: ...`) for quick state awareness.
+- Tapping an already-active drawing tool returns the shell to Select mode (`Active Tool: Select`) so existing markups can be selected/edited without adding a separate select button in this MVP.
+- In Select mode, pointer-down on an unselected existing markup can promote it to selected state immediately and continue the same-gesture handle-drag or whole-markup move path.
 - Style action remains in the `Edit` group and updates active style for subsequent markups.
 - New markups store a style preset id at creation, so changing active preset does not recolor existing markups unexpectedly.
+- Style dialog also governs text typography defaults for new dimension labels and text notes:
+  - allowed fonts: `Default/System`, `Segoe UI`, `Arial`, `Calibri`
+  - allowed size range: `10-72`
+  - if a dimension or text note is selected, the same dialog applies font family/size to that selected markup too
 - Dimension drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Arrow drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Rectangle drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Oval drag start/end points are clamped to the actual displayed image rectangle (BoxFit.contain bounds).
 - Overlay painter clips drawing to the displayed image rectangle to prevent render bleed into white canvas.
 - Tapping a dimension line selects it for erase/edit actions.
+- Tapping or dragging a dimension line body away from the label bubble in Select mode can select/move the whole dimension without forcing label edit.
 - Tapping an arrow selects it for erase actions.
 - Tapping a rectangle selects it for erase actions.
 - Tapping an oval selects it for erase actions.
@@ -242,8 +252,11 @@ Required sections are present and updated through Phase 1O.
 - Keyboard `Delete` and `Backspace` trigger the same selected-line erase path.
 - After line creation, label dialog allows manual text input or skip.
 - Pressing Enter/Done in the label input submits the same save path as tapping Save.
-- Saved labels render near the line midpoint and remain in displayed-image bounds as much as practical.
-- Tapping near an existing line re-opens the label dialog for editing.
+- Saved labels render near the line midpoint by default and remain in displayed-image bounds as much as practical.
+- When no drawing tool is active, tapping a selected dimension label re-opens the label dialog for editing; pressing `Enter` with a selected dimension also reopens label edit.
+- Dimension labels can be dragged independently in Select mode and persist a normalized label offset in sidecar data.
+- Moved dimension labels render a leader line back to the measured line midpoint; default midpoint labels do not force a leader line.
+- If a DWG preview load fails while another image is already loaded, the user-facing fallback/error message is shown through the snackbar path instead of remaining log-only.
 - Label dialog controller lifecycle is dialog-local to prevent disposed-controller crashes during Save/Enter/Skip teardown.
 - Label updates repaint immediately after save (no delayed redraw on next interaction).
 - Export button now performs explicit user-selected PNG export workflow:
@@ -262,6 +275,11 @@ Required sections are present and updated through Phase 1O.
 - Exported markups preserve style colors/strokes/fills from each markup's stored style preset.
 - Save Markup defaults to `OriginalName - Markup.ncdmarkup.json` naming with duplicate-safe increment behavior.
 - Open Markup restores saved dimension/arrow/rectangle/oval/freehand/text note geometry and stored style preset IDs.
+- Open Markup also restores:
+  - active text font family/size defaults
+  - per-dimension label offset/font family/font size
+  - per-text-note font family/font size
+- Older sidecars that do not include typography/label-offset fields reopen safely with governed defaults.
 - If sidecar source image is missing, app prompts user to locate the source image before restoring markups.
 - Quick-entry measurement normalization currently outputs inches:
   - `72` -> `72"`
@@ -295,6 +313,7 @@ Required sections are present and updated through Phase 1O.
   - markup move threshold/hit-distance/fine-delta/bounds-padding tunables
   - endpoint/resize handle radius, hit-distance, drag-threshold, and handle visual style tunables
   - style selector labels/copy and preset definitions (names/colors/fill/text-note chip colors)
+  - text typography defaults/allowed fonts/size range
   - export default filename suffix, extension, and duplicate-name sequence tunables
   - editable markup sidecar schema version, extension, dialog labels, and duplicate-name sequence tunables
   - unsaved-change warning copy/action labels

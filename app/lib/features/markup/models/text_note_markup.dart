@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 class TextNoteMarkup {
@@ -6,12 +7,16 @@ class TextNoteMarkup {
     required this.id,
     required this.anchorNormalized,
     required this.text,
+    this.fontFamily = MarkupTypographyConstants.defaultFontFamily,
+    this.fontSize = MarkupTypographyConstants.defaultFontSize,
     this.stylePresetId = MarkupStylePresets.defaultPresetId,
   });
 
   final int id;
   final Offset anchorNormalized;
   final String text;
+  final String fontFamily;
+  final double fontSize;
   final MarkupStylePresetId stylePresetId;
 
   factory TextNoteMarkup.fromCanvasPoint({
@@ -38,12 +43,16 @@ class TextNoteMarkup {
     int? id,
     Offset? anchorNormalized,
     String? text,
+    String? fontFamily,
+    double? fontSize,
     MarkupStylePresetId? stylePresetId,
   }) {
     return TextNoteMarkup(
       id: id ?? this.id,
       anchorNormalized: anchorNormalized ?? this.anchorNormalized,
       text: text ?? this.text,
+      fontFamily: fontFamily ?? this.fontFamily,
+      fontSize: fontSize ?? this.fontSize,
       stylePresetId: stylePresetId ?? this.stylePresetId,
     );
   }
@@ -81,9 +90,18 @@ class TextNoteMarkup {
         other.id == id &&
         other.anchorNormalized == anchorNormalized &&
         other.text == text &&
+        other.fontFamily == fontFamily &&
+        other.fontSize == fontSize &&
         other.stylePresetId == stylePresetId;
   }
 
   @override
-  int get hashCode => Object.hash(id, anchorNormalized, text, stylePresetId);
+  int get hashCode => Object.hash(
+    id,
+    anchorNormalized,
+    text,
+    fontFamily,
+    fontSize,
+    stylePresetId,
+  );
 }
