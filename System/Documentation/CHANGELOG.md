@@ -1567,3 +1567,15 @@ Changes: Added Phase 1Y offline DWG converter contract entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.32 - 2026-06-18
+- Owner: Documentation Maintainers
+- Author: defre
+- Type: Documentation
+- Reason: Approve governed DWG converter hook
+- Changes:
+  - Updated release version.
+- Validation Evidence:
+  - Automated version bump script: PASS
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
