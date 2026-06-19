@@ -375,3 +375,18 @@ Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decisio
 - Rollback or Reversal: Remove the converter-command contract constants and service path, then return to embedded-preview-only DWG handling from Phase 1W.
 - Related Changes: Phase 1Y TODO-040 Offline DWG Converter Support (uncommitted workspace)
 - Review Date: N/A
+
+## DECISION-025
+- Date: 2026-06-19
+- Status: Accepted
+- Owner: NCD / M
+- Area: DWG Renderer Research Outcome
+- Decision: Keep TODO-040 open and stop pursuing the currently tested free/offline DWG preview candidates for production use on the real Polito drawings until a governed approved renderer decision is made.
+- Alternatives Considered:
+- Keep iterating on `cad2x`, `ACadSharp + ACadSharp.Pdf`, `LibreDWG`, or `cad-viewer` as if one were already close enough for governed production rollout.
+- Add online/cloud DWG conversion to bridge the gap.
+- Rationale: Real-workstation probes against the governing Polito DWGs showed that the currently tested free/offline paths do not provide a dependable usable preview here: `cad2x` could not handle the owner DWGs reliably, `ACadSharp + ACadSharp.Pdf` produced unimplemented/blank output paths, `LibreDWG` only got as far as technically valid DXF conversion without a usable rendered preview, and `cad-viewer` is not practical on this workstation and still depends on LibreDWG behavior. The app should remain honest rather than pretending DWG rendering is solved.
+- Impact: Photo Markup keeps the governed converter-command hook plus embedded-preview quality gate from Phase 1Y, TODO-040 stays open, no free/offline renderer is promoted to production, and practical feature work can move back to field-value measurement tooling while future DWG production support waits for an approved renderer choice.
+- Rollback or Reversal: Reopen renderer evaluation only after a specific governed tool is approved for workstation deployment and real Polito DWG validation is scheduled.
+- Related Changes: Phase 1Y-D DWG GitHub/tool research note; TODO-040 follow-up remains active.
+- Review Date: N/A

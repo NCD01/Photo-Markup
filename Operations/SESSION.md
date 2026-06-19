@@ -1,4 +1,4 @@
-﻿# Session Log
+# Session Log
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\SESSION.md`
 Version: `v0.3`
@@ -6,6 +6,43 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track concise session history and handoff state.
+
+# SESSION_2026-06-19_0001_dwg_free_renderer_research_note
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Record the Phase 1Y-D free/offline DWG rendering research result in-repo without changing app code, tests, assets, or converter binaries, then leave TODO-040 open and move practical app work toward new measurement tools.
+
+## Actions
+- Recorded the bounded workstation research result showing free/offline DWG rendering remains blocked for the real Polito DWGs.
+- Documented the rejected/boundary findings:
+  - `cad2x` rejected for real-owner DWG preview use on this workstation.
+  - `ACadSharp + ACadSharp.Pdf` rejected for usable preview/PDF rendering on the real Polito files.
+  - `LibreDWG` rejected as a usable preview renderer even though DXF conversion technically succeeded.
+  - `cad-viewer` blocked/not practical on this workstation and still coupled to LibreDWG behavior.
+- Confirmed no online/cloud conversion was used and no original DWGs were modified.
+- Kept TODO-040 open and noted that the next practical app work moves to new measurement tools while the future DWG production path waits for a governed approved renderer decision.
+
+## Logging/Debug Notes
+- This was a docs-only follow-up to prior bounded DWG tool probes; no new converter binaries, probe artifacts, or runtime assets were introduced.
+- The real Polito DWGs remain the governing acceptance sample; theoretical DXF/DWG pipeline success without usable visual preview was treated as a rejection.
+
+## Validation
+- `git status --short`: `PASS` (dirty state limited to docs-only DWG research note files)
+- `verify-version-sync.ps1`: `PASS` (`v0.32`)
+- `.agent_temp` ignore check: `PASS`
+
+## Constraints Confirmed
+- No app code changed.
+- No tests changed.
+- No assets changed.
+- No converter binaries were added or committed.
+- TODO-040 remains open.
 
 # SESSION_2026-06-18_0002_phase1y_validation_visibility_followup
 
