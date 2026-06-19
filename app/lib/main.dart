@@ -241,6 +241,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   bool _isPickingFile = false;
   bool _isExporting = false;
   bool _isSavingMarkupDocument = false;
+  bool _isShowingLoadErrorDialog = false;
   final UnsavedChangesTracker _unsavedChangesTracker = UnsavedChangesTracker();
   Size? _loadedImagePixelSize;
   final GlobalKey _canvasExportKey = GlobalKey();
@@ -282,6 +283,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     WidgetsBinding.instance.addObserver(this);
     _launchContext = widget.launchContext;
     _errorMessage = widget.launchErrorMessage;
+    if (widget.launchErrorMessage != null &&
+        widget.launchErrorMessage!.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        unawaited(_showLoadErrorDialog(widget.launchErrorMessage!));
+      });
+    }
     final String? initialPath = widget.initialImagePath;
     if (initialPath != null && initialPath.isNotEmpty) {
       _loadImageFromPath(initialPath, showErrorForFailure: true);
@@ -508,10 +518,28 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   void _setLoadError({String? message}) {
     final String resolvedMessage =
         message ?? ImageImportConstants.openErrorMessage;
+    final bool hasLoadedImage =
+        _loadedSourceImagePath != null && _imagePath != null;
     setState(() {
+      if (!hasLoadedImage) {
+        _imagePath = null;
+        _loadedSourceImagePath = null;
+        _temporaryConvertedImagePath = null;
+        _loadedFileName = null;
+        _loadedImagePixelSize = null;
+      }
       _errorMessage = resolvedMessage;
       _isPickingFile = false;
     });
+    if (!hasLoadedImage) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        unawaited(_showLoadErrorDialog(resolvedMessage));
+      });
+      return;
+    }
     if (LoadErrorVisibilityPolicy.shouldShowSnackBar(imagePath: _imagePath)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
@@ -1248,6 +1276,34 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _showLoadErrorDialog(String message) async {
+    if (_isShowingLoadErrorDialog || !mounted) {
+      return;
+    }
+    _isShowingLoadErrorDialog = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: const Text(UiCopyConstants.importErrorDialogTitle),
+            content: Text(message),
+            actions: <Widget>[
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text(
+                  UiCopyConstants.importErrorDialogDismissButton,
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      _isShowingLoadErrorDialog = false;
+    }
   }
 
   bool get _hasUnsavedMarkupChanges => _unsavedChangesTracker.hasUnsavedChanges;

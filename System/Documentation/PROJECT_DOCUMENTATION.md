@@ -7,7 +7,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-06-18`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1X select-mode interaction, movable dimension-label, and typography persistence notes.
+Changes: Added Phase 1Y offline DWG converter contract notes.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -41,7 +41,7 @@ Required sections are present and updated through Phase 1W with Phase 1X working
 | Editable Markup Model | `Typed sidecar schema model for persisted editable markup sessions` | `app/lib/features/markup/models/editable_markup_document.dart` | `NCD / M` |
 | Editable Markup Service | `Builds safe sidecar paths and reads/writes .ncdmarkup.json documents` | `app/lib/features/markup/services/editable_markup_document_service.dart` | `NCD / M` |
 | Import Service | `Converts HEIC/HEIF source files into preview-capped temporary working copies (cache-reused JPEG in current policy), applies fallback conversion, and cleans stale cache artifacts` | `app/lib/features/import/services/image_import_service.dart` | `NCD / M` |
-| DWG Preview Service | `Extracts embedded DWG raster previews into internal cache paths, validates preview usability, and preserves friendly fallback behavior for no-preview/unusable-preview drawings` | `app/lib/features/import/services/dwg_preview_conversion_service.dart` | `NCD / M` |
+| DWG Preview Service | `Runs a governed offline DWG preview-converter command when configured, validates converter output with the governed preview quality gate, falls back to embedded PNG/BMP preview extraction only when that fallback is usable, and preserves friendly fallback behavior for no-preview/unusable-preview drawings` | `app/lib/features/import/services/dwg_preview_conversion_service.dart` | `NCD / M` |
 | View Transform Utility | `Provides centralized zoom clamp/step/wheel transform helpers for canvas view controls` | `app/lib/features/view/utils/canvas_view_transform_utils.dart` | `NCD / M` |
 | Export Service | `Capture visible marked canvas and write PNG to user-selected location` | `app/lib/features/export/services/marked_up_image_export_service.dart` | `NCD / M` |
 | Export Path Service | `Builds default export name/folder and duplicate-safe output path` | `app/lib/features/export/services/markup_export_path_service.dart` | `NCD / M` |
@@ -53,9 +53,9 @@ Required sections are present and updated through Phase 1W with Phase 1X working
 ## Core Features
 | Feature | Behavior | Primary Module | Test Evidence |
 |---|---|---|---|
-| `Open Photo` | `Opens Windows-compatible file picker and loads JPG/JPEG/PNG/WEBP/HEIC/HEIF into canvas; for DWG, extracts an embedded preview image only when it passes the governed usability gate and otherwise shows friendly fallback guidance` | `app/lib/main.dart` + `app/lib/features/import/services/image_import_service.dart` | `flutter analyze/test/build + runtime smoke` |
+| `Open Photo` | `Opens Windows-compatible file picker and loads JPG/JPEG/PNG/WEBP/HEIC/HEIF into canvas; for DWG, tries a governed offline converter command when configured, otherwise falls back to embedded preview extraction only when that preview passes the governed usability gate, and otherwise shows friendly fallback guidance` | `app/lib/main.dart` + `app/lib/features/import/services/image_import_service.dart` | `flutter analyze/test/build + runtime smoke` |
 | `HEIC/HEIF Conversion` | `Converts HEIC/HEIF to preview-capped temporary working copy (current policy: JPEG cache), preserves original file, and retains fallback conversion safety` | `app/lib/features/import/services/image_import_service.dart` | `Service tests + runtime smoke` |
-| `DWG Import Recognition` | `Accepts .dwg for picker/launch/naming flows, preserves original DWG path/basename, extracts embedded PNG/BMP preview data into temp cache when present, validates preview usability, and falls back to the required converter-needed message when no usable preview is available` | `app/lib/features/import/services/dwg_preview_conversion_service.dart` + `app/lib/features/import/services/image_import_service.dart` | `Service tests + launch-context tests` |
+| `DWG Import Recognition` | `Accepts .dwg for picker/launch/naming flows, preserves original DWG path/basename, supports a governed offline converter command contract for local converter pipelines, validates converter and embedded preview output with the same usability gate, and falls back to the required converter-needed message when no usable preview is available` | `app/lib/features/import/services/dwg_preview_conversion_service.dart` + `app/lib/features/import/services/image_import_service.dart` | `Service tests + launch-context tests` |
 | `Import Progress Feedback` | `Shows user-friendly progress copy while photo import/conversion is in progress` | `app/lib/main.dart` | `Runtime smoke + widget/runtime observation` |
 | `Canvas Image Display` | `Shows selected image centered with BoxFit.contain (no default cropping)` | `app/lib/main.dart` | `Loaded-image screenshot` |
 | `Canvas Zoom Controls` | `In-canvas controls support zoom in/out with configured min/max clamping and zoom-percent status` | `app/lib/main.dart` + `app/lib/features/view/utils/canvas_view_transform_utils.dart` | `Utility tests + runtime smoke` |
@@ -83,7 +83,7 @@ Required sections are present and updated through Phase 1W with Phase 1X working
 | `Style Preset Selection` | `Style toolbar action opens touch-friendly preset list (NCD Blue/Red/Yellow/White/Black)` | `app/lib/main.dart` + `app/lib/features/markup/models/markup_style_preset.dart` | `Widget tests + runtime smoke` |
 | `Style Preset Application` | `New markups use active style preset and selected markup can be restyled to current preset` | `app/lib/main.dart` + `app/lib/features/markup/models/*` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` | `Model/widget tests + runtime smoke` |
 | `Launch Context Bootstrap (Optional)` | `Accepts optional command-line args or launch context JSON path for Control Center-origin sessions; standalone startup remains default when absent` | `app/lib/main.dart` + `app/lib/features/integration/services/launch_context_service.dart` | `Launch-context service tests + runtime smoke` |
-| `Launch Source Image Open (Optional)` | `If context includes a valid supported sourceImagePath, app opens it at startup; invalid paths show friendly message and keep app usable` | `app/lib/main.dart` + `app/lib/features/integration/services/launch_context_service.dart` | `Service tests + runtime smoke` |
+| `Launch Source Image Open (Optional)` | `If context includes a valid supported sourceImagePath, app opens it at startup; invalid paths or unusable DWG previews keep the app usable and surface the friendly error path without requiring a previously loaded image` | `app/lib/main.dart` + `app/lib/features/integration/services/launch_context_service.dart` | `Service tests + runtime smoke` |
 | `Move Selected Markup` | `Drag already-selected markup to reposition it while clamped to displayed photo bounds` | `app/lib/main.dart` + `app/lib/features/markup/utils/markup_move_utils.dart` | `Utility tests + runtime smoke` |
 | `Dimension Endpoint Handles` | `Selected dimension renders endpoint handles and supports drag-adjust on each endpoint` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` + `app/lib/features/markup/utils/markup_handle_utils.dart` | `Handle utility tests + runtime smoke` |
 | `Arrow Endpoint Handles` | `Selected arrow renders endpoint handles and supports drag-adjust on each endpoint` | `app/lib/main.dart` + `app/lib/features/markup/widgets/dimension_lines_overlay.dart` + `app/lib/features/markup/utils/markup_handle_utils.dart` | `Handle utility tests + runtime smoke` |
@@ -107,7 +107,8 @@ Required sections are present and updated through Phase 1W with Phase 1X working
 ## Data and Persistence Boundaries
 - Canonical data source: `User-selected local image file path at runtime`
 - HEIC/HEIF working-copy policy: `Converted JPEG preview working copy is temporary/internal, preview-capped for display performance, and original source file remains unchanged`
-- DWG working-copy policy: `If the drawing contains an embedded raster preview that passes the governed usability gate, that preview is extracted into an ignored temp cache path and used as the display working copy; original DWG path is still preserved for export/sidecar naming`
+- DWG working-copy policy: `If a governed offline converter command is configured, it is tried first to produce an internal preview working copy; if no usable converter output is produced, the app falls back to embedded raster preview extraction only when that embedded preview passes the governed usability gate. Original DWG path is still preserved for export/sidecar naming.`
+- Import-failure UX policy: `When startup/launch-context loading fails before any successful image load exists, the shell stays in the empty-state branch and preserves the friendly error message path instead of leaving a blank canvas.`
 - Launch-context policy: `Client/project/source context can be passed in, but app remains standalone and has no direct Control Center code dependency`
 - Local cache policy: `Best-effort FileImage cache eviction on image replacement; stale HEIC preview cache files are pruned by age/count guardrails`
 - Migration policy: `N/A`
@@ -142,7 +143,12 @@ Required sections are present and updated through Phase 1W with Phase 1X working
 - User-safe error behavior:
   - Generic: `Could not open this image. Please choose a JPG, PNG, WEBP, HEIC/HEIF, or DWG file.`
   - HEIC/HEIF conversion failure: `Could not open this HEIC image. Please convert it to JPG/PNG or try another photo.`
-  - DWG preview unavailable: `Could not create a usable DWG preview. This DWG needs an approved offline DWG converter.`
+- DWG preview unavailable: `Could not create a usable DWG preview. This DWG needs an approved offline DWG converter.`
+- Governed offline converter contract:
+  - `NCD_PM_DWG_CONVERTER_COMMAND`: required command or script path/name
+  - `NCD_PM_DWG_CONVERTER_STRATEGY_NAME`: optional diagnostic/cache strategy label
+  - `NCD_PM_DWG_CONVERTER_OUTPUT_EXTENSION`: optional output extension (`png`, `jpg`, `jpeg`, `bmp`)
+  - `NCD_PM_DWG_CONVERTER_TIMEOUT_SECONDS`: optional bounded timeout override
 
 ## Privacy and Sensitive Data Controls
 - Data classification: `Internal`
@@ -205,8 +211,9 @@ Required sections are present and updated through Phase 1W with Phase 1X working
 - Launch context can display a non-intrusive client/project/source banner when provided.
 - Invalid or unsupported launch source image paths show a friendly message and do not block normal app usage.
 - HEIC/HEIF files are converted to preview-capped temporary working copies for display/markup (current policy: JPEG cache output), with fallback conversion when package conversion fails.
-- DWG files are recognized as valid source inputs for launch/open and naming flows; when they contain an embedded PNG/BMP preview that passes the governed usability gate, the app extracts and loads that preview into the normal markup canvas workflow.
-- DWG files without a usable embedded raster preview, or only with a tiny/partial dark embedded thumbnail, still show the converter-required message until a governed offline fallback path is approved.
+- DWG files are recognized as valid source inputs for launch/open and naming flows; when a governed offline converter command is configured, the app tries that local pipeline first and only accepts its output if it passes the governed preview quality gate.
+- If no converter is configured, or the converter times out/fails/produces bad output, the app falls back to embedded PNG/BMP preview extraction and only loads that preview when it passes the governed usability gate.
+- DWG files without any usable converter output or embedded raster preview, or only with a tiny/partial dark embedded thumbnail, still show the converter-required message.
 - Original HEIC/HEIF source files are not modified, moved, overwritten, or deleted.
 - Loaded photo is displayed in-canvas with preserved aspect ratio and contain fit.
 - Dimension tool can be selected before photo load without crash.

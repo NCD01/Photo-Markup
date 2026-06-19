@@ -54,7 +54,7 @@ Changes: Added Phase 1U-B icon-pack comparison follow-up tracking.
 | `TODO-037` | `UI` | `Evaluate optional ultra-compact action strategy for very short/narrow windows while keeping critical sidebar actions visible` | `Medium` | `NCD / M` | `Open` | `DECISION-016` | `N/A` |
 | `TODO-038` | `Canvas View` | `Evaluate optional gesture-polish follow-up for touch-first pan/zoom ergonomics (for example, pinch+pan behavior tuning and optional smart pan/tool mode transitions beyond Phase 1V-A auto-disable fix)` | `Medium` | `NCD / M` | `Open` | `DECISION-018` | `N/A` |
 | `TODO-039` | `UI` | `Finalize production-default sidebar icon pack after Phase 1U-B comparison (Lucide vs NCD custom) and remove temporary toggle path once approved` | `Medium` | `NCD / M` | `Done` | `DECISION-019, DECISION-020` | `2026-05-31` |
-| `TODO-040` | `Import` | `Add governed fallback handling for DWGs that do not contain a usable embedded raster preview, or only expose previews that fail the governed quality gate (for example WMF-only, no-preview, tiny dark thumbnail, or partial-preview drawings), using an approved offline converter if needed` | `High` | `NCD / M` | `Open` | `DECISION-021` | `N/A` |
+| `TODO-040` | `Import` | `Validate and document a real approved offline DWG converter deployment on target workstations after adding the governed converter-command contract for DWGs that do not contain a usable embedded raster preview, or only expose previews that fail the governed quality gate (for example WMF-only, no-preview, tiny dark thumbnail, or partial-preview drawings)` | `High` | `NCD / M` | `Open` | `DECISION-021, DECISION-024` | `N/A` |
 
 ## Active Workstream Summary
 | Order | Workstream | Item | Status | Dependency | Evidence |
@@ -83,7 +83,7 @@ Changes: Added Phase 1U-B icon-pack comparison follow-up tracking.
 | `22` | `UI` | `Compact rail + expandable drawer toolbar polish delivered for field tablet use; ultra-compact short-window behavior remains deferred` | `Open` | `Owner approval for compact-toolbar follow-up` | `Tracked in TODO-037` |
 | `23` | `Canvas View` | `Zoom/pan/fit MVP delivered with transform-layer alignment safeguards; optional touch gesture polish remains deferred` | `Open` | `Owner approval for touch-gesture follow-up` | `Tracked in TODO-038` |
 | `24` | `UI` | `Sidebar icon standard finalized to governed NCD custom assets; comparison-only hotkey/label and Lucide dependency removed from production path` | `Done` | `N/A` | `Phase 1U-B finalization complete` |
-| `25` | `Import` | `DWG source files now open through embedded raster preview extraction only when that preview passes governed usability checks; fallback handling for no-preview/unusable-preview drawings remains deferred` | `Open` | `Owner approval of fallback converter strategy if embedded preview is missing or unusable` | `Tracked in TODO-040` |
+| `25` | `Import` | `DWG source files now try a governed offline converter command first when configured, then fall back to embedded raster preview extraction only when that fallback passes governed usability checks; approved workstation converter deployment/validation remains open` | `Open` | `Owner approval of target converter deployment and real workstation validation` | `Tracked in TODO-040` |
 
 
 

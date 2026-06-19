@@ -359,3 +359,19 @@ Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decisio
 - Rollback or Reversal: Remove the pointer-down selection promotion helper and return to select-then-second-gesture editing behavior.
 - Related Changes: Phase 1X Select/Edit/Move restoration on top of measurement-label usability work (uncommitted workspace)
 - Review Date: N/A
+
+## DECISION-024
+- Date: 2026-06-18
+- Status: Accepted
+- Owner: NCD / M
+- Area: DWG Offline Converter Contract
+- Decision: Add a governed offline DWG preview-converter command contract driven by environment/config values, run it with a bounded timeout before embedded-preview fallback, and apply the same governed preview quality gate to converter output and embedded output.
+- Alternatives Considered:
+- Hardcode a guessed ODA/LibreCAD/Autodesk command-line path.
+- Auto-detect and launch arbitrary machine-specific converter installs by default.
+- Pretend ImageMagick currently provides DWG decoding on this workstation.
+- Rationale: Local audit on this workstation found no approved offline DWG converter installed, and vendor/version/license-specific CLI contracts are not safe to guess. A governed command contract keeps Photo Markup honest, allows approved local converter pipelines later without repo binaries or cloud upload, and preserves current embedded-preview fallback only when that fallback is actually usable.
+- Impact: `DwgPreviewConversionService` now supports `NCD_PM_DWG_CONVERTER_COMMAND` plus related governed strategy/output/timeout env values, caches converter-rendered previews separately from embedded-preview cache entries, rejects timed-out/missing/bad converter output safely, and keeps the existing friendly converter-required message when neither path yields a usable preview.
+- Rollback or Reversal: Remove the converter-command contract constants and service path, then return to embedded-preview-only DWG handling from Phase 1W.
+- Related Changes: Phase 1Y TODO-040 Offline DWG Converter Support (uncommitted workspace)
+- Review Date: N/A

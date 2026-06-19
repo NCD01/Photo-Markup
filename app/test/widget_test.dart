@@ -425,4 +425,37 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('launch error message renders in empty state', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const NcdPhotoMarkupApp(
+        showStartupSplash: false,
+        launchErrorMessage: ImageImportConstants.dwgPreviewUnavailableMessage,
+        launchContext: PhotoMarkupLaunchContext(
+          launchedFromControlCenter: true,
+          clientName: 'Manual Validation',
+          projectCode: 'PH1Y',
+          sourceLabel: 'Known bad DWG',
+        ),
+      ),
+    );
+    await _pumpFrames(tester, frames: 16);
+
+    expect(
+      find.text(UiCopyConstants.importErrorDialogTitle),
+      findsOneWidget,
+    );
+    expect(
+      find.text(ImageImportConstants.dwgPreviewUnavailableMessage),
+      findsWidgets,
+    );
+    expect(
+      find.text(UiCopyConstants.importErrorDialogDismissButton),
+      findsOneWidget,
+    );
+    expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
+    expect(find.textContaining('Source: Known bad DWG'), findsOneWidget);
+  });
 }

@@ -6,7 +6,41 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-06-18`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1X measurement-label usability and typography entry.
+Changes: Added Phase 1Y offline DWG converter contract entry.
+
+## Unreleased - 2026-06-18 (Phase 1Y TODO-040 Offline DWG Converter Support)
+- Owner: NCD / M
+- Author: Codex
+- Type: Import / Converter Foundation
+- Reason: Add a governed offline DWG converter command contract so Photo Markup can use approved local offline converter pipelines when available, while preserving embedded-preview fallback only when that fallback is actually usable.
+- Scope:
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/import/services/dwg_preview_conversion_service.dart`
+  - `app/test/dwg_preview_conversion_service_test.dart`
+  - Required operations/system documentation updates
+- Changes:
+  - Added governed offline converter env/config constants:
+    - `NCD_PM_DWG_CONVERTER_COMMAND`
+    - `NCD_PM_DWG_CONVERTER_STRATEGY_NAME`
+    - `NCD_PM_DWG_CONVERTER_OUTPUT_EXTENSION`
+    - `NCD_PM_DWG_CONVERTER_TIMEOUT_SECONDS`
+  - Added bounded offline converter execution contract to `DwgPreviewConversionService`:
+    - converter command receives `sourcePath` and `outputPreviewPath`
+    - converter output is accepted only when it passes the governed DWG preview quality gate
+    - converter timeout, launch failure, non-zero exit, missing output, and low-quality output all fall back safely instead of hanging or pretending success
+  - Split cache signatures so converter-generated previews and embedded-preview-derived previews do not collide.
+  - Kept current embedded PNG/BMP preview extraction as fallback only when the embedded preview passes the existing usability gate.
+  - Hardened the startup/launch-context error surface so a failed initial DWG/image load keeps the shell in the empty-state branch when no prior image has been loaded, instead of leaving the user on a blank canvas.
+  - Updated load-error visibility policy so friendly import failures can surface through the shell snackbar even when the app has not successfully loaded an image yet.
+  - Kept the existing friendly failure copy unchanged:
+    - `Could not create a usable DWG preview. This DWG needs an approved offline DWG converter.`
+  - Preserved original DWG file safety and did not add any online/cloud conversion path.
+- Validation Evidence:
+  - local converter audit: `PASS` (`magick` present but no `DWG`/`DXF` decode support listed; no approved ODA/Teigha/LibreCAD/Autodesk-class CLI found on this workstation`)
+  - `flutter analyze`: `PASS`
+  - `flutter test test/dwg_preview_conversion_service_test.dart`: `PASS`
+- Risks / Known Gaps:
+  - TODO-040 remains open until an approved offline converter is actually deployed and validated on target workstations.
 
 ## Unreleased - 2026-06-18 (Phase 1X Measurement Label Usability + Text Typography)
 - Owner: NCD / M

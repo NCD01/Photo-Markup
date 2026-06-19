@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Codex`
 Last Updated: `2026-06-18`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1X select-mode label editing/movement and typography-control notes.
+Changes: Added Phase 1Y governed offline DWG converter contract notes.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -87,9 +87,11 @@ Changes: Added Phase 1X select-mode label editing/movement and typography-contro
 - Notes:
 - `Original selected source file is not modified`
 - `Shows safe error message if image cannot be opened`
+- `Startup/launch-context failures that happen before any successful image load keep the shell in empty-state and use the friendly import-error path instead of leaving a blank working canvas`
 - `HEIC/HEIF source files are converted to preview-capped temporary working copies for display/markup (current policy: JPEG cache output)`
-- `DWG source files are accepted for open/launch flows and load through embedded PNG/BMP preview extraction only when that preview passes the governed usability gate`
-- `DWG files without a usable embedded raster preview, or only with a tiny/partial dark embedded thumbnail, still show the converter-required fallback message`
+- `DWG source files are accepted for open/launch flows and first try a governed offline converter command when configured`
+- `If no usable converter output is produced, DWG load falls back to embedded PNG/BMP preview extraction only when that preview passes the governed usability gate`
+- `DWG files without a usable converter output or embedded raster preview, or only with a tiny/partial dark embedded thumbnail, still show the converter-required fallback message`
 - `Import progress message ('Opening photo...') is shown while import/conversion is active`
 - `Dimension overlay is constrained to displayed photo bounds (BoxFit.contain rect)`
 - `View controls adjust render transform only; underlying markup geometry model stays normalized to displayed image rect`
@@ -119,10 +121,11 @@ Changes: Added Phase 1X select-mode label editing/movement and typography-contro
 
 #### `DWG Preview Import Gate`
 - Source path: `app/lib/features/import/services/dwg_preview_conversion_service.dart`
-- Purpose: `Extract embedded DWG raster previews into internal cache paths and keep fallback handling explicit/safe when a drawing has no usable preview`
+- Purpose: `Use a governed offline DWG converter command when configured, validate converter output, and fall back to embedded DWG raster previews only when that fallback is usable`
 - Parent/master form: `Photo Markup Shell`
 - Child components:
 - `DWG extension detection`
+- `Governed offline converter command contract`
 - `Embedded PNG preview extraction`
 - `Embedded BMP preview extraction`
 - `Preview usability validation`
@@ -134,9 +137,12 @@ Changes: Added Phase 1X select-mode label editing/movement and typography-contro
 - Read/write behavior: `READ_WRITE` (temp/cache preview write only)
 - Notes:
 - `Original DWG file remains unchanged`
+- `Configured converter command receives only sourcePath and outputPreviewPath; no DWG content is uploaded or written back to the source file`
 - `Extracted DWG preview files are internal temp/cache artifacts only`
 - `Current MVP does not perform fake/online/cloud conversion`
+- `Governed converter contract is controlled through env/config values rather than hardcoded vendor paths on this workstation`
 - `Embedded preview must pass governed usability checks before it is treated as a successful open`
+- `Converter output must pass the same governed usability checks before it is treated as a successful open`
 - `Current usability gate rejects obviously unusable previews such as very small thumbnails, mostly-dark previews with too little drawing area, and extreme-margin/partial-looking previews`
 - `Fallback failure message remains: Could not create a usable DWG preview. This DWG needs an approved offline DWG converter.`
 - `Original DWG basename still drives default export and editable sidecar naming`

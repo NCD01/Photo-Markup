@@ -49,6 +49,68 @@ void main() {
       expect(service.isManagedPreviewPath(firstPath), isTrue);
     });
 
+    test('prefers configured offline converter output when usable', () async {
+      final File dwgFile = File('${tempDir.path}/converter_source.dwg');
+      await dwgFile.writeAsBytes(<int>[1, 2, 3, 4, 5]);
+
+      final DwgPreviewConversionService service = DwgPreviewConversionService(
+        tempDirectoryPath: tempDir.path,
+        environmentLookup: _environmentFromMap(<String, String>{
+          ImageImportConstants.dwgOfflineConverterCommandEnvVar:
+              r'C:\tools\dwg_converter.cmd',
+          ImageImportConstants.dwgOfflineConverterStrategyNameEnvVar:
+              'test-converter',
+          ImageImportConstants.dwgOfflineConverterOutputExtensionEnvVar: 'png',
+        }),
+        offlineConverterRunner:
+            ({required DwgOfflineConverterInvocation invocation}) async {
+              await File(
+                invocation.outputPath,
+              ).writeAsBytes(_buildUsablePngPreviewBytes(), flush: true);
+              return const DwgOfflineConverterRunResult.success(exitCode: 0);
+            },
+      );
+
+      final String previewPath = await service.prepareDisplayablePreview(
+        sourcePath: dwgFile.path,
+      );
+
+      expect(previewPath.endsWith('.png'), isTrue);
+      expect(await File(previewPath).exists(), isTrue);
+      expect(await File(previewPath).length(), greaterThan(0));
+    });
+
+    test('falls back to embedded preview when converter fails', () async {
+      final Uint8List embeddedPreviewBytes = _buildUsablePngPreviewBytes();
+      final File dwgFile = File('${tempDir.path}/drawing1.dwg');
+      await dwgFile.writeAsBytes(
+        _buildFakeDwgWithPngPreview(embeddedPreviewBytes),
+      );
+
+      final DwgPreviewConversionService service = DwgPreviewConversionService(
+        tempDirectoryPath: tempDir.path,
+        environmentLookup: _environmentFromMap(<String, String>{
+          ImageImportConstants.dwgOfflineConverterCommandEnvVar:
+              r'C:\tools\dwg_converter.cmd',
+        }),
+        offlineConverterRunner:
+            ({required DwgOfflineConverterInvocation invocation}) async {
+              return const DwgOfflineConverterRunResult.failed(
+                failureReason:
+                    ImageImportConstants.dwgOfflineConverterExitCodeReason,
+                exitCode: 1,
+              );
+            },
+      );
+
+      final String previewPath = await service.prepareDisplayablePreview(
+        sourcePath: dwgFile.path,
+      );
+
+      expect(previewPath.endsWith('.png'), isTrue);
+      expect(await File(previewPath).readAsBytes(), embeddedPreviewBytes);
+    });
+
     test('rejects low-quality embedded preview thumbnails', () async {
       final File dwgFile = File('${tempDir.path}/drawing1.dwg');
       await dwgFile.writeAsBytes(
@@ -72,8 +134,8 @@ void main() {
     });
 
     test('rejects mostly-dark large previews with tiny drawing area', () async {
-      final DwgPreviewQualityResult result = await DwgPreviewConversionService
-          .evaluatePreviewQuality(
+      final DwgPreviewQualityResult result =
+          await DwgPreviewConversionService.evaluatePreviewQuality(
             previewBytes: _buildDarkBackgroundBmpPreviewBytes(),
             fileExtension: 'bmp',
           );
@@ -87,6 +149,148 @@ void main() {
         ),
       );
     });
+
+    test(
+      'reports friendly error when configured converter times out',
+      () async {
+        final File dwgFile = File('${tempDir.path}/drawing1.dwg');
+        await dwgFile.writeAsBytes(<int>[1, 2, 3, 4, 5, 6]);
+
+        final DwgPreviewConversionService service = DwgPreviewConversionService(
+          tempDirectoryPath: tempDir.path,
+          environmentLookup: _environmentFromMap(<String, String>{
+            ImageImportConstants.dwgOfflineConverterCommandEnvVar:
+                r'C:\tools\dwg_converter.cmd',
+          }),
+          offlineConverterRunner:
+              ({required DwgOfflineConverterInvocation invocation}) async {
+                return const DwgOfflineConverterRunResult.failed(
+                  failureReason:
+                      ImageImportConstants.dwgOfflineConverterTimeoutReason,
+                );
+              },
+        );
+
+        expect(
+          () => service.prepareDisplayablePreview(sourcePath: dwgFile.path),
+          throwsA(
+            isA<ImageImportFailure>().having(
+              (ImageImportFailure error) => error.message,
+              'message',
+              ImageImportConstants.dwgPreviewUnavailableMessage,
+            ),
+          ),
+        );
+      },
+    );
+
+    test('reports friendly error when converter output is missing', () async {
+      final File dwgFile = File('${tempDir.path}/drawing1.dwg');
+      await dwgFile.writeAsBytes(<int>[1, 2, 3, 4, 5, 6]);
+
+      final DwgPreviewConversionService service = DwgPreviewConversionService(
+        tempDirectoryPath: tempDir.path,
+        environmentLookup: _environmentFromMap(<String, String>{
+          ImageImportConstants.dwgOfflineConverterCommandEnvVar:
+              r'C:\tools\dwg_converter.cmd',
+        }),
+        offlineConverterRunner:
+            ({required DwgOfflineConverterInvocation invocation}) async {
+              return const DwgOfflineConverterRunResult.success(exitCode: 0);
+            },
+      );
+
+      expect(
+        () => service.prepareDisplayablePreview(sourcePath: dwgFile.path),
+        throwsA(
+          isA<ImageImportFailure>().having(
+            (ImageImportFailure error) => error.message,
+            'message',
+            ImageImportConstants.dwgPreviewUnavailableMessage,
+          ),
+        ),
+      );
+    });
+
+    test('rejects low-quality converter output', () async {
+      final File dwgFile = File('${tempDir.path}/drawing1.dwg');
+      await dwgFile.writeAsBytes(<int>[1, 2, 3, 4, 5, 6]);
+
+      final DwgPreviewConversionService service = DwgPreviewConversionService(
+        tempDirectoryPath: tempDir.path,
+        environmentLookup: _environmentFromMap(<String, String>{
+          ImageImportConstants.dwgOfflineConverterCommandEnvVar:
+              r'C:\tools\dwg_converter.cmd',
+        }),
+        offlineConverterRunner:
+            ({required DwgOfflineConverterInvocation invocation}) async {
+              await File(
+                invocation.outputPath,
+              ).writeAsBytes(_buildLowQualityPngPreviewBytes(), flush: true);
+              return const DwgOfflineConverterRunResult.success(exitCode: 0);
+            },
+      );
+
+      expect(
+        () => service.prepareDisplayablePreview(sourcePath: dwgFile.path),
+        throwsA(
+          isA<ImageImportFailure>().having(
+            (ImageImportFailure error) => error.message,
+            'message',
+            ImageImportConstants.dwgPreviewUnavailableMessage,
+          ),
+        ),
+      );
+    });
+
+    test(
+      'changes converter cache key when converter settings change',
+      () async {
+        final File dwgFile = File('${tempDir.path}/cache_key_source.dwg');
+        await dwgFile.writeAsBytes(<int>[1, 2, 3, 4, 5]);
+
+        Future<DwgOfflineConverterRunResult> runner({
+          required DwgOfflineConverterInvocation invocation,
+        }) async {
+          await File(
+            invocation.outputPath,
+          ).writeAsBytes(_buildUsablePngPreviewBytes(), flush: true);
+          return const DwgOfflineConverterRunResult.success(exitCode: 0);
+        }
+
+        final DwgPreviewConversionService firstService =
+            DwgPreviewConversionService(
+              tempDirectoryPath: tempDir.path,
+              environmentLookup: _environmentFromMap(<String, String>{
+                ImageImportConstants.dwgOfflineConverterCommandEnvVar:
+                    r'C:\tools\dwg_converter_a.cmd',
+                ImageImportConstants.dwgOfflineConverterStrategyNameEnvVar:
+                    'strategy-a',
+              }),
+              offlineConverterRunner: runner,
+            );
+        final DwgPreviewConversionService secondService =
+            DwgPreviewConversionService(
+              tempDirectoryPath: tempDir.path,
+              environmentLookup: _environmentFromMap(<String, String>{
+                ImageImportConstants.dwgOfflineConverterCommandEnvVar:
+                    r'C:\tools\dwg_converter_b.cmd',
+                ImageImportConstants.dwgOfflineConverterStrategyNameEnvVar:
+                    'strategy-b',
+              }),
+              offlineConverterRunner: runner,
+            );
+
+        final String firstPath = await firstService.prepareDisplayablePreview(
+          sourcePath: dwgFile.path,
+        );
+        final String secondPath = await secondService.prepareDisplayablePreview(
+          sourcePath: dwgFile.path,
+        );
+
+        expect(firstPath, isNot(secondPath));
+      },
+    );
 
     test('reports friendly error when dwg preview is unavailable', () async {
       final File dwgFile = File('${tempDir.path}/drawing1.dwg');
@@ -108,6 +312,10 @@ void main() {
       );
     });
   });
+}
+
+DwgEnvironmentLookup _environmentFromMap(Map<String, String> values) {
+  return (String key) => values[key];
 }
 
 Uint8List _buildFakeDwgWithPngPreview(Uint8List pngBytes) {

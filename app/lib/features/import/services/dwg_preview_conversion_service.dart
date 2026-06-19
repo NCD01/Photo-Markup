@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -5,81 +7,80 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 
+typedef DwgEnvironmentLookup = String? Function(String key);
+typedef DwgOfflineConverterRunner =
+    Future<DwgOfflineConverterRunResult> Function({
+      required DwgOfflineConverterInvocation invocation,
+    });
+
 class DwgPreviewConversionService {
   DwgPreviewConversionService({
     String? tempDirectoryPath,
+    DwgEnvironmentLookup? environmentLookup,
+    DwgOfflineConverterRunner? offlineConverterRunner,
   }) : _cacheDirectoryPath =
-           '${tempDirectoryPath ?? Directory.systemTemp.path}${Platform.pathSeparator}${ImageImportConstants.dwgPreviewCacheFolderName}';
+           '${tempDirectoryPath ?? Directory.systemTemp.path}${Platform.pathSeparator}${ImageImportConstants.dwgPreviewCacheFolderName}',
+       _environmentLookup = environmentLookup ?? _defaultEnvironmentLookup,
+       _offlineConverterRunner =
+           offlineConverterRunner ?? _defaultOfflineConverterRunner;
 
   final String _cacheDirectoryPath;
+  final DwgEnvironmentLookup _environmentLookup;
+  final DwgOfflineConverterRunner _offlineConverterRunner;
 
   Future<String> prepareDisplayablePreview({required String sourcePath}) async {
     await _cleanupStalePreviewFiles();
-    final String cacheBasePath = await _buildCachedPreviewBasePath(sourcePath);
-    final String? cachedPath = await _findCachedPreviewPath(cacheBasePath);
-    if (cachedPath != null) {
-      final DwgPreviewQualityResult cachedResult = await _evaluatePreviewFile(
-        previewPath: cachedPath,
+
+    final DwgOfflineConverterConfig? converterConfig =
+        _resolveOfflineConverterConfig();
+    final String embeddedCacheBasePath = await _buildEmbeddedCacheBasePath(
+      sourcePath,
+    );
+
+    if (converterConfig != null) {
+      final String converterCacheBasePath =
+          await _buildOfflineConverterCacheBasePath(
+            sourcePath,
+            converterConfig,
+          );
+      final String? cachedConverterPath = await _findUsableCachedPreviewPath(
+        cacheBasePath: converterCacheBasePath,
         sourcePath: sourcePath,
-        previewSource: 'cache',
+        previewSource: 'offline-converter-cache',
       );
-      if (cachedResult.isUsable) {
-        _logDebug(
-          'cache hit path=$cachedPath '
-          'format=${cachedResult.fileExtension} '
-          'size=${cachedResult.width}x${cachedResult.height} '
-          'sourcePath=$sourcePath',
-        );
-        return cachedPath;
+      if (cachedConverterPath != null) {
+        return cachedConverterPath;
       }
-      await _deleteFileIfExists(cachedPath);
+
+      final String? convertedPreviewPath = await _tryOfflineConverterPreview(
+        sourcePath: sourcePath,
+        cacheBasePath: converterCacheBasePath,
+        converterConfig: converterConfig,
+      );
+      if (convertedPreviewPath != null) {
+        return convertedPreviewPath;
+      }
+    } else {
       _logDebug(
-        'cache reject path=$cachedPath '
-        'format=${cachedResult.fileExtension} '
-        'size=${cachedResult.width}x${cachedResult.height} '
-        'reason=${cachedResult.rejectionReason} '
+        'offline converter unavailable '
+        'reason=${ImageImportConstants.dwgOfflineConverterMissingReason} '
         'sourcePath=$sourcePath',
       );
     }
 
-    final Uint8List dwgBytes = await File(sourcePath).readAsBytes();
-    final DwgEmbeddedPreview? preview = extractEmbeddedPreview(dwgBytes);
-    if (preview == null) {
-      _logDebug('no embedded preview found sourcePath=$sourcePath');
-      throw const ImageImportFailure(
-        ImageImportConstants.dwgPreviewUnavailableMessage,
-      );
+    final String? cachedEmbeddedPath = await _findUsableCachedPreviewPath(
+      cacheBasePath: embeddedCacheBasePath,
+      sourcePath: sourcePath,
+      previewSource: 'embedded-cache',
+    );
+    if (cachedEmbeddedPath != null) {
+      return cachedEmbeddedPath;
     }
 
-    final String outputPath = '$cacheBasePath.${preview.fileExtension}';
-    final DwgPreviewQualityResult qualityResult = await evaluatePreviewQuality(
-      previewBytes: preview.bytes,
-      fileExtension: preview.fileExtension,
+    return _extractEmbeddedPreviewToCache(
+      sourcePath: sourcePath,
+      cacheBasePath: embeddedCacheBasePath,
     );
-    _logDebug(
-      'embedded preview found '
-      'format=${preview.fileExtension} '
-      'size=${qualityResult.width}x${qualityResult.height} '
-      'bytes=${preview.bytes.length} '
-      'candidatePath=$outputPath '
-      'usable=${qualityResult.isUsable} '
-      'reason=${qualityResult.rejectionReason ?? 'accepted'} '
-      'sourcePath=$sourcePath',
-    );
-    if (!qualityResult.isUsable) {
-      throw const ImageImportFailure(
-        ImageImportConstants.dwgPreviewUnavailableMessage,
-      );
-    }
-
-    final File outputFile = File(outputPath);
-    await outputFile.parent.create(recursive: true);
-    await outputFile.writeAsBytes(preview.bytes, flush: true);
-    _logDebug(
-      'cached usable embedded ${preview.fileExtension} preview '
-      'bytes=${preview.bytes.length} path=$outputPath sourcePath=$sourcePath',
-    );
-    return outputPath;
   }
 
   bool isManagedPreviewPath(String path) {
@@ -96,7 +97,11 @@ class DwgPreviewConversionService {
       dwgBytes.length,
       ImageImportConstants.dwgPreviewSearchByteLimit,
     );
-    final Uint8List searchBytes = Uint8List.sublistView(dwgBytes, 0, searchLimit);
+    final Uint8List searchBytes = Uint8List.sublistView(
+      dwgBytes,
+      0,
+      searchLimit,
+    );
 
     final DwgEmbeddedPreview? pngPreview = _extractPngPreview(searchBytes);
     if (pngPreview != null) {
@@ -131,7 +136,8 @@ class DwgPreviewConversionService {
           fileExtension: fileExtension,
           width: width,
           height: height,
-          rejectionReason: ImageImportConstants.dwgPreviewRejectedTooSmallReason,
+          rejectionReason:
+              ImageImportConstants.dwgPreviewRejectedTooSmallReason,
         );
       }
 
@@ -167,7 +173,8 @@ class DwgPreviewConversionService {
 
           opaquePixelCount += 1;
           final int brightestChannel = math.max(red, math.max(green, blue));
-          if (brightestChannel <= ImageImportConstants.dwgPreviewDarkPixelThreshold) {
+          if (brightestChannel <=
+              ImageImportConstants.dwgPreviewDarkPixelThreshold) {
             darkPixelCount += 1;
             continue;
           }
@@ -214,7 +221,8 @@ class DwgPreviewConversionService {
         math.max(topMarginRatio, bottomMarginRatio),
       );
 
-      if (darkPixelRatio >= ImageImportConstants.dwgPreviewMaximumDarkPixelRatio &&
+      if (darkPixelRatio >=
+              ImageImportConstants.dwgPreviewMaximumDarkPixelRatio &&
           contentBoundsAreaRatio <=
               ImageImportConstants.dwgPreviewMaximumDarkAreaRatio) {
         return DwgPreviewQualityResult.rejected(
@@ -229,7 +237,8 @@ class DwgPreviewConversionService {
         );
       }
 
-      if (darkPixelRatio >= ImageImportConstants.dwgPreviewMaximumDarkPixelRatio &&
+      if (darkPixelRatio >=
+              ImageImportConstants.dwgPreviewMaximumDarkPixelRatio &&
           dominantMarginRatio >=
               ImageImportConstants.dwgPreviewMaximumDominantMarginRatio) {
         return DwgPreviewQualityResult.rejected(
@@ -297,7 +306,9 @@ class DwgPreviewConversionService {
     }
 
     return DwgEmbeddedPreview(
-      bytes: Uint8List.fromList(bytes.sublist(start, end + pngEndMarker.length)),
+      bytes: Uint8List.fromList(
+        bytes.sublist(start, end + pngEndMarker.length),
+      ),
       fileExtension: 'png',
     );
   }
@@ -344,7 +355,218 @@ class DwgPreviewConversionService {
     return -1;
   }
 
-  Future<String> _buildCachedPreviewBasePath(String sourcePath) async {
+  DwgOfflineConverterConfig? _resolveOfflineConverterConfig() {
+    final String? configuredCommand = _readTrimmedEnvironmentValue(
+      ImageImportConstants.dwgOfflineConverterCommandEnvVar,
+    );
+    if (configuredCommand == null) {
+      return null;
+    }
+
+    final String strategyName =
+        _readTrimmedEnvironmentValue(
+          ImageImportConstants.dwgOfflineConverterStrategyNameEnvVar,
+        ) ??
+        ImageImportConstants.dwgOfflineConverterDefaultStrategyName;
+    final String outputExtension = _resolveOfflineConverterOutputExtension();
+    final Duration timeout = _resolveOfflineConverterTimeout();
+    final String cacheSignature = <String>[
+      strategyName,
+      configuredCommand.toLowerCase(),
+      outputExtension,
+      timeout.inSeconds.toString(),
+    ].join('|');
+
+    return DwgOfflineConverterConfig(
+      configuredCommand: configuredCommand,
+      strategyName: strategyName,
+      outputExtension: outputExtension,
+      timeout: timeout,
+      cacheSignature: cacheSignature,
+    );
+  }
+
+  Future<String> _extractEmbeddedPreviewToCache({
+    required String sourcePath,
+    required String cacheBasePath,
+  }) async {
+    final Uint8List dwgBytes = await File(sourcePath).readAsBytes();
+    final DwgEmbeddedPreview? preview = extractEmbeddedPreview(dwgBytes);
+    if (preview == null) {
+      _logDebug('no embedded preview found sourcePath=$sourcePath');
+      throw const ImageImportFailure(
+        ImageImportConstants.dwgPreviewUnavailableMessage,
+      );
+    }
+
+    final String outputPath = '$cacheBasePath.${preview.fileExtension}';
+    final DwgPreviewQualityResult qualityResult = await evaluatePreviewQuality(
+      previewBytes: preview.bytes,
+      fileExtension: preview.fileExtension,
+    );
+    _logDebug(
+      'embedded preview found '
+      'format=${preview.fileExtension} '
+      'size=${qualityResult.width}x${qualityResult.height} '
+      'bytes=${preview.bytes.length} '
+      'candidatePath=$outputPath '
+      'usable=${qualityResult.isUsable} '
+      'reason=${qualityResult.rejectionReason ?? 'accepted'} '
+      'sourcePath=$sourcePath',
+    );
+    if (!qualityResult.isUsable) {
+      throw const ImageImportFailure(
+        ImageImportConstants.dwgPreviewUnavailableMessage,
+      );
+    }
+
+    final File outputFile = File(outputPath);
+    await outputFile.parent.create(recursive: true);
+    await outputFile.writeAsBytes(preview.bytes, flush: true);
+    _logDebug(
+      'cached usable embedded ${preview.fileExtension} preview '
+      'bytes=${preview.bytes.length} path=$outputPath sourcePath=$sourcePath',
+    );
+    return outputPath;
+  }
+
+  Future<String?> _tryOfflineConverterPreview({
+    required String sourcePath,
+    required String cacheBasePath,
+    required DwgOfflineConverterConfig converterConfig,
+  }) async {
+    final String outputPath =
+        '$cacheBasePath.${converterConfig.outputExtension}';
+    await File(outputPath).parent.create(recursive: true);
+    await _deleteFileIfExists(outputPath);
+
+    final DwgOfflineConverterInvocation invocation =
+        _buildOfflineConverterInvocation(
+          sourcePath: sourcePath,
+          outputPath: outputPath,
+          converterConfig: converterConfig,
+        );
+    _logDebug(
+      'offline converter try '
+      'strategy=${converterConfig.strategyName} '
+      'command=${invocation.diagnosticCommandLine} '
+      'outputPath=$outputPath sourcePath=$sourcePath',
+    );
+
+    final DwgOfflineConverterRunResult result = await _offlineConverterRunner(
+      invocation: invocation,
+    );
+    if (!result.wasSuccessful) {
+      await _deleteFileIfExists(outputPath);
+      _logDebug(
+        'offline converter reject '
+        'strategy=${converterConfig.strategyName} '
+        'reason=${result.failureReason ?? ImageImportConstants.dwgOfflineConverterLaunchFailedReason} '
+        'exitCode=${result.exitCode?.toString() ?? 'n/a'} '
+        'stdout=${_truncateLogValue(result.stdout)} '
+        'stderr=${_truncateLogValue(result.stderr)} '
+        'sourcePath=$sourcePath',
+      );
+      return null;
+    }
+
+    final File outputFile = File(outputPath);
+    if (!await outputFile.exists() || await outputFile.length() == 0) {
+      await _deleteFileIfExists(outputPath);
+      _logDebug(
+        'offline converter reject '
+        'strategy=${converterConfig.strategyName} '
+        'reason=${ImageImportConstants.dwgOfflineConverterOutputMissingReason} '
+        'sourcePath=$sourcePath',
+      );
+      return null;
+    }
+
+    final DwgPreviewQualityResult qualityResult = await _evaluatePreviewFile(
+      previewPath: outputPath,
+      sourcePath: sourcePath,
+      previewSource: 'offline-converter',
+    );
+    if (!qualityResult.isUsable) {
+      await _deleteFileIfExists(outputPath);
+      _logDebug(
+        'offline converter reject '
+        'strategy=${converterConfig.strategyName} '
+        'reason=${ImageImportConstants.dwgOfflineConverterOutputRejectedReason} '
+        'qualityReason=${qualityResult.rejectionReason ?? 'unknown'} '
+        'sourcePath=$sourcePath',
+      );
+      return null;
+    }
+
+    _logDebug(
+      'offline converter accepted '
+      'strategy=${converterConfig.strategyName} '
+      'path=$outputPath '
+      'format=${qualityResult.fileExtension} '
+      'size=${qualityResult.width}x${qualityResult.height} '
+      'sourcePath=$sourcePath',
+    );
+    return outputPath;
+  }
+
+  Future<String?> _findUsableCachedPreviewPath({
+    required String cacheBasePath,
+    required String sourcePath,
+    required String previewSource,
+  }) async {
+    final String? cachedPath = await _findCachedPreviewPath(cacheBasePath);
+    if (cachedPath == null) {
+      return null;
+    }
+
+    final DwgPreviewQualityResult cachedResult = await _evaluatePreviewFile(
+      previewPath: cachedPath,
+      sourcePath: sourcePath,
+      previewSource: previewSource,
+    );
+    if (cachedResult.isUsable) {
+      _logDebug(
+        '$previewSource hit path=$cachedPath '
+        'format=${cachedResult.fileExtension} '
+        'size=${cachedResult.width}x${cachedResult.height} '
+        'sourcePath=$sourcePath',
+      );
+      return cachedPath;
+    }
+
+    await _deleteFileIfExists(cachedPath);
+    _logDebug(
+      '$previewSource reject path=$cachedPath '
+      'format=${cachedResult.fileExtension} '
+      'size=${cachedResult.width}x${cachedResult.height} '
+      'reason=${cachedResult.rejectionReason} '
+      'sourcePath=$sourcePath',
+    );
+    return null;
+  }
+
+  Future<String> _buildEmbeddedCacheBasePath(String sourcePath) {
+    return _buildCacheBasePath(
+      sourcePath: sourcePath,
+      variantSignature: 'embedded-preview',
+    );
+  }
+
+  Future<String> _buildOfflineConverterCacheBasePath(
+    String sourcePath,
+    DwgOfflineConverterConfig converterConfig,
+  ) {
+    return _buildCacheBasePath(
+      sourcePath: sourcePath,
+      variantSignature: converterConfig.cacheSignature,
+    );
+  }
+
+  Future<String> _buildCacheBasePath({
+    required String sourcePath,
+    required String variantSignature,
+  }) async {
     final File sourceFile = File(sourcePath);
     final FileStat sourceStat = await sourceFile.stat();
     final String signature =
@@ -357,13 +579,15 @@ class DwgPreviewConversionService {
         '${ImageImportConstants.dwgPreviewMinimumHeight}|'
         '${ImageImportConstants.dwgPreviewMaximumDarkPixelRatio}|'
         '${ImageImportConstants.dwgPreviewMaximumDarkAreaRatio}|'
-        '${ImageImportConstants.dwgPreviewMaximumDominantMarginRatio}';
+        '${ImageImportConstants.dwgPreviewMaximumDominantMarginRatio}|'
+        '$variantSignature';
     final String cacheKey = _stableCacheKey(signature);
     return '$_cacheDirectoryPath${Platform.pathSeparator}$cacheKey';
   }
 
   Future<String?> _findCachedPreviewPath(String cacheBasePath) async {
-    for (final String extension in ImageImportConstants.dwgPreviewCacheExtensions) {
+    for (final String extension
+        in ImageImportConstants.dwgPreviewCacheExtensions) {
       final String candidate = '$cacheBasePath.$extension';
       final File file = File(candidate);
       if (await file.exists() && await file.length() > 0) {
@@ -390,7 +614,9 @@ class DwgPreviewConversionService {
 
       for (final File file in entries.whereType<File>()) {
         final String extension = file.path.split('.').last.toLowerCase();
-        if (!ImageImportConstants.dwgPreviewCacheExtensions.contains(extension)) {
+        if (!ImageImportConstants.dwgPreviewCacheExtensions.contains(
+          extension,
+        )) {
           continue;
         }
         final FileStat stat = await file.stat();
@@ -436,7 +662,9 @@ class DwgPreviewConversionService {
     if (!kDebugMode) {
       return;
     }
-    debugPrint('${ImageImportConstants.importDiagnosticsPrefix} [DWG] $message');
+    debugPrint(
+      '${ImageImportConstants.importDiagnosticsPrefix} [DWG] $message',
+    );
   }
 
   Future<DwgPreviewQualityResult> _evaluatePreviewFile({
@@ -478,13 +706,189 @@ class DwgPreviewConversionService {
       await file.delete();
     }
   }
+
+  String? _readTrimmedEnvironmentValue(String key) {
+    final String? value = _environmentLookup(key)?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    return value;
+  }
+
+  String _resolveOfflineConverterOutputExtension() {
+    final String? configuredExtension = _readTrimmedEnvironmentValue(
+      ImageImportConstants.dwgOfflineConverterOutputExtensionEnvVar,
+    );
+    final String normalizedExtension =
+        configuredExtension?.toLowerCase() ??
+        ImageImportConstants.dwgOfflineConverterDefaultOutputExtension;
+    if (ImageImportConstants.dwgOfflineConverterAllowedOutputExtensions
+        .contains(normalizedExtension)) {
+      return normalizedExtension;
+    }
+
+    _logDebug(
+      'offline converter output extension fallback '
+      'configured=$configuredExtension '
+      'fallback=${ImageImportConstants.dwgOfflineConverterDefaultOutputExtension}',
+    );
+    return ImageImportConstants.dwgOfflineConverterDefaultOutputExtension;
+  }
+
+  Duration _resolveOfflineConverterTimeout() {
+    final String? rawValue = _readTrimmedEnvironmentValue(
+      ImageImportConstants.dwgOfflineConverterTimeoutSecondsEnvVar,
+    );
+    final int? seconds = rawValue == null ? null : int.tryParse(rawValue);
+    if (seconds == null || seconds <= 0) {
+      return ImageImportConstants.dwgOfflineConverterTimeout;
+    }
+    return Duration(seconds: seconds);
+  }
+
+  DwgOfflineConverterInvocation _buildOfflineConverterInvocation({
+    required String sourcePath,
+    required String outputPath,
+    required DwgOfflineConverterConfig converterConfig,
+  }) {
+    final String normalizedCommand = converterConfig.configuredCommand
+        .toLowerCase();
+    if (normalizedCommand.endsWith('.ps1')) {
+      return DwgOfflineConverterInvocation(
+        executable: 'powershell.exe',
+        arguments: <String>[
+          '-ExecutionPolicy',
+          'Bypass',
+          '-File',
+          converterConfig.configuredCommand,
+          sourcePath,
+          outputPath,
+        ],
+        sourcePath: sourcePath,
+        outputPath: outputPath,
+        strategyName: converterConfig.strategyName,
+        timeout: converterConfig.timeout,
+        configuredCommand: converterConfig.configuredCommand,
+        outputExtension: converterConfig.outputExtension,
+      );
+    }
+    if (normalizedCommand.endsWith('.cmd') ||
+        normalizedCommand.endsWith('.bat')) {
+      return DwgOfflineConverterInvocation(
+        executable: 'cmd.exe',
+        arguments: <String>[
+          '/c',
+          converterConfig.configuredCommand,
+          sourcePath,
+          outputPath,
+        ],
+        sourcePath: sourcePath,
+        outputPath: outputPath,
+        strategyName: converterConfig.strategyName,
+        timeout: converterConfig.timeout,
+        configuredCommand: converterConfig.configuredCommand,
+        outputExtension: converterConfig.outputExtension,
+      );
+    }
+    return DwgOfflineConverterInvocation(
+      executable: converterConfig.configuredCommand,
+      arguments: <String>[sourcePath, outputPath],
+      sourcePath: sourcePath,
+      outputPath: outputPath,
+      strategyName: converterConfig.strategyName,
+      timeout: converterConfig.timeout,
+      configuredCommand: converterConfig.configuredCommand,
+      outputExtension: converterConfig.outputExtension,
+    );
+  }
+
+  static String? _defaultEnvironmentLookup(String key) =>
+      Platform.environment[key];
+
+  static Future<DwgOfflineConverterRunResult> _defaultOfflineConverterRunner({
+    required DwgOfflineConverterInvocation invocation,
+  }) async {
+    Process? process;
+    try {
+      process = await Process.start(
+        invocation.executable,
+        invocation.arguments,
+      );
+    } catch (_) {
+      return const DwgOfflineConverterRunResult.failed(
+        failureReason:
+            ImageImportConstants.dwgOfflineConverterLaunchFailedReason,
+        didStart: false,
+      );
+    }
+
+    final StringBuffer stdoutBuffer = StringBuffer();
+    final StringBuffer stderrBuffer = StringBuffer();
+    final Future<void> stdoutFuture = process.stdout
+        .transform(utf8.decoder)
+        .forEach(stdoutBuffer.write);
+    final Future<void> stderrFuture = process.stderr
+        .transform(utf8.decoder)
+        .forEach(stderrBuffer.write);
+
+    try {
+      final int exitCode = await process.exitCode.timeout(invocation.timeout);
+      await _drainProcessStreams(stdoutFuture, stderrFuture);
+      if (exitCode != 0) {
+        return DwgOfflineConverterRunResult.failed(
+          failureReason: ImageImportConstants.dwgOfflineConverterExitCodeReason,
+          exitCode: exitCode,
+          stdout: stdoutBuffer.toString(),
+          stderr: stderrBuffer.toString(),
+        );
+      }
+      return DwgOfflineConverterRunResult.success(
+        exitCode: exitCode,
+        stdout: stdoutBuffer.toString(),
+        stderr: stderrBuffer.toString(),
+      );
+    } on TimeoutException {
+      process.kill();
+      await _drainProcessStreams(stdoutFuture, stderrFuture);
+      return DwgOfflineConverterRunResult.failed(
+        failureReason: ImageImportConstants.dwgOfflineConverterTimeoutReason,
+        stdout: stdoutBuffer.toString(),
+        stderr: stderrBuffer.toString(),
+      );
+    }
+  }
+
+  static Future<void> _drainProcessStreams(
+    Future<void> stdoutFuture,
+    Future<void> stderrFuture,
+  ) async {
+    try {
+      await Future.wait<void>(<Future<void>>[
+        stdoutFuture,
+        stderrFuture,
+      ]).timeout(const Duration(seconds: 1));
+    } catch (_) {
+      // Best-effort diagnostic stream drain only.
+    }
+  }
+
+  static String _truncateLogValue(String value) {
+    final String normalized = value
+        .replaceAll('\n', ' ')
+        .replaceAll('\r', ' ')
+        .trim();
+    if (normalized.isEmpty) {
+      return '<empty>';
+    }
+    if (normalized.length <= 160) {
+      return normalized;
+    }
+    return '${normalized.substring(0, 157)}...';
+  }
 }
 
 class DwgEmbeddedPreview {
-  const DwgEmbeddedPreview({
-    required this.bytes,
-    required this.fileExtension,
-  });
+  const DwgEmbeddedPreview({required this.bytes, required this.fileExtension});
 
   final Uint8List bytes;
   final String fileExtension;
@@ -548,6 +952,72 @@ class DwgPreviewQualityResult {
   final String? rejectionReason;
 }
 
+class DwgOfflineConverterConfig {
+  const DwgOfflineConverterConfig({
+    required this.configuredCommand,
+    required this.strategyName,
+    required this.outputExtension,
+    required this.timeout,
+    required this.cacheSignature,
+  });
+
+  final String configuredCommand;
+  final String strategyName;
+  final String outputExtension;
+  final Duration timeout;
+  final String cacheSignature;
+}
+
+class DwgOfflineConverterInvocation {
+  const DwgOfflineConverterInvocation({
+    required this.executable,
+    required this.arguments,
+    required this.sourcePath,
+    required this.outputPath,
+    required this.strategyName,
+    required this.timeout,
+    required this.configuredCommand,
+    required this.outputExtension,
+  });
+
+  final String executable;
+  final List<String> arguments;
+  final String sourcePath;
+  final String outputPath;
+  final String strategyName;
+  final Duration timeout;
+  final String configuredCommand;
+  final String outputExtension;
+
+  String get diagnosticCommandLine =>
+      <String>[executable, ...arguments].map(_quoteCommandArg).join(' ');
+}
+
+class DwgOfflineConverterRunResult {
+  const DwgOfflineConverterRunResult.success({
+    required this.exitCode,
+    this.stdout = '',
+    this.stderr = '',
+  }) : didStart = true,
+       failureReason = null;
+
+  const DwgOfflineConverterRunResult.failed({
+    required this.failureReason,
+    this.didStart = true,
+    this.exitCode,
+    this.stdout = '',
+    this.stderr = '',
+  });
+
+  final bool didStart;
+  final int? exitCode;
+  final String stdout;
+  final String stderr;
+  final String? failureReason;
+
+  bool get wasSuccessful => didStart && failureReason == null && exitCode == 0;
+}
+
 class ImageImportFailure implements Exception {
   const ImageImportFailure(this.message);
 
@@ -558,11 +1028,18 @@ class ImageImportFailure implements Exception {
 }
 
 class _TempFileMeta {
-  const _TempFileMeta({
-    required this.file,
-    required this.modified,
-  });
+  const _TempFileMeta({required this.file, required this.modified});
 
   final File file;
   final DateTime modified;
+}
+
+String _quoteCommandArg(String value) {
+  if (value.isEmpty) {
+    return '""';
+  }
+  if (!value.contains(' ') && !value.contains('"')) {
+    return value;
+  }
+  return '"${value.replaceAll('"', '\\"')}"';
 }

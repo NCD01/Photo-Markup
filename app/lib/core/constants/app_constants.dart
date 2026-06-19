@@ -126,7 +126,7 @@ class ImageImportConstants {
       'ncd_photo_markup_heic_cache';
   static const String dwgPreviewCacheFolderName = 'ncd_photo_markup_dwg_cache';
   static const String heicPreviewCacheKeyVersion = 'v2';
-  static const String dwgPreviewCacheKeyVersion = 'v2';
+  static const String dwgPreviewCacheKeyVersion = 'v3';
   static const int heicMaxPreviewDimension = 2560;
   static const int heicPreviewJpegQuality = 85;
   static const int dwgPreviewSearchByteLimit = 262144;
@@ -156,13 +156,44 @@ class ImageImportConstants {
       'preview has extreme empty margins and appears partial';
   static const String dwgPreviewRejectedDecodeReason =
       'preview could not be decoded for quality validation';
+  static const String dwgOfflineConverterCommandEnvVar =
+      'NCD_PM_DWG_CONVERTER_COMMAND';
+  static const String dwgOfflineConverterStrategyNameEnvVar =
+      'NCD_PM_DWG_CONVERTER_STRATEGY_NAME';
+  static const String dwgOfflineConverterOutputExtensionEnvVar =
+      'NCD_PM_DWG_CONVERTER_OUTPUT_EXTENSION';
+  static const String dwgOfflineConverterTimeoutSecondsEnvVar =
+      'NCD_PM_DWG_CONVERTER_TIMEOUT_SECONDS';
+  static const String dwgOfflineConverterDefaultStrategyName =
+      'configured-offline-preview-pipeline';
+  static const String dwgOfflineConverterDefaultOutputExtension = 'png';
+  static const Duration dwgOfflineConverterTimeout = Duration(seconds: 20);
+  static const List<String> dwgOfflineConverterAllowedOutputExtensions =
+      <String>['png', 'jpg', 'jpeg', 'bmp'];
+  static const String dwgOfflineConverterMissingReason =
+      'offline converter command is not configured';
+  static const String dwgOfflineConverterLaunchFailedReason =
+      'offline converter command could not be started';
+  static const String dwgOfflineConverterTimeoutReason =
+      'offline converter command timed out';
+  static const String dwgOfflineConverterExitCodeReason =
+      'offline converter command returned a non-zero exit code';
+  static const String dwgOfflineConverterOutputMissingReason =
+      'offline converter command did not produce an output preview file';
+  static const String dwgOfflineConverterOutputRejectedReason =
+      'offline converter output failed the governed preview quality gate';
   static const List<String> dwgConverterCommandCandidates = <String>[
     'ODAFileConverter',
     'TeighaFileConverter',
     'dwgread',
     'LibreCAD',
   ];
-  static const List<String> dwgPreviewCacheExtensions = <String>['png', 'bmp'];
+  static const List<String> dwgPreviewCacheExtensions = <String>[
+    'png',
+    'bmp',
+    'jpg',
+    'jpeg',
+  ];
   static const String heicTempSuffix = '_heic_converted';
   static const String heicConvertedOutputExtension = 'jpg';
   static const String heicFallbackConverterCommand = 'magick';
@@ -205,6 +236,8 @@ class UiCopyConstants {
   static const String textNoteSaveButton = 'Save';
   static const String textNoteSkipButton = 'Skip';
   static const String importInProgressMessage = 'Opening photo...';
+  static const String importErrorDialogTitle = 'Open Photo Failed';
+  static const String importErrorDialogDismissButton = 'OK';
   static const String styleDialogTitle = 'Markup Style & Text';
   static const String styleDialogPresetsSectionTitle = 'Color Preset';
   static const String styleDialogTypographySectionTitle = 'Text Typography';

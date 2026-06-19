@@ -3,14 +3,14 @@ import 'package:ncd_photo_markup/features/import/utils/load_error_visibility_pol
 
 void main() {
   group('LoadErrorVisibilityPolicy', () {
-    test('does not show snack bar when no image is loaded', () {
+    test('shows snack bar when no image is loaded yet', () {
       expect(
         LoadErrorVisibilityPolicy.shouldShowSnackBar(imagePath: null),
-        isFalse,
+        isTrue,
       );
       expect(
         LoadErrorVisibilityPolicy.shouldShowSnackBar(imagePath: '   '),
-        isFalse,
+        isTrue,
       );
     });
 

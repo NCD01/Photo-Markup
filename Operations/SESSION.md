@@ -7,6 +7,54 @@ Last Updated By: `Codex`
 Last Updated: `2026-05-25`
 Purpose: Track concise session history and handoff state.
 
+# SESSION_2026-06-18_0002_phase1y_validation_visibility_followup
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Finish Phase 1Y manual-validation prep by keeping the governed offline DWG converter contract intact while making startup/launch-context import failures surface to the user more reliably.
+
+## Actions
+- Re-ran bounded Phase 1Y validation and rebuilt the current Windows debug binary from the dirty workspace.
+- Probed the real known-bad owner DWG sample through a temporary non-committed Flutter test and confirmed the import service still rejects the `256x142` embedded preview with the governed converter-required message.
+- Confirmed no approved local offline DWG converter is installed/configured on this workstation, so TODO-040 remains open.
+- Tightened the shell error path so startup/launch-context load failures keep the app in the empty-state branch when no prior successful image was loaded.
+- Updated the load-error visibility policy to permit snackbar surfacing even when no image is currently loaded.
+- Replaced a hanging startup-DWG widget probe with a deterministic lightweight UI test that verifies launch-error rendering in the empty state without long-running file/import setup.
+
+## Logging/Debug Notes
+- Real bad DWG sample probe result:
+  - source: `C:\Users\defre\Downloads\Re_ Amelia's - Meeting_Site Visit Notes\Polito RCP Base_06.01.26.dwg`
+  - embedded preview: `PNG`
+  - size: `256x142`
+  - usable: `false`
+  - rejection reason: `preview dimensions are below the minimum usable size`
+- Runtime window-capture evidence on this workstation is not trustworthy for centered empty-state/snackbar verification:
+  - direct `PrintWindow` and foreground screen captures both omitted the center empty-state content even when launching the shell with no image at all
+  - owner visual/manual confirmation is still required for the actual GUI message path
+- Non-hanging guardrail applied:
+  - one startup-DWG widget test attempt timed out
+  - stale test-runner process was identified and killed once
+  - replacement deterministic widget coverage was added instead of repeatedly rerunning the same hanging path
+
+## Validation
+- `flutter analyze`: `PASS`
+- `flutter test test/load_error_visibility_policy_test.dart`: `PASS`
+- `flutter test test/widget_test.dart --plain-name "launch error message renders in empty state" -r expanded`: `PASS`
+- actual bad-DWG service probe via temporary `.agent_temp` test: `PASS`
+- `flutter build windows --debug`: `PASS`
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No converter binaries/packages/assets were added.
+- No online/cloud conversion was added.
+- No Control Center code changes were made.
+- No new measurement tools were started.
+
 # SESSION_2026-06-17_0001_phase1w_dwg_preview_import
 
 ## Context
@@ -2883,6 +2931,65 @@ Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 - No Control Center code changes.
 - No export/import/save/reopen behavior changes outside the active Phase 1X + DWG visibility scopes.
 - TODO-040 remains open; no DWG converter work started.
+
+# SESSION_2026-06-18_phase1y_offline_dwg_converter_foundation
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+
+## Goal
+- Implement the governed Phase 1Y TODO-040 offline DWG converter support foundation without faking converter availability, while preserving original DWG safety and the existing embedded-preview quality gate.
+
+## Actions
+- Re-ran preflight:
+  - `git status --short`
+  - confirmed branch `main`
+  - confirmed app version `v0.31`
+  - confirmed HEAD `98ad55eb6816633ed2fda1b633ce5a8b0b8187d5`
+- Audited local offline DWG converter availability on this workstation with bounded shell probes:
+  - no `ODAFileConverter`, `TeighaFileConverter`, `dwgread`, `LibreCAD`, `DWG TrueView`, `accoreconsole`, or similar approved converter CLI was found
+  - `magick` is installed, but `magick -list format` does not advertise `DWG`/`DXF` decode support here
+- Extended `DwgPreviewConversionService` to support a governed external converter command contract:
+  - `NCD_PM_DWG_CONVERTER_COMMAND`
+  - optional strategy/output/timeout env values
+  - bounded process execution with timeout handling
+  - converter-output quality validation using the same governed preview gate as embedded previews
+  - converter cache entries kept distinct from embedded-preview cache entries
+  - embedded preview remains fallback only when it passes the usability gate
+- Added focused deterministic test coverage for:
+  - configured converter success
+  - converter failure fallback to usable embedded preview
+  - converter timeout
+  - missing converter output
+  - rejected low-quality converter output
+  - converter cache-key change when strategy/command changes
+
+## Logging/Debug Notes
+- DWG diagnostics continue to log under `[ImageImport] [DWG]`.
+- Added bounded converter diagnostics for:
+  - configured command line
+  - timeout
+  - non-zero exit
+  - missing output preview
+  - rejected output quality
+- No hanging converter process behavior was introduced; timeout handling is bounded in the service path.
+
+## Validation
+- `git status --short`: `PASS` (dirty state isolated to Phase 1Y working files after clean baseline audit)
+- local converter audit (`Get-Command` + Program Files scan + `magick -list format`): `PASS`
+- `dart format` on touched DWG files: `PASS`
+- `flutter analyze`: `PASS`
+- `flutter test test/dwg_preview_conversion_service_test.dart`: `PASS`
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No online/cloud conversion was added.
+- No converter binaries were installed or committed.
+- No detached Flutter/app/converter process was left running after this targeted validation pass.
+- TODO-040 remains open pending validation of a real approved offline converter deployment on target workstations.
 
 # SESSION_2026-05-30_0002_phase1u_b_sidebar_icon_pack_comparison
 
