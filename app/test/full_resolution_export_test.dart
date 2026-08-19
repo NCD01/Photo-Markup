@@ -432,4 +432,87 @@ void main() {
     // Away from the pin the photo is untouched.
     expect(decoded.redAt(100, 100), greaterThan(240));
   });
+
+  test('a rotated photo exports with its axes swapped', () async {
+    final ui.Image source = await whiteImage(2000, 1000);
+    final String path = '${outputDir.path}/rotated.png';
+
+    final FullResolutionExportResult result =
+        await FullResolutionExportService.renderToPng(
+          sourceImage: source,
+          scene: sceneWith(),
+          displayImageRect: const Rect.fromLTWH(0, 0, 500, 1000),
+          outputPath: path,
+          quarterTurns: 1,
+        );
+    source.dispose();
+
+    expect(result.pixelWidth, 1000);
+    expect(result.pixelHeight, 2000);
+    final DecodedPng decoded = await readPng(path);
+    expect(decoded.width, 1000);
+    expect(decoded.height, 2000);
+  });
+
+  test('a half turn keeps the axes and moves the photo content', () async {
+    final ui.Image source = await stripedImage(800, 400, 100);
+    final String upright = '${outputDir.path}/upright.png';
+    final String flipped = '${outputDir.path}/flipped.png';
+
+    await FullResolutionExportService.renderToPng(
+      sourceImage: source,
+      scene: sceneWith(),
+      displayImageRect: const Rect.fromLTWH(0, 0, 800, 400),
+      outputPath: upright,
+    );
+    await FullResolutionExportService.renderToPng(
+      sourceImage: source,
+      scene: sceneWith(),
+      displayImageRect: const Rect.fromLTWH(0, 0, 800, 400),
+      outputPath: flipped,
+      quarterTurns: 2,
+    );
+    source.dispose();
+
+    final DecodedPng a = await readPng(upright);
+    final DecodedPng b = await readPng(flipped);
+    expect(a.width, b.width);
+    expect(a.height, b.height);
+    // 800 wide with 100px stripes is 8 stripes, an even count, so a half turn
+    // swaps black for white at the same column.
+    expect((a.redAt(50, 200) - b.redAt(50, 200)).abs(), greaterThan(200));
+  });
+
+  test('markup on a rotated photo lands in the rotated frame', () async {
+    final ui.Image source = await whiteImage(2000, 1000);
+    final String path = '${outputDir.path}/rotated_markup.png';
+
+    await FullResolutionExportService.renderToPng(
+      sourceImage: source,
+      scene: sceneWith(
+        rectangles: const <RectangleMarkup>[
+          // Top-left quarter of the rotated (1000x2000) frame.
+          RectangleMarkup(
+            id: 1,
+            startNormalized: Offset(0.05, 0.05),
+            endNormalized: Offset(0.45, 0.2),
+            stylePresetId: MarkupStylePresetId.black,
+            filled: true,
+          ),
+        ],
+      ),
+      displayImageRect: const Rect.fromLTWH(0, 0, 500, 1000),
+      outputPath: path,
+      quarterTurns: 1,
+    );
+    source.dispose();
+
+    final DecodedPng decoded = await readPng(path);
+    expect(decoded.width, 1000);
+    expect(decoded.height, 2000);
+    // Inside the box, in rotated-frame pixels.
+    expect(decoded.redAt(250, 250), lessThan(200));
+    // Outside it.
+    expect(decoded.redAt(800, 1500), greaterThan(240));
+  });
 }

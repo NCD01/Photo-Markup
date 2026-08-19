@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/blur_markup.dart';
@@ -25,6 +27,8 @@ class MarkupSnapshot {
     List<CalloutMarkup> callouts = const <CalloutMarkup>[],
     List<BlurMarkup> blurs = const <BlurMarkup>[],
     required this.nextMarkupId,
+    this.quarterTurns = 0,
+    this.imagePixelSize,
   }) : dimensionLines = List<DimensionLine>.unmodifiable(dimensionLines),
        arrows = List<ArrowMarkup>.unmodifiable(arrows),
        rectangles = List<RectangleMarkup>.unmodifiable(rectangles),
@@ -43,6 +47,14 @@ class MarkupSnapshot {
   final List<CalloutMarkup> callouts;
   final List<BlurMarkup> blurs;
   final int nextMarkupId;
+
+  /// How far the photo has been turned, in quarter turns clockwise. Carried
+  /// here so undo puts the photo and the marks back together.
+  final int quarterTurns;
+
+  /// The photo's pixel size in the current rotation. Width and height swap on
+  /// an odd number of quarter turns.
+  final Size? imagePixelSize;
 
   static MarkupSnapshot empty() {
     return MarkupSnapshot(
@@ -92,7 +104,9 @@ class MarkupSnapshot {
         listEquals(other.freehands, freehands) &&
         listEquals(other.textNotes, textNotes) &&
         listEquals(other.callouts, callouts) &&
-        listEquals(other.blurs, blurs);
+        listEquals(other.blurs, blurs) &&
+        other.quarterTurns == quarterTurns &&
+        other.imagePixelSize == imagePixelSize;
   }
 
   @override
@@ -106,5 +120,7 @@ class MarkupSnapshot {
     Object.hashAll(textNotes),
     Object.hashAll(callouts),
     Object.hashAll(blurs),
+    quarterTurns,
+    imagePixelSize,
   );
 }

@@ -74,6 +74,12 @@ class SidebarIconRegistry {
       Icons.pin_drop_outlined,
     ),
     ToolbarConstants.blur: SidebarIconDescriptor.icon(Icons.blur_on),
+    ToolbarConstants.rotateLeft: SidebarIconDescriptor.icon(
+      Icons.rotate_90_degrees_ccw_outlined,
+    ),
+    ToolbarConstants.rotateRight: SidebarIconDescriptor.icon(
+      Icons.rotate_90_degrees_cw_outlined,
+    ),
         ToolbarConstants.clearAll: SidebarIconDescriptor.icon(
           Icons.layers_clear_outlined,
         ),

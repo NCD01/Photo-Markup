@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -40,6 +41,7 @@ class FullResolutionExportService {
     required MarkupScene scene,
     required Rect displayImageRect,
     required String outputPath,
+    int quarterTurns = 0,
   }) async {
     final ui.Image sourceImage = await decodeImageFile(sourceImagePath);
     try {
@@ -48,6 +50,7 @@ class FullResolutionExportService {
         scene: scene,
         displayImageRect: displayImageRect,
         outputPath: outputPath,
+        quarterTurns: quarterTurns,
       );
     } finally {
       sourceImage.dispose();
@@ -90,11 +93,32 @@ class FullResolutionExportService {
   ///
   /// This runs before the annotations are painted, so a blur hides part of the
   /// photo and never smears the markup on top of it.
+  static void _applyRotation(Canvas canvas, int turns, Rect exportRect) {
+    switch (turns) {
+      case 1:
+        canvas.translate(exportRect.width, 0);
+        canvas.rotate(math.pi / 2);
+        break;
+      case 2:
+        canvas.translate(exportRect.width, exportRect.height);
+        canvas.rotate(math.pi);
+        break;
+      case 3:
+        canvas.translate(0, exportRect.height);
+        canvas.rotate(-math.pi / 2);
+        break;
+      default:
+        break;
+    }
+  }
+
   static void _paintBlurRegions({
     required Canvas canvas,
     required ui.Image sourceImage,
     required List<BlurMarkup> blurs,
     required Rect exportRect,
+    required Rect sourceRect,
+    required int turns,
     required double scale,
   }) {
     for (final BlurMarkup blur in blurs) {
@@ -105,10 +129,11 @@ class FullResolutionExportService {
       final double sigma = blur.sigmaForRect(rect, scale);
       canvas.save();
       canvas.clipRect(rect);
+      _applyRotation(canvas, turns, exportRect);
       canvas.drawImageRect(
         sourceImage,
-        exportRect,
-        exportRect,
+        sourceRect,
+        sourceRect,
         Paint()
           ..imageFilter = ui.ImageFilter.blur(
             sigmaX: sigma,
@@ -126,9 +151,12 @@ class FullResolutionExportService {
     required MarkupScene scene,
     required Rect displayImageRect,
     required String outputPath,
+    int quarterTurns = 0,
   }) async {
-    final int width = sourceImage.width;
-    final int height = sourceImage.height;
+    final int turns = ((quarterTurns % 4) + 4) % 4;
+    final bool swapsAxes = turns.isOdd;
+    final int width = swapsAxes ? sourceImage.height : sourceImage.width;
+    final int height = swapsAxes ? sourceImage.width : sourceImage.height;
     if (width <= 0 || height <= 0) {
       throw StateError('Source image has no pixels to export.');
     }
@@ -144,19 +172,35 @@ class FullResolutionExportService {
       height.toDouble(),
     );
 
+    final Rect sourceRect = Rect.fromLTWH(
+      0,
+      0,
+      sourceImage.width.toDouble(),
+      sourceImage.height.toDouble(),
+    );
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(recorder, exportRect);
+
+    // Draw the photo in its rotated orientation, then drop back to the
+    // upright frame so the markup, whose coordinates were already rotated when
+    // the user turned the photo, paints straight onto it.
+    canvas.save();
+    _applyRotation(canvas, turns, exportRect);
     canvas.drawImageRect(
       sourceImage,
-      exportRect,
-      exportRect,
+      sourceRect,
+      sourceRect,
       Paint()..filterQuality = FilterQuality.high,
     );
+    canvas.restore();
+
     _paintBlurRegions(
       canvas: canvas,
       sourceImage: sourceImage,
       blurs: scene.blurs,
       exportRect: exportRect,
+      sourceRect: sourceRect,
+      turns: turns,
       scale: markupScale,
     );
     MarkupSceneRenderer.paint(

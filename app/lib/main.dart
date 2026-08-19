@@ -35,6 +35,7 @@ import 'package:ncd_photo_markup/features/markup/utils/freehand_smoothing.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_interaction_policy.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
+import 'package:ncd_photo_markup/features/markup/utils/markup_rotation_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_text_layout_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_typography_utils.dart';
 import 'package:ncd_photo_markup/features/markup/rendering/markup_scene_renderer.dart';
@@ -285,6 +286,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   int? _selectedBlurId;
   CalloutLabelStyle _calloutLabelStyle = CalloutLabelStyle.numbers;
   int _nextMarkupId = 1;
+  int _rotationQuarterTurns = 0;
   Offset? _activeDimensionStart;
   Offset? _activeDimensionCurrent;
   final List<Offset> _activeFreehandPoints = <Offset>[];
@@ -462,6 +464,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           : null;
       _loadedFileName = _fileNameFromPath(path);
       _loadedImagePixelSize = imageSize;
+      _rotationQuarterTurns = 0;
       _errorMessage = null;
       _isPanModeEnabled = false;
       _canvasTransformController.value = Matrix4.identity();
@@ -909,6 +912,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
+    if (label == ToolbarConstants.rotateLeft) {
+      _rotatePhoto(clockwise: false);
+      return;
+    }
+
+    if (label == ToolbarConstants.rotateRight) {
+      _rotatePhoto(clockwise: true);
+      return;
+    }
+
     if (label == ToolbarConstants.erase) {
       _eraseSelectedMarkup();
       return;
@@ -990,6 +1003,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
             scene: _buildExportScene(),
             displayImageRect: displayImageRect,
             outputPath: outputPath,
+            quarterTurns: _rotationQuarterTurns,
           );
 
       if (!mounted) {
@@ -1663,6 +1677,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       (label == ToolbarConstants.undo && !_isUndoEnabled()) ||
       (label == ToolbarConstants.redo && !_isRedoEnabled()) ||
       (label == ToolbarConstants.clearAll && !_hasAnyMarkup()) ||
+      ((label == ToolbarConstants.rotateLeft ||
+              label == ToolbarConstants.rotateRight) &&
+          _imagePath == null) ||
       (label == ToolbarConstants.export && _isExporting);
 
   double _sidebarDrawerWidthForViewport(double viewportWidth) {
@@ -2167,9 +2184,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                       Wrap(
                         spacing: 8,
                         children: <Widget>[
-                          for (int i = 0;
-                              i < MarkupStrokeConstants.allScales.length;
-                              i++)
+                          for (
+                            int i = 0;
+                            i < MarkupStrokeConstants.allScales.length;
+                            i++
+                          )
                             ChoiceChip(
                               key: ValueKey<String>(
                                 'style-width-'
@@ -2218,7 +2237,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                         spacing: 8,
                         children: <Widget>[
                           ChoiceChip(
-                            key: const ValueKey<String>('callout-style-numbers'),
+                            key: const ValueKey<String>(
+                              'callout-style-numbers',
+                            ),
                             label: const Text(
                               UiCopyConstants.calloutLabelStyleNumbers,
                             ),
@@ -2232,7 +2253,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                             },
                           ),
                           ChoiceChip(
-                            key: const ValueKey<String>('callout-style-letters'),
+                            key: const ValueKey<String>(
+                              'callout-style-letters',
+                            ),
                             label: const Text(
                               UiCopyConstants.calloutLabelStyleLetters,
                             ),
@@ -2488,9 +2511,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         (BlurMarkup blur) => blur.id == selectedBlurId,
       );
       if (index != -1) {
-        _blurs[index] = _blurs[index].copyWith(
-          strengthScale: strokeWidthScale,
-        );
+        _blurs[index] = _blurs[index].copyWith(strengthScale: strokeWidthScale);
         applied = true;
       }
     }
@@ -2521,6 +2542,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       callouts: _callouts,
       blurs: _blurs,
       nextMarkupId: _nextMarkupId,
+      quarterTurns: _rotationQuarterTurns,
+      imagePixelSize: _loadedImagePixelSize,
     );
   }
 
@@ -2550,6 +2573,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       ..clear()
       ..addAll(snapshot.blurs);
     _nextMarkupId = snapshot.nextMarkupId;
+    _rotationQuarterTurns = snapshot.quarterTurns;
+    if (snapshot.imagePixelSize != null) {
+      _loadedImagePixelSize = snapshot.imagePixelSize;
+    }
     _dropSelectionForMissingMarkup();
   }
 
@@ -2695,6 +2722,30 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     _selectedRectangleId = null;
     _selectedOvalId = null;
     _selectedFreehandId = null;
+  }
+
+  /// Turns the photo and every mark on it a quarter turn.
+  ///
+  /// The rotation is baked into the stored coordinates, so nothing downstream
+  /// has to know the photo was turned. Rotation rides in the same snapshot as
+  /// the marks, so undo never leaves the marks turned and the photo straight.
+  void _rotatePhoto({required bool clockwise}) {
+    if (_imagePath == null || _loadedImagePixelSize == null) {
+      _showSnack(UiCopyConstants.rotateNoPhotoMessage);
+      return;
+    }
+    final MarkupSnapshot before = _snapshotMarkup();
+    final MarkupSnapshot rotated = MarkupRotationUtils.rotateSnapshot(
+      before,
+      clockwise: clockwise,
+    );
+    setState(() {
+      _restoreMarkupSnapshot(rotated);
+      _canvasTransformController.value = Matrix4.identity();
+      _viewScale = ViewControlConstants.defaultScale;
+      _unsavedChangesTracker.markDirty();
+    });
+    _history.record(before, _snapshotMarkup());
   }
 
   void _undoMarkup() {
@@ -2932,7 +2983,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         final double minDistance = _selectedTool == MarkupTool.highlighter
             ? HighlighterMarkupConstants.pointMinDistance
             : FreehandMarkupConstants.pointMinDistance;
-        if (lastPoint == null || (clamped - lastPoint).distance >= minDistance) {
+        if (lastPoint == null ||
+            (clamped - lastPoint).distance >= minDistance) {
           _activeFreehandPoints.add(clamped);
         }
       }
@@ -5070,27 +5122,31 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                             fit: StackFit.expand,
                             children: [
                               Center(
-                                child: Image.file(
-                                  File(_imagePath!),
-                                  fit: BoxFit.contain,
-                                  errorBuilder:
-                                      (
-                                        _,
-                                        Object error,
-                                        StackTrace? stackTrace,
-                                      ) {
-                                        return const Text(
-                                          ImageImportConstants.openErrorMessage,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            color:
-                                                AppThemeConstants.errorAccent,
-                                            fontSize: UiLayoutConstants
-                                                .messageFontSize,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        );
-                                      },
+                                child: RotatedBox(
+                                  quarterTurns: _rotationQuarterTurns,
+                                  child: Image.file(
+                                    File(_imagePath!),
+                                    fit: BoxFit.contain,
+                                    errorBuilder:
+                                        (
+                                          _,
+                                          Object error,
+                                          StackTrace? stackTrace,
+                                        ) {
+                                          return const Text(
+                                            ImageImportConstants
+                                                .openErrorMessage,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color:
+                                                  AppThemeConstants.errorAccent,
+                                              fontSize: UiLayoutConstants
+                                                  .messageFontSize,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          );
+                                        },
+                                  ),
                                 ),
                               ),
                               BlurRegionsLayer(

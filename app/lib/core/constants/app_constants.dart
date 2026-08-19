@@ -290,6 +290,7 @@ class UiCopyConstants {
   static const String clearAllCancelButton = 'Keep Markup';
   static const String clearAllNothingMessage = 'There is no markup to clear.';
   static const String clearAllDoneMessage = 'All markup cleared.';
+  static const String rotateNoPhotoMessage = 'Load a photo before rotating.';
   static const String launchContextFileNotFoundMessage =
       'Launch context file was not found. You can still open a photo manually.';
   static const String launchContextInvalidJsonMessage =
@@ -323,8 +324,8 @@ class ViewControlConstants {
 
   static const double defaultScale = 1.0;
   static const double minScale = 1.0;
-  static const double maxScale = 5.0;
-  static const double buttonZoomStep = 0.25;
+  static const double maxScale = 12.0;
+  static const double buttonZoomStep = 0.5;
   static const double wheelZoomSensitivity = 0.0015;
   static const double panStepMultiplier = 1.0;
   static const double scaleEpsilon = 0.001;
@@ -375,6 +376,8 @@ class ToolbarConstants {
   static const String undo = 'Undo';
   static const String redo = 'Redo';
   static const String clearAll = 'Clear All';
+  static const String rotateLeft = 'Rotate Left';
+  static const String rotateRight = 'Rotate Right';
   static const String export = 'Export';
   static const String fileSectionTitle = 'File';
   static const String markupSectionTitle = 'Markup Tools';
@@ -405,6 +408,11 @@ class ToolbarConstants {
     erase,
     clearAll,
   ];
+  static const List<String> photoActionOrder = <String>[
+    rotateLeft,
+    rotateRight,
+  ];
+  static const String photoSectionTitle = 'Photo';
 
   static const List<ToolbarSectionDefinition>
   sections = <ToolbarSectionDefinition>[
@@ -414,12 +422,17 @@ class ToolbarConstants {
       actions: markupActionOrder,
     ),
     ToolbarSectionDefinition(title: editSectionTitle, actions: editActionOrder),
+    ToolbarSectionDefinition(
+      title: photoSectionTitle,
+      actions: photoActionOrder,
+    ),
   ];
 
   static const List<String> labels = <String>[
     ...fileActionOrder,
     ...markupActionOrder,
     ...editActionOrder,
+    ...photoActionOrder,
   ];
 }
 
