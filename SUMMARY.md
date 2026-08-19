@@ -302,7 +302,18 @@ the same way before I touched anything. Left alone.
 ## 6. Rollback map
 
 Every commit below leaves the app running. Roll back with
-`git checkout <tag or hash>`.
+`git checkout <hash>`.
+
+The three pass tags exist in the branch I built on, but this machine's push
+credential is scoped to the branch ref only, so pushing tags came back 403 and
+they did not reach GitHub. The hashes below are the same information. If you
+want the tags back on your own machine, after pulling the branch run:
+
+```
+git tag pass-1-features 94a7b05
+git tag pass-2-design c490148
+git tag pass-3-flow claude/photo-markup-overnight-enjgup
+```
 
 | Commit | Tag | State |
 |---|---|---|
@@ -319,11 +330,11 @@ Every commit below leaves the app running. Roll back with
 | `0fbc0d4` | | Field Scale, Marker Mode, the hidden extra. |
 | `ec09d3f` | | End-to-end verification tests. No behaviour change. |
 | `78b9622` | | README rewritten, logs finished. No code change. |
-| final | `pass-3-flow` | **End of the run.** |
+| branch tip | `pass-3-flow` | **End of the run.** The morning report and this verification. |
 
 If something is wrong in the morning and you need the app working in thirty
 seconds: `git checkout 3e4da98`. If the features are fine but you hate the dark
-interface: `git checkout pass-1-features`.
+interface: `git checkout 94a7b05`.
 
 ---
 
