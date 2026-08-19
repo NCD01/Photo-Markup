@@ -63,6 +63,16 @@ flutter:
     - assets/branding/
     - assets/sidebar_icons/ncd_custom/
 
+  fonts:
+    - family: Barlow
+      fonts:
+        - asset: assets/fonts/Barlow-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Barlow-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Barlow-Bold.ttf
+          weight: 700
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

@@ -91,14 +91,23 @@ void main() {
       find.byKey(_drawerActionKey(ToolbarConstants.export)),
       findsOneWidget,
     );
-    expect(find.text(ToolbarConstants.fileSectionTitle), findsOneWidget);
-    expect(find.text(ToolbarConstants.markupSectionTitle), findsOneWidget);
+    expect(
+      find.text(ToolbarConstants.fileSectionTitle.toUpperCase()),
+      findsOneWidget,
+    );
+    expect(
+      find.text(ToolbarConstants.markupSectionTitle.toUpperCase()),
+      findsOneWidget,
+    );
     await tester.scrollUntilVisible(
-      find.text(ToolbarConstants.editSectionTitle),
+      find.text(ToolbarConstants.editSectionTitle.toUpperCase()),
       260,
       scrollable: sidebarList,
     );
-    expect(find.text(ToolbarConstants.editSectionTitle), findsOneWidget);
+    expect(
+      find.text(ToolbarConstants.editSectionTitle.toUpperCase()),
+      findsOneWidget,
+    );
     await tester.scrollUntilVisible(
       find.byKey(_drawerActionKey(ToolbarConstants.erase)),
       240,
@@ -122,7 +131,10 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('sidebar-rail-toggle')));
     await tester.pumpAndSettle();
 
-    expect(find.text(ToolbarConstants.fileSectionTitle), findsOneWidget);
+    expect(
+      find.text(ToolbarConstants.fileSectionTitle.toUpperCase()),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const ValueKey<String>('sidebar-drawer-toggle')),
       findsOneWidget,
@@ -136,16 +148,18 @@ void main() {
     await _expandSidebarIfCollapsed(tester);
 
     expect(
-      find.textContaining(
-        '${UiCopyConstants.toolbarActiveToolPrefix}: ${UiCopyConstants.toolbarActiveToolNone}',
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('status-active-tool')),
+        matching: find.text(UiCopyConstants.toolbarActiveToolNone),
       ),
       findsOneWidget,
     );
 
     await _tapSidebarAction(tester, ToolbarConstants.dimension);
     expect(
-      find.textContaining(
-        '${UiCopyConstants.toolbarActiveToolPrefix}: ${ToolbarConstants.dimension}',
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('status-active-tool')),
+        matching: find.text(ToolbarConstants.dimension),
       ),
       findsOneWidget,
     );
@@ -391,49 +405,55 @@ void main() {
 
     await _tapSidebarAction(tester, ToolbarConstants.dimension);
     expect(
-      find.textContaining(
-        '${UiCopyConstants.toolbarActiveToolPrefix}: ${ToolbarConstants.dimension}',
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('status-active-tool')),
+        matching: find.text(ToolbarConstants.dimension),
       ),
       findsOneWidget,
     );
 
     await _tapSidebarAction(tester, ToolbarConstants.dimension);
     expect(
-      find.textContaining(
-        '${UiCopyConstants.toolbarActiveToolPrefix}: ${UiCopyConstants.toolbarActiveToolNone}',
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('status-active-tool')),
+        matching: find.text(UiCopyConstants.toolbarActiveToolNone),
       ),
       findsOneWidget,
     );
   });
 
-  testWidgets('active tool stays selected when pan mode is turned off from it', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
-    await _pumpFrames(tester, frames: 12);
-    await _expandSidebarIfCollapsed(tester);
+  testWidgets(
+    'active tool stays selected when pan mode is turned off from it',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const NcdPhotoMarkupApp(showStartupSplash: false),
+      );
+      await _pumpFrames(tester, frames: 12);
+      await _expandSidebarIfCollapsed(tester);
 
-    await _tapSidebarAction(tester, ToolbarConstants.dimension);
+      await _tapSidebarAction(tester, ToolbarConstants.dimension);
 
-    final dynamic stateBefore = tester.state(
-      find.byType(PhotoMarkupShellScreen),
-    );
-    stateBefore.debugSetPanModeEnabled(true);
-    await _pumpFrames(tester, frames: 4);
+      final dynamic stateBefore = tester.state(
+        find.byType(PhotoMarkupShellScreen),
+      );
+      stateBefore.debugSetPanModeEnabled(true);
+      await _pumpFrames(tester, frames: 4);
 
-    await _tapSidebarAction(tester, ToolbarConstants.dimension);
+      await _tapSidebarAction(tester, ToolbarConstants.dimension);
 
-    final dynamic stateAfter = tester.state(
-      find.byType(PhotoMarkupShellScreen),
-    );
-    expect(stateAfter.debugIsPanModeEnabled, isFalse);
-    expect(
-      find.textContaining(
-        '${UiCopyConstants.toolbarActiveToolPrefix}: ${ToolbarConstants.dimension}',
-      ),
-      findsOneWidget,
-    );
-  });
+      final dynamic stateAfter = tester.state(
+        find.byType(PhotoMarkupShellScreen),
+      );
+      expect(stateAfter.debugIsPanModeEnabled, isFalse);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('status-active-tool')),
+          matching: find.text(ToolbarConstants.dimension),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('launch error message renders in empty state', (
     WidgetTester tester,
@@ -452,10 +472,7 @@ void main() {
     );
     await _pumpFrames(tester, frames: 16);
 
-    expect(
-      find.text(UiCopyConstants.importErrorDialogTitle),
-      findsOneWidget,
-    );
+    expect(find.text(UiCopyConstants.importErrorDialogTitle), findsOneWidget);
     expect(
       find.text(ImageImportConstants.dwgPreviewUnavailableMessage),
       findsWidgets,

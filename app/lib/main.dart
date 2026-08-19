@@ -9,6 +9,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/core/theme/design_tokens.dart';
 import 'package:ncd_photo_markup/features/export/services/markup_export_path_service.dart';
 import 'package:ncd_photo_markup/features/export/services/full_resolution_export_service.dart';
 import 'package:ncd_photo_markup/features/integration/models/photo_markup_launch_context.dart';
@@ -102,10 +103,7 @@ class NcdPhotoMarkupApp extends StatelessWidget {
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: AppThemeConstants.ncdBlue,
-      ),
+      theme: DesignTokens.buildTheme(),
       home: showStartupSplash ? StartupSplashGate(child: shell) : shell,
     );
   }
@@ -148,7 +146,7 @@ class _StartupSplashGateState extends State<StartupSplashGate> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DesignTokens.canvasVoid,
       body: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           return Center(
@@ -187,9 +185,10 @@ class _StartupSplashGateState extends State<StartupSplashGate> {
                   const Text(
                     UiCopyConstants.splashFallbackLabel,
                     style: TextStyle(
-                      fontSize: UiLayoutConstants.emptyStateBodyFontSize,
-                      fontWeight: FontWeight.w700,
-                      color: AppThemeConstants.ncdBlue,
+                      fontSize: DesignTokens.textTitle,
+                      fontWeight: DesignTokens.weightBold,
+                      color: DesignTokens.inkPrimary,
+                      letterSpacing: 0.5,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -197,9 +196,9 @@ class _StartupSplashGateState extends State<StartupSplashGate> {
                   const Text(
                     AppConstants.appVersion,
                     style: TextStyle(
-                      fontSize: UiLayoutConstants.splashVersionFontSize,
-                      fontWeight: FontWeight.w600,
-                      color: AppThemeConstants.ncdBlue,
+                      fontSize: DesignTokens.textLabel,
+                      fontWeight: DesignTokens.weightMedium,
+                      color: DesignTokens.inkSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -659,10 +658,6 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   void _zoomOutView() {
     _setCanvasScale(CanvasViewTransformUtils.zoomOutStep(_normalizedViewScale));
-  }
-
-  void _setCanvasViewActualSize() {
-    _setCanvasScale(ViewControlConstants.defaultScale);
   }
 
   void _fitCanvasToScreen() {
@@ -1566,12 +1561,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   String _buildToolbarStyleLabel() =>
       '${ToolbarConstants.style}: ${_selectedStylePreset.shortLabel}';
 
-  String _sidebarStyleSummary() =>
-      '${UiCopyConstants.sidebarStylePrefix}: ${_selectedStylePreset.shortLabel}';
-
   /// NCD artwork only exists for the original five presets. Anything newer
   /// falls back to a tinted glyph rather than a broken-image box.
   String? _currentNcdStyleIconAssetPath() {
+    if (!SidebarIconRegistry.useNcdArtworkPack) {
+      return null;
+    }
     switch (_selectedStylePresetId) {
       case MarkupStylePresetId.red:
         return SidebarAssetConstants.ncdSidebarStyleRedAssetPath;
@@ -1592,10 +1587,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   SidebarIconDescriptor _toolbarActionIconDescriptor(String label) {
     if (label == ToolbarConstants.style) {
       final String? assetPath = _currentNcdStyleIconAssetPath();
-      if (assetPath == null) {
-        return const SidebarIconDescriptor.icon(Icons.palette);
+      if (assetPath != null) {
+        return SidebarIconDescriptor.asset(assetPath);
       }
-      return SidebarIconDescriptor.asset(assetPath);
+      return const SidebarIconDescriptor.icon(Icons.palette_outlined);
     }
     return SidebarIconRegistry.actionIcons[label] ??
         const SidebarIconDescriptor.icon(Icons.help_outline);
@@ -1684,288 +1679,248 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   double _sidebarDrawerWidthForViewport(double viewportWidth) {
     final double maxExpandedWidth = math.max(
-      UiLayoutConstants.sidebarCollapsedWidth,
-      viewportWidth - UiLayoutConstants.sidebarMinimumCanvasWidth,
+      DesignTokens.railWidth,
+      viewportWidth - DesignTokens.minimumCanvasWidth,
     );
-    return math.min(UiLayoutConstants.sidebarExpandedWidth, maxExpandedWidth);
+    return math.min(DesignTokens.railExpandedWidth, maxExpandedWidth);
   }
 
-  Widget _buildSidebarRail() {
-    final BorderSide seamBorder = _isSidebarExpanded
-        ? BorderSide.none
-        : const BorderSide(color: AppThemeConstants.sidebarDivider, width: 1);
-    return Container(
-      width: UiLayoutConstants.sidebarCollapsedWidth,
-      decoration: BoxDecoration(
-        color: AppThemeConstants.sidebarBackground,
-        border: Border(right: seamBorder),
+  /// The tool rail.
+  ///
+  /// It lives on the left edge and it never covers the photo. Expanding it
+  /// widens the rail and narrows the canvas instead of floating a panel over
+  /// the image, which is what used to swallow the first stroke after picking a
+  /// tool.
+  Widget _buildSidebarPanel(double viewportWidth) {
+    final double expandedWidth = _sidebarDrawerWidthForViewport(viewportWidth);
+    final double width = _isSidebarExpanded
+        ? expandedWidth
+        : DesignTokens.railWidth;
+    final String scrollKey = _isSidebarExpanded
+        ? 'sidebar-drawer-scroll'
+        : 'sidebar-rail-scroll';
+    final String toggleKey = _isSidebarExpanded
+        ? 'sidebar-drawer-toggle'
+        : 'sidebar-rail-toggle';
+
+    return AnimatedContainer(
+      duration: DesignTokens.motionPanel,
+      curve: DesignTokens.motionCurve,
+      width: width,
+      decoration: const BoxDecoration(
+        color: DesignTokens.surface,
+        border: Border(right: BorderSide(color: DesignTokens.hairline)),
       ),
       child: SafeArea(
+        right: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(
-                left: UiLayoutConstants.sidebarHeaderHorizontalPadding,
-                right: UiLayoutConstants.sidebarHeaderHorizontalPadding,
-                top: UiLayoutConstants.sidebarHeaderTopPadding,
-                bottom: UiLayoutConstants.sidebarHeaderBottomPadding,
-              ),
-              child: IconButton(
-                key: const ValueKey<String>('sidebar-rail-toggle'),
-                tooltip: _sidebarToggleTooltip(),
-                onPressed: () {
-                  setState(() {
-                    _isSidebarExpanded = !_isSidebarExpanded;
-                  });
+          children: <Widget>[
+            _buildRailToggle(toggleKey),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                key: ValueKey<String>(scrollKey),
+                padding: const EdgeInsets.symmetric(
+                  vertical: DesignTokens.space2,
+                ),
+                itemCount: ToolbarConstants.sections.length,
+                itemBuilder: (BuildContext context, int sectionIndex) {
+                  final ToolbarSectionDefinition section =
+                      ToolbarConstants.sections[sectionIndex];
+                  return _SidebarActionSection(
+                    title: section.title,
+                    isExpanded: _isSidebarExpanded,
+                    child: Column(
+                      children: <Widget>[
+                        for (final String label in section.actions)
+                          _SidebarActionButton(
+                            actionKey: label,
+                            label: label == ToolbarConstants.style
+                                ? _buildToolbarStyleLabel()
+                                : label,
+                            tooltipLabel: _tooltipForAction(label),
+                            iconDescriptor: _toolbarActionIconDescriptor(label),
+                            iconColor: _toolbarActionIconColor(
+                              label,
+                              isSelected: _isToolbarActionSelected(label),
+                            ),
+                            isExpanded: _isSidebarExpanded,
+                            isSelected: _isToolbarActionSelected(label),
+                            isDisabled: _isToolbarActionDisabled(label),
+                            onPressed: () => _onToolbarPressed(label),
+                          ),
+                      ],
+                    ),
+                  );
                 },
-                iconSize: UiLayoutConstants.sidebarHeaderIconSize,
-                visualDensity: VisualDensity.compact,
-                splashRadius: UiLayoutConstants.sidebarHeaderIconSize,
-                color: AppThemeConstants.sidebarIconNeutral,
-                icon: const Icon(Icons.menu),
               ),
             ),
-            if (!_isSidebarExpanded)
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: UiLayoutConstants.sidebarSectionHorizontalPadding,
-                  right: UiLayoutConstants.sidebarSectionHorizontalPadding,
-                  bottom: UiLayoutConstants.sidebarSectionBottomPadding,
-                ),
-                child: Tooltip(
-                  message: _buildToolbarStyleLabel(),
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _selectedStylePreset.dimensionLineColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppThemeConstants.canvasFooterBorder,
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            if (!_isSidebarExpanded)
-              Expanded(
-                child: ListView.builder(
-                  key: const ValueKey<String>('sidebar-rail-scroll'),
-                  padding: const EdgeInsets.only(
-                    top: UiLayoutConstants.sidebarSectionBottomPadding,
-                    bottom: UiLayoutConstants.sidebarSectionBottomPadding,
-                  ),
-                  itemCount: ToolbarConstants.sections.length,
-                  itemBuilder: (BuildContext context, int sectionIndex) {
-                    final ToolbarSectionDefinition section =
-                        ToolbarConstants.sections[sectionIndex];
-                    return _SidebarActionSection(
-                      title: section.title,
-                      isExpanded: false,
-                      child: Column(
-                        children: [
-                          for (final String label in section.actions)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: UiLayoutConstants.sidebarActionGap,
-                              ),
-                              child: _SidebarActionButton(
-                                actionKey: label,
-                                label: label == ToolbarConstants.style
-                                    ? _buildToolbarStyleLabel()
-                                    : label,
-                                tooltipLabel: label == ToolbarConstants.style
-                                    ? _buildToolbarStyleLabel()
-                                    : label,
-                                iconDescriptor: _toolbarActionIconDescriptor(
-                                  label,
-                                ),
-                                iconColor: _toolbarActionIconColor(
-                                  label,
-                                  isSelected: _isToolbarActionSelected(label),
-                                ),
-                                isExpanded: false,
-                                isSelected: _isToolbarActionSelected(label),
-                                isDisabled: _isToolbarActionDisabled(label),
-                                onPressed: () => _onToolbarPressed(label),
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSidebarHeaderChip({
-    required String text,
-    required Color foregroundColor,
-    required Color backgroundColor,
-  }) {
+  Widget _buildRailToggle(String toggleKey) {
+    final Widget button = Tooltip(
+      message: _sidebarToggleTooltip(),
+      child: IconButton(
+        key: ValueKey<String>(toggleKey),
+        onPressed: () {
+          setState(() {
+            _isSidebarExpanded = !_isSidebarExpanded;
+          });
+        },
+        iconSize: DesignTokens.iconSize,
+        color: DesignTokens.inkPrimary,
+        icon: Icon(_isSidebarExpanded ? Icons.menu_open : Icons.menu),
+      ),
+    );
+
+    if (!_isSidebarExpanded) {
+      return SizedBox(height: DesignTokens.touchTarget, child: button);
+    }
+
+    return SizedBox(
+      height: DesignTokens.touchTarget,
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: DesignTokens.railWidth - DesignTokens.space2,
+            child: button,
+          ),
+          const Expanded(child: SizedBox.shrink()),
+        ],
+      ),
+    );
+  }
+
+  String _tooltipForAction(String label) {
+    if (label == ToolbarConstants.style) {
+      return _buildToolbarStyleLabel();
+    }
+    final String? shortcut = KeyboardShortcutConstants.hintForAction(label);
+    return shortcut == null ? label : '$label  ($shortcut)';
+  }
+
+  /// The status bar along the bottom.
+  ///
+  /// Tool, colour and width are stated at all times and can be changed here in
+  /// one tap, instead of being buried in a dialog. Zoom lives here too, which
+  /// gets it off the top-right corner of the photo where it used to sit.
+  Widget _buildStatusBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: UiLayoutConstants.sidebarHeaderChipHorizontalPadding,
-        vertical: UiLayoutConstants.sidebarHeaderChipVerticalPadding,
+      width: double.infinity,
+      height: DesignTokens.statusBarHeight,
+      decoration: const BoxDecoration(
+        color: DesignTokens.surface,
+        border: Border(top: BorderSide(color: DesignTokens.hairline)),
       ),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: UiLayoutConstants.sidebarStyleSummaryFontSize,
-          fontWeight: FontWeight.w600,
-          color: foregroundColor,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space3),
+        child: Row(
+          children: <Widget>[
+            _buildActiveToolChip(),
+            _statusDivider(),
+            for (final MarkupStylePreset preset in MarkupStylePresets.all)
+              _buildColorSwatch(preset),
+            _statusDivider(),
+            for (int i = 0; i < MarkupStrokeConstants.allScales.length; i++)
+              _buildWidthButton(i),
+            _statusDivider(),
+            _buildZoomControls(),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSidebarDrawerOverlay() {
-    final double drawerWidth = _sidebarDrawerWidthForViewport(
-      MediaQuery.sizeOf(context).width,
+  Widget _statusDivider() {
+    return Container(
+      width: 1,
+      height: DesignTokens.space5,
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.space3),
+      color: DesignTokens.hairline,
     );
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 170),
-      curve: Curves.easeOutCubic,
-      left: _isSidebarExpanded ? 0 : -(drawerWidth + 8),
-      top: 0,
-      bottom: 0,
-      width: drawerWidth,
-      child: IgnorePointer(
-        ignoring: !_isSidebarExpanded,
-        child: TooltipVisibility(
-          visible: _isSidebarExpanded,
-          child: Material(
-            elevation: 10,
-            color: AppThemeConstants.sidebarBackground,
-            borderRadius: const BorderRadius.horizontal(
-              right: Radius.circular(10),
+  }
+
+  Widget _buildActiveToolChip() {
+    final bool isSelectMode = _selectedTool == MarkupTool.none;
+    return Container(
+      key: const ValueKey<String>('status-active-tool'),
+      constraints: const BoxConstraints(minWidth: 108),
+      padding: const EdgeInsets.symmetric(
+        horizontal: DesignTokens.space3,
+        vertical: DesignTokens.space1,
+      ),
+      decoration: BoxDecoration(
+        color: isSelectMode
+            ? DesignTokens.surfaceHigh
+            : DesignTokens.selectedFill,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
+        border: Border.all(
+          color: isSelectMode ? DesignTokens.hairline : DesignTokens.brand,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(
+            UiCopyConstants.toolbarActiveToolPrefix,
+            style: TextStyle(
+              fontSize: DesignTokens.textMicro,
+              fontWeight: DesignTokens.weightMedium,
+              color: DesignTokens.inkSecondary,
+              letterSpacing: 0.6,
             ),
-            clipBehavior: Clip.antiAlias,
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: UiLayoutConstants.sidebarHeaderHorizontalPadding,
-                      right: UiLayoutConstants.sidebarHeaderHorizontalPadding,
-                      top: UiLayoutConstants.sidebarHeaderTopPadding,
-                      bottom: UiLayoutConstants.sidebarHeaderBottomPadding,
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          key: const ValueKey<String>('sidebar-drawer-toggle'),
-                          tooltip: _sidebarToggleTooltip(),
-                          onPressed: () {
-                            setState(() {
-                              _isSidebarExpanded = false;
-                            });
-                          },
-                          iconSize: UiLayoutConstants.sidebarHeaderIconSize,
-                          visualDensity: VisualDensity.compact,
-                          splashRadius: UiLayoutConstants.sidebarHeaderIconSize,
-                          color: AppThemeConstants.sidebarIconNeutral,
-                          icon: const Icon(Icons.menu),
-                        ),
-                        const SizedBox(
-                          width: UiLayoutConstants.sidebarHeaderChipGap,
-                        ),
-                        Expanded(
-                          child: Wrap(
-                            spacing: UiLayoutConstants.sidebarHeaderChipGap,
-                            runSpacing: UiLayoutConstants.sidebarHeaderChipGap,
-                            children: [
-                              _buildSidebarHeaderChip(
-                                text:
-                                    '${UiCopyConstants.toolbarActiveToolPrefix}: ${_activeToolLabel()}',
-                                foregroundColor: AppThemeConstants.ncdBlue,
-                                backgroundColor:
-                                    AppThemeConstants.sidebarSelectedTint,
-                              ),
-                              _buildSidebarHeaderChip(
-                                text: _sidebarStyleSummary(),
-                                foregroundColor: AppThemeConstants.ncdBlue,
-                                backgroundColor:
-                                    AppThemeConstants.sidebarSelectedTint,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+          ),
+          Text(
+            _activeToolLabel(),
+            style: const TextStyle(
+              fontSize: DesignTokens.textLabel,
+              fontWeight: DesignTokens.weightBold,
+              color: DesignTokens.inkPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColorSwatch(MarkupStylePreset preset) {
+    final bool isSelected = preset.id == _selectedStylePresetId;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space1 / 2),
+      child: Tooltip(
+        message: preset.label,
+        child: SizedBox(
+          key: ValueKey<String>('status-color-${preset.id.name}'),
+          width: DesignTokens.touchTargetCompact,
+          height: DesignTokens.touchTargetCompact,
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
+              onTap: () => _selectStylePreset(preset.id),
+              child: Center(
+                child: Container(
+                  width: isSelected ? 30 : 24,
+                  height: isSelected ? 30 : 24,
+                  decoration: BoxDecoration(
+                    color: preset.strokeColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? DesignTokens.inkPrimary
+                          : DesignTokens.hairlineStrong,
+                      width: isSelected ? 3 : 1.5,
                     ),
                   ),
-                  const Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: AppThemeConstants.sidebarDivider,
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      key: const ValueKey<String>('sidebar-drawer-scroll'),
-                      padding: const EdgeInsets.only(
-                        top: UiLayoutConstants.sidebarSectionBottomPadding,
-                        bottom: UiLayoutConstants.sidebarSectionBottomPadding,
-                      ),
-                      itemCount: ToolbarConstants.sections.length,
-                      itemBuilder: (BuildContext context, int sectionIndex) {
-                        final ToolbarSectionDefinition section =
-                            ToolbarConstants.sections[sectionIndex];
-                        return _SidebarActionSection(
-                          title: section.title,
-                          isExpanded: true,
-                          child: Column(
-                            children: [
-                              for (final String label in section.actions)
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    bottom: UiLayoutConstants.sidebarActionGap,
-                                  ),
-                                  child: _SidebarActionButton(
-                                    actionKey: label,
-                                    label: label == ToolbarConstants.style
-                                        ? _buildToolbarStyleLabel()
-                                        : label,
-                                    tooltipLabel:
-                                        label == ToolbarConstants.style
-                                        ? _buildToolbarStyleLabel()
-                                        : label,
-                                    iconDescriptor:
-                                        _toolbarActionIconDescriptor(label),
-                                    iconColor: _toolbarActionIconColor(
-                                      label,
-                                      isSelected: _isToolbarActionSelected(
-                                        label,
-                                      ),
-                                    ),
-                                    isExpanded: true,
-                                    isSelected: _isToolbarActionSelected(label),
-                                    isDisabled: _isToolbarActionDisabled(label),
-                                    onPressed: () => _onToolbarPressed(label),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -1974,35 +1929,36 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     );
   }
 
-  Widget _buildViewControlButton({
-    required String keySuffix,
-    required String tooltip,
-    required IconData icon,
-    required VoidCallback? onPressed,
-    Color? iconColor,
-    bool isActive = false,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: SizedBox(
-        key: ValueKey<String>('view-control-$keySuffix'),
-        width: UiLayoutConstants.viewControlButtonSize,
-        height: UiLayoutConstants.viewControlButtonSize,
-        child: Material(
-          color: isActive
-              ? AppThemeConstants.sidebarSelectedTint
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(
-            UiLayoutConstants.sidebarActionRadius,
-          ),
-          child: IconButton(
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            onPressed: onPressed,
-            icon: Icon(
-              icon,
-              size: UiLayoutConstants.viewControlIconSize,
-              color: iconColor ?? AppThemeConstants.viewControlIcon,
+  Widget _buildWidthButton(int index) {
+    final double scale = MarkupStrokeConstants.allScales[index];
+    final String label = MarkupStrokeConstants.allScaleLabels[index];
+    final bool isSelected = (scale - _selectedStrokeWidthScale).abs() < 0.01;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space1 / 2),
+      child: Tooltip(
+        message: '$label stroke',
+        child: SizedBox(
+          key: ValueKey<String>('status-width-$label'),
+          width: DesignTokens.touchTargetCompact,
+          height: DesignTokens.touchTargetCompact,
+          child: Material(
+            color: isSelected ? DesignTokens.selectedFill : Colors.transparent,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
+              onTap: () => _selectStrokeWidth(scale),
+              child: Center(
+                child: Container(
+                  width: 26,
+                  height: (2.0 * scale).clamp(2.0, 9.0),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? DesignTokens.brandBright
+                        : DesignTokens.inkSecondary,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -2010,115 +1966,131 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     );
   }
 
-  Widget _buildCanvasViewControls() {
+  Widget _buildZoomControls() {
     final bool canZoomIn =
         _normalizedViewScale <
         ViewControlConstants.maxScale - ViewControlConstants.scaleEpsilon;
     final bool canZoomOut =
         _normalizedViewScale >
         ViewControlConstants.minScale + ViewControlConstants.scaleEpsilon;
-    final bool canReset = _isZoomedCanvas;
 
-    return Material(
-      elevation: 3,
-      color: AppThemeConstants.viewControlSurface,
-      borderRadius: BorderRadius.circular(
-        UiLayoutConstants.viewControlPanelRadius,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(
-            UiLayoutConstants.viewControlPanelRadius,
-          ),
-          border: Border.all(
-            color: AppThemeConstants.viewControlBorder,
-            width: UiLayoutConstants.viewControlPanelBorderWidth,
+    return Row(
+      children: <Widget>[
+        _buildStatusIconButton(
+          keySuffix: 'zoom-out',
+          tooltip: UiCopyConstants.viewZoomOutTooltip,
+          icon: Icons.remove,
+          onPressed: canZoomOut ? _zoomOutView : null,
+        ),
+        SizedBox(
+          width: 62,
+          child: Text(
+            '$_zoomPercent%',
+            key: const ValueKey<String>('status-zoom-label'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: DesignTokens.textLabel,
+              fontWeight: DesignTokens.weightBold,
+              color: DesignTokens.inkPrimary,
+            ),
           ),
         ),
-        padding: const EdgeInsets.all(
-          UiLayoutConstants.viewControlPanelPadding,
+        _buildStatusIconButton(
+          keySuffix: 'zoom-in',
+          tooltip: UiCopyConstants.viewZoomInTooltip,
+          icon: Icons.add,
+          onPressed: canZoomIn ? _zoomInView : null,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                _buildViewControlButton(
-                  keySuffix: 'zoom-out',
-                  tooltip: UiCopyConstants.viewZoomOutTooltip,
-                  icon: Icons.remove,
-                  onPressed: canZoomOut ? _zoomOutView : null,
-                ),
-                const SizedBox(width: UiLayoutConstants.viewControlGap),
-                SizedBox(
-                  width: UiLayoutConstants.viewControlZoomLabelWidth,
-                  child: Text(
-                    '${UiCopyConstants.viewZoomPrefix}: $_zoomPercent%',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: UiLayoutConstants.viewControlZoomLabelFontSize,
-                      fontWeight: FontWeight.w700,
-                      color: AppThemeConstants.sidebarHeaderText,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: UiLayoutConstants.viewControlGap),
-                _buildViewControlButton(
-                  keySuffix: 'zoom-in',
-                  tooltip: UiCopyConstants.viewZoomInTooltip,
-                  icon: Icons.add,
-                  onPressed: canZoomIn ? _zoomInView : null,
-                ),
-              ],
-            ),
-            const SizedBox(height: UiLayoutConstants.viewControlGap),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                _buildViewControlButton(
-                  keySuffix: 'fit',
-                  tooltip: UiCopyConstants.viewFitTooltip,
-                  icon: Icons.fit_screen,
-                  onPressed: canReset ? _fitCanvasToScreen : null,
-                  iconColor: AppThemeConstants.viewControlAccent,
-                ),
-                const SizedBox(width: UiLayoutConstants.viewControlGap),
-                _buildViewControlButton(
-                  keySuffix: 'actual',
-                  tooltip: UiCopyConstants.viewActualSizeTooltip,
-                  icon: Icons.center_focus_strong,
-                  onPressed: canReset ? _setCanvasViewActualSize : null,
-                ),
-                const SizedBox(width: UiLayoutConstants.viewControlGap),
-                _buildViewControlButton(
-                  keySuffix: 'pan',
-                  tooltip: _isPanModeEnabled
-                      ? UiCopyConstants.viewPanDisableTooltip
-                      : UiCopyConstants.viewPanEnableTooltip,
-                  icon: Icons.pan_tool_alt_outlined,
-                  onPressed: _togglePanMode,
-                  iconColor: _isPanModeEnabled
-                      ? AppThemeConstants.viewControlAccent
-                      : AppThemeConstants.viewControlIcon,
-                  isActive: _isPanModeEnabled,
-                ),
-              ],
-            ),
-            const SizedBox(height: UiLayoutConstants.viewControlPanLabelTopGap),
-            Text(
-              '${UiCopyConstants.viewPanLabel}: '
-              '${_isPanModeEnabled ? UiCopyConstants.viewStateOn : UiCopyConstants.viewStateOff}',
-              style: const TextStyle(
-                fontSize: UiLayoutConstants.viewControlPanLabelFontSize,
-                fontWeight: FontWeight.w600,
-                color: AppThemeConstants.sidebarSectionLabel,
-              ),
-            ),
-          ],
+        _buildStatusIconButton(
+          keySuffix: 'fit',
+          tooltip: UiCopyConstants.viewFitTooltip,
+          icon: Icons.fit_screen,
+          onPressed: _isZoomedCanvas ? _fitCanvasToScreen : null,
+        ),
+        _buildStatusIconButton(
+          keySuffix: 'pan',
+          tooltip: _isPanModeEnabled
+              ? UiCopyConstants.viewPanDisableTooltip
+              : UiCopyConstants.viewPanEnableTooltip,
+          icon: Icons.pan_tool_alt_outlined,
+          onPressed: _togglePanMode,
+          isActive: _isPanModeEnabled,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusIconButton({
+    required String keySuffix,
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback? onPressed,
+    bool isActive = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: SizedBox(
+        key: ValueKey<String>('view-control-$keySuffix'),
+        width: DesignTokens.touchTargetCompact,
+        height: DesignTokens.touchTargetCompact,
+        child: Material(
+          color: isActive ? DesignTokens.selectedFill : Colors.transparent,
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            onPressed: onPressed,
+            iconSize: DesignTokens.iconSizeSmall + 2,
+            color: isActive
+                ? DesignTokens.brandBright
+                : DesignTokens.inkPrimary,
+            disabledColor: DesignTokens.inkDisabled,
+            icon: Icon(icon),
+          ),
         ),
       ),
     );
+  }
+
+  void _selectStylePreset(MarkupStylePresetId presetId) {
+    final MarkupSnapshot before = _snapshotMarkup();
+    bool appliedToSelection = false;
+    setState(() {
+      _selectedStylePresetId = presetId;
+      appliedToSelection = _applyTypographyAndStyleToSelection(
+        presetId: presetId,
+        fontFamily: _selectedFontFamily,
+        fontSize: _selectedFontSize,
+        strokeWidthScale: _selectedStrokeWidthScale,
+        filled: _selectedShapeFilled,
+      );
+      if (appliedToSelection) {
+        _unsavedChangesTracker.markDirty();
+      }
+    });
+    if (appliedToSelection) {
+      _history.record(before, _snapshotMarkup());
+    }
+  }
+
+  void _selectStrokeWidth(double scale) {
+    final MarkupSnapshot before = _snapshotMarkup();
+    bool appliedToSelection = false;
+    setState(() {
+      _selectedStrokeWidthScale = MarkupStrokeConstants.normalizeScale(scale);
+      appliedToSelection = _applyTypographyAndStyleToSelection(
+        presetId: _selectedStylePresetId,
+        fontFamily: _selectedFontFamily,
+        fontSize: _selectedFontSize,
+        strokeWidthScale: _selectedStrokeWidthScale,
+        filled: _selectedShapeFilled,
+      );
+      if (appliedToSelection) {
+        _unsavedChangesTracker.markDirty();
+      }
+    });
+    if (appliedToSelection) {
+      _history.record(before, _snapshotMarkup());
+    }
   }
 
   Future<void> _showStylePresetDialog() async {
@@ -4873,153 +4845,166 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           }
         },
         child: Scaffold(
-          appBar: AppBar(
-            backgroundColor: AppThemeConstants.ncdBlue,
-            foregroundColor: Colors.white,
-            leading: Padding(
-              padding: const EdgeInsets.all(
-                UiLayoutConstants.appBarBrandingIconPadding,
-              ),
-              child: Image.asset(
-                BrandingAssetConstants.iconV15AssetPath,
-                fit: BoxFit.contain,
-                errorBuilder:
-                    (
-                      BuildContext context,
-                      Object error,
-                      StackTrace? stackTrace,
-                    ) {
-                      return const Icon(Icons.photo_camera_outlined);
+          backgroundColor: DesignTokens.canvasVoid,
+          body: SafeArea(
+            child: Column(
+              children: <Widget>[
+                _buildAppHeader(),
+                if (_showLaunchContextBanner) _buildLaunchContextBanner(),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (BuildContext context, BoxConstraints constraints) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            // Swipe the rail out or away without hunting for
+                            // the toggle: useful one-handed.
+                            onHorizontalDragEnd: (DragEndDetails details) {
+                              final double velocity =
+                                  details.primaryVelocity ?? 0;
+                              if (velocity.abs() <
+                                  UiLayoutConstants.railSwipeVelocity) {
+                                return;
+                              }
+                              setState(() {
+                                _isSidebarExpanded = velocity > 0;
+                              });
+                            },
+                            child: _buildSidebarPanel(constraints.maxWidth),
+                          ),
+                          Expanded(
+                            key: const ValueKey<String>('markup-canvas'),
+                            child: _buildCanvasContent(),
+                          ),
+                        ],
+                      );
                     },
-              ),
+                  ),
+                ),
+                _buildStatusBar(),
+              ],
             ),
-            title: const Text(AppConstants.appName),
-            actions: [
-              if (_loadedFileName != null)
-                ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: UiLayoutConstants.loadedNameMaxWidth,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      right: UiLayoutConstants.appBarLoadedNameRightPadding,
-                    ),
-                    child: Center(
-                      child: Text(
-                        _loadedFileName!,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: UiLayoutConstants.loadedNameFontSize,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              const Padding(
-                padding: EdgeInsets.only(
-                  right: UiLayoutConstants.appBarVersionRightPadding,
-                ),
-                child: Center(
-                  child: Text(
-                    AppConstants.appVersion,
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          body: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (!_isSidebarExpanded) _buildSidebarRail(),
-              Expanded(
-                child: Stack(
-                  children: [
-                    Column(
-                      children: [
-                        if (_showLaunchContextBanner)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: UiLayoutConstants
-                                  .launchContextBannerHorizontalPadding,
-                              vertical: UiLayoutConstants
-                                  .launchContextBannerVerticalPadding,
-                            ),
-                            color: AppThemeConstants.toolbarBackground,
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.link,
-                                  size:
-                                      UiLayoutConstants
-                                          .launchContextBannerFontSize +
-                                      2,
-                                  color: AppThemeConstants.ncdBlue,
-                                ),
-                                const SizedBox(
-                                  width:
-                                      UiLayoutConstants.launchContextBannerGap,
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    _buildLaunchContextSummary(),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: UiLayoutConstants
-                                          .launchContextBannerFontSize,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(
-                              UiLayoutConstants.canvasOuterPadding,
-                            ),
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(
-                                  UiLayoutConstants.canvasBorderRadius,
-                                ),
-                                border: Border.all(
-                                  color: AppThemeConstants.ncdBlue,
-                                  width: UiLayoutConstants.canvasBorderWidth,
-                                ),
-                              ),
-                              child: _buildCanvasContent(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_isSidebarExpanded) ...[
-                      Positioned.fill(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            setState(() {
-                              _isSidebarExpanded = false;
-                            });
-                          },
-                          child: Container(color: Colors.black12),
-                        ),
-                      ),
-                      _buildSidebarDrawerOverlay(),
-                    ],
-                  ],
-                ),
-              ),
-            ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// A slim header. The photo is the subject; the chrome states what is loaded
+  /// and gets out of the way.
+  Widget _buildAppHeader() {
+    return Container(
+      height: DesignTokens.touchTarget,
+      decoration: const BoxDecoration(
+        color: DesignTokens.surface,
+        border: Border(bottom: BorderSide(color: DesignTokens.hairline)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space3),
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: DesignTokens.iconSize + DesignTokens.space2,
+            height: DesignTokens.iconSize + DesignTokens.space2,
+            child: Image.asset(
+              BrandingAssetConstants.iconV15AssetPath,
+              fit: BoxFit.contain,
+              errorBuilder:
+                  (BuildContext context, Object error, StackTrace? stack) =>
+                      const Icon(
+                        Icons.photo_camera_outlined,
+                        color: DesignTokens.brand,
+                      ),
+            ),
+          ),
+          const SizedBox(width: DesignTokens.space3),
+          const Text(
+            AppConstants.appName,
+            style: TextStyle(
+              fontSize: DesignTokens.textTitle,
+              fontWeight: DesignTokens.weightBold,
+              color: DesignTokens.inkPrimary,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const Expanded(child: SizedBox.shrink()),
+          if (_loadedFileName != null)
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: UiLayoutConstants.loadedNameMaxWidth,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(right: DesignTokens.space3),
+                child: Text(
+                  _loadedFileName!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: DesignTokens.textLabel,
+                    fontWeight: DesignTokens.weightMedium,
+                    color: DesignTokens.inkSecondary,
+                  ),
+                ),
+              ),
+            ),
+          if (_hasUnsavedMarkupChanges)
+            Container(
+              key: const ValueKey<String>('header-unsaved-dot'),
+              margin: const EdgeInsets.only(right: DesignTokens.space3),
+              width: 10,
+              height: 10,
+              decoration: const BoxDecoration(
+                color: DesignTokens.warning,
+                shape: BoxShape.circle,
+              ),
+            ),
+          const Text(
+            AppConstants.appVersion,
+            style: TextStyle(
+              fontSize: DesignTokens.textMicro,
+              fontWeight: DesignTokens.weightMedium,
+              color: DesignTokens.inkSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLaunchContextBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: DesignTokens.space3,
+        vertical: DesignTokens.space2,
+      ),
+      decoration: const BoxDecoration(
+        color: DesignTokens.surfaceRaised,
+        border: Border(bottom: BorderSide(color: DesignTokens.hairline)),
+      ),
+      child: Row(
+        children: <Widget>[
+          const Icon(
+            Icons.link,
+            size: DesignTokens.iconSizeSmall,
+            color: DesignTokens.brandBright,
+          ),
+          const SizedBox(width: DesignTokens.space2),
+          Expanded(
+            child: Text(
+              _buildLaunchContextSummary(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: DesignTokens.textLabel,
+                fontWeight: DesignTokens.weightMedium,
+                color: DesignTokens.inkPrimary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -5033,53 +5018,66 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: <Widget>[
               const Icon(
                 Icons.photo_size_select_actual_outlined,
                 size: UiLayoutConstants.emptyStateIconSize,
-                color: AppThemeConstants.ncdBlue,
+                color: DesignTokens.hairlineStrong,
               ),
-              const SizedBox(height: UiLayoutConstants.emptyStateIconBottomGap),
+              const SizedBox(height: DesignTokens.space4),
               const Text(
                 UiCopyConstants.emptyStateTitle,
                 style: TextStyle(
-                  fontSize: UiLayoutConstants.emptyStateTitleFontSize,
-                  fontWeight: FontWeight.w700,
-                  color: AppThemeConstants.ncdBlue,
+                  fontSize: DesignTokens.textDisplay,
+                  fontWeight: DesignTokens.weightBold,
+                  color: DesignTokens.inkPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(
-                height: UiLayoutConstants.emptyStateTitleBottomGap,
-              ),
+              const SizedBox(height: DesignTokens.space2),
               const Text(
                 UiCopyConstants.emptyStateMessage,
                 style: TextStyle(
-                  fontSize: UiLayoutConstants.emptyStateBodyFontSize,
+                  fontSize: DesignTokens.textBody,
+                  fontWeight: DesignTokens.weightRegular,
+                  color: DesignTokens.inkSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
-              if (_errorMessage != null) ...[
-                const SizedBox(height: UiLayoutConstants.messageTopGap),
+              const SizedBox(height: DesignTokens.space5),
+              // One obvious way in, sized for a thumb, so the first tap of the
+              // day never has to find a 20px icon.
+              SizedBox(
+                height: DesignTokens.touchTarget,
+                child: FilledButton.icon(
+                  key: const ValueKey<String>('empty-state-open-photo'),
+                  onPressed: _isPickingFile ? null : _openPhoto,
+                  icon: const Icon(Icons.add_photo_alternate_outlined),
+                  label: const Text(ToolbarConstants.openPhoto),
+                ),
+              ),
+              if (_errorMessage != null) ...<Widget>[
+                const SizedBox(height: DesignTokens.space4),
                 Text(
                   _errorMessage!,
                   style: const TextStyle(
-                    fontSize: UiLayoutConstants.messageFontSize,
-                    color: AppThemeConstants.errorAccent,
-                    fontWeight: FontWeight.w600,
+                    fontSize: DesignTokens.textBody,
+                    color: DesignTokens.danger,
+                    fontWeight: DesignTokens.weightMedium,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ],
-              if (_isPickingFile) ...[
-                const SizedBox(height: UiLayoutConstants.messageTopGap),
+              if (_isPickingFile) ...<Widget>[
+                const SizedBox(height: DesignTokens.space4),
                 const CircularProgressIndicator(),
-                const SizedBox(height: UiLayoutConstants.messageTopGap),
+                const SizedBox(height: DesignTokens.space3),
                 const Text(
                   UiCopyConstants.importInProgressMessage,
                   style: TextStyle(
-                    fontSize: UiLayoutConstants.messageFontSize,
-                    fontWeight: FontWeight.w600,
+                    fontSize: DesignTokens.textBody,
+                    fontWeight: DesignTokens.weightMedium,
+                    color: DesignTokens.inkSecondary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -5091,10 +5089,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
 
     return Column(
-      children: [
+      children: <Widget>[
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.all(UiLayoutConstants.imageAreaPadding),
+            padding: const EdgeInsets.all(DesignTokens.space2),
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
                 final Size canvasSize = Size(
@@ -5218,32 +5216,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                         ),
                       ),
                     ),
-                    Positioned(
-                      top: UiLayoutConstants.viewControlPanelTop,
-                      right: UiLayoutConstants.viewControlPanelRight,
-                      child: _buildCanvasViewControls(),
-                    ),
                   ],
                 );
               },
             ),
-          ),
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: UiLayoutConstants.footerHorizontalPadding,
-            vertical: UiLayoutConstants.footerVerticalPadding,
-          ),
-          decoration: const BoxDecoration(
-            border: Border(
-              top: BorderSide(color: AppThemeConstants.canvasFooterBorder),
-            ),
-          ),
-          child: Text(
-            '${ImageImportConstants.loadedPhotoPrefix}${_loadedFileName ?? ImageImportConstants.unknownLoadedPhotoName}',
-            style: const TextStyle(fontWeight: FontWeight.w600),
-            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -5347,36 +5323,46 @@ class _SidebarActionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle sectionStyle = const TextStyle(
-      fontSize: UiLayoutConstants.sidebarSectionTitleFontSize,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.3,
-      color: AppThemeConstants.sidebarSectionLabel,
-    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <Widget>[
         if (isExpanded)
           Padding(
-            padding: const EdgeInsets.only(
-              left: UiLayoutConstants.sidebarSectionHorizontalPadding,
-              right: UiLayoutConstants.sidebarSectionHorizontalPadding,
-              bottom: UiLayoutConstants.sidebarSectionHeaderBottomGap,
+            padding: const EdgeInsets.fromLTRB(
+              DesignTokens.space3,
+              DesignTokens.space3,
+              DesignTokens.space3,
+              DesignTokens.space1,
             ),
-            child: Text(title, style: sectionStyle),
-          ),
-        if (!isExpanded)
-          const Divider(
-            thickness: UiLayoutConstants.sidebarActionUnselectedBorderWidth,
-            color: AppThemeConstants.sidebarDivider,
+            child: Text(
+              title.toUpperCase(),
+              style: const TextStyle(
+                fontSize: DesignTokens.textMicro,
+                fontWeight: DesignTokens.weightBold,
+                letterSpacing: 1.1,
+                color: DesignTokens.inkSecondary,
+              ),
+            ),
+          )
+        else
+          const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: DesignTokens.space4,
+              vertical: DesignTokens.space2,
+            ),
+            child: Divider(height: 1),
           ),
         child,
-        const SizedBox(height: UiLayoutConstants.sidebarSectionBottomPadding),
       ],
     );
   }
 }
 
+/// One tool or command in the rail.
+///
+/// Sized for a gloved thumb rather than a mouse pointer, and the selected
+/// state is carried by three things at once: a fill, a border and a bar on the
+/// leading edge. In direct sun a tint alone is not enough to see.
 class _SidebarActionButton extends StatelessWidget {
   const _SidebarActionButton({
     required this.actionKey,
@@ -5402,106 +5388,75 @@ class _SidebarActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double horizontalPadding = isExpanded
-        ? UiLayoutConstants.sidebarExpandedActionHorizontalPadding
-        : UiLayoutConstants.sidebarCollapsedActionHorizontalPadding;
     final Color resolvedIconColor = isDisabled
-        ? AppThemeConstants.sidebarIconMuted.withValues(alpha: 0.55)
-        : iconColor;
+        ? DesignTokens.inkDisabled
+        : (isSelected ? DesignTokens.brandBright : iconColor);
     final Color textColor = isDisabled
-        ? AppThemeConstants.sidebarIconMuted.withValues(alpha: 0.65)
-        : AppThemeConstants.sidebarIconNeutral;
-    final Color backgroundColor = isSelected
-        ? AppThemeConstants.sidebarSelectedTint
-        : Colors.transparent;
-    final BorderSide borderSide = BorderSide(
-      color: isSelected
-          ? AppThemeConstants.ncdBlue.withValues(alpha: 0.30)
-          : Colors.transparent,
-      width: UiLayoutConstants.sidebarActionSelectedBorderWidth,
-    );
+        ? DesignTokens.inkDisabled
+        : (isSelected ? DesignTokens.inkPrimary : DesignTokens.inkSecondary);
     final Widget iconWidget = _buildIconWidget(
       resolvedIconColor: resolvedIconColor,
       isDisabled: isDisabled,
     );
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+      padding: const EdgeInsets.symmetric(
+        horizontal: DesignTokens.space2,
+        vertical: 2,
+      ),
       child: Tooltip(
         message: tooltipLabel,
+        waitDuration: const Duration(milliseconds: 400),
         child: SizedBox(
           key: ValueKey<String>(
             'sidebar-${isExpanded ? 'drawer' : 'rail'}-$actionKey',
           ),
-          height: UiLayoutConstants.sidebarActionHeight,
+          height: DesignTokens.touchTarget,
           child: Material(
-            color: backgroundColor,
+            color: isSelected ? DesignTokens.selectedFill : Colors.transparent,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                UiLayoutConstants.sidebarActionRadius,
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
+              side: BorderSide(
+                color: isSelected ? DesignTokens.brand : Colors.transparent,
+                width: 1.5,
               ),
-              side: borderSide,
             ),
             child: InkWell(
-              borderRadius: BorderRadius.circular(
-                UiLayoutConstants.sidebarActionRadius,
-              ),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
               onTap: isDisabled ? null : onPressed,
-              child: isExpanded
-                  ? Row(
-                      children: [
-                        if (isSelected)
-                          Container(
-                            width:
-                                UiLayoutConstants.sidebarSelectedIndicatorWidth,
-                            height: UiLayoutConstants.sidebarActionHeight - 10,
-                            margin: const EdgeInsets.symmetric(horizontal: 5),
-                            decoration: BoxDecoration(
-                              color: AppThemeConstants.sidebarSelectedIndicator,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          )
-                        else
-                          const SizedBox(width: 8),
-                        iconWidget,
-                        const SizedBox(
-                          width: UiLayoutConstants.sidebarActionLabelGap,
-                        ),
-                        Expanded(
-                          child: Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: UiLayoutConstants.sidebarActionFontSize,
-                              fontWeight: FontWeight.w600,
-                              color: textColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Stack(
-                      children: [
-                        if (isSelected)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              width: UiLayoutConstants
-                                  .sidebarSelectedIndicatorWidth,
-                              height:
-                                  UiLayoutConstants.sidebarActionHeight - 12,
-                              margin: const EdgeInsets.only(left: 4),
-                              decoration: BoxDecoration(
-                                color:
-                                    AppThemeConstants.sidebarSelectedIndicator,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                          ),
-                        Center(child: iconWidget),
-                      ],
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    width: 4,
+                    height: DesignTokens.touchTarget - 18,
+                    margin: const EdgeInsets.only(left: 2, right: 6),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? DesignTokens.brand
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(2),
                     ),
+                  ),
+                  if (isExpanded) ...<Widget>[
+                    iconWidget,
+                    const SizedBox(width: DesignTokens.space3),
+                    Expanded(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: DesignTokens.textBody,
+                          fontWeight: DesignTokens.weightMedium,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: DesignTokens.space2),
+                  ] else
+                    Expanded(child: Center(child: iconWidget)),
+                ],
+              ),
             ),
           ),
         ),
@@ -5517,39 +5472,35 @@ class _SidebarActionButton extends StatelessWidget {
     if (iconData != null) {
       return Icon(
         iconData,
-        size: UiLayoutConstants.sidebarActionIconSize,
+        size: DesignTokens.iconSize,
         color: resolvedIconColor,
       );
     }
 
     final String? assetPath = iconDescriptor.assetPath;
     if (assetPath != null) {
-      final Color? tintedColor = iconDescriptor.allowTint
-          ? resolvedIconColor
-          : null;
-      return Image.asset(
-        assetPath,
-        width: UiLayoutConstants.sidebarActionIconSize,
-        height: UiLayoutConstants.sidebarActionIconSize,
-        color: tintedColor,
-        filterQuality: FilterQuality.high,
-        errorBuilder:
-            (BuildContext context, Object error, StackTrace? stackTrace) =>
-                Icon(
-                  Icons.broken_image_outlined,
-                  size: UiLayoutConstants.sidebarActionIconSize,
-                  color: isDisabled
-                      ? AppThemeConstants.sidebarIconMuted.withValues(
-                          alpha: 0.55,
-                        )
-                      : AppThemeConstants.sidebarDestructiveAccent,
-                ),
+      return Opacity(
+        opacity: isDisabled ? 0.4 : 1.0,
+        child: Image.asset(
+          assetPath,
+          width: DesignTokens.iconSize,
+          height: DesignTokens.iconSize,
+          color: iconDescriptor.allowTint ? resolvedIconColor : null,
+          filterQuality: FilterQuality.high,
+          errorBuilder:
+              (BuildContext context, Object error, StackTrace? stackTrace) =>
+                  Icon(
+                    Icons.broken_image_outlined,
+                    size: DesignTokens.iconSize,
+                    color: DesignTokens.danger,
+                  ),
+        ),
       );
     }
 
     return Icon(
       Icons.help_outline,
-      size: UiLayoutConstants.sidebarActionIconSize,
+      size: DesignTokens.iconSize,
       color: resolvedIconColor,
     );
   }

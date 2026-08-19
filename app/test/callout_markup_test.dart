@@ -4,14 +4,8 @@ import 'package:ncd_photo_markup/features/markup/models/callout_markup.dart';
 
 void main() {
   test('numbered pins read as plain numbers', () {
-    expect(
-      CalloutMarkup.labelForSequence(1, CalloutLabelStyle.numbers),
-      '1',
-    );
-    expect(
-      CalloutMarkup.labelForSequence(42, CalloutLabelStyle.numbers),
-      '42',
-    );
+    expect(CalloutMarkup.labelForSequence(1, CalloutLabelStyle.numbers), '1');
+    expect(CalloutMarkup.labelForSequence(42, CalloutLabelStyle.numbers), '42');
   });
 
   test('lettered pins run A..Z then AA', () {

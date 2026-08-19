@@ -86,11 +86,7 @@ class MarkupTextLayoutUtils {
         TextPainter(
           text: TextSpan(
             text: label,
-            style: dimensionLabelTextStyle(
-              line,
-              preset: preset,
-              scale: scale,
-            ),
+            style: dimensionLabelTextStyle(line, preset: preset, scale: scale),
           ),
           textDirection: TextDirection.ltr,
           maxLines: 2,

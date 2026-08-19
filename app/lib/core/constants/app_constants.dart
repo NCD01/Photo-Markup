@@ -1,5 +1,6 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/core/theme/design_tokens.dart';
 
 class AppConstants {
   const AppConstants._();
@@ -74,27 +75,30 @@ class BrandingAssetConstants {
   static const int startupSplashDurationMs = 2200;
 }
 
+/// Names the rest of the app already uses, re-pointed at the dark palette in
+/// [DesignTokens]. New work should reach for DesignTokens directly; these stay
+/// so that one theme change did not have to touch every call site at once.
 class AppThemeConstants {
   const AppThemeConstants._();
 
-  static const Color ncdBlue = Color(0xFF009ADA);
-  static const Color toolbarBackground = Color(0xFFF2FAFE);
-  static const Color canvasFooterBorder = Color(0xFFD8E5EB);
-  static const Color sidebarBackground = Color(0xFFF6FAFD);
-  static const Color sidebarIconNeutral = Color(0xFF27313A);
-  static const Color sidebarIconMuted = Color(0xFF5B6570);
-  static const Color sidebarFileAccent = Color(0xFF007FB7);
-  static const Color sidebarDestructiveAccent = Color(0xFFC64A4A);
-  static const Color sidebarSelectedTint = Color(0x1A009ADA);
-  static const Color sidebarSelectedIndicator = Color(0xFF009ADA);
-  static const Color sidebarSectionLabel = Color(0xFF4D5A68);
-  static const Color sidebarDivider = Color(0xFFE0E8EE);
-  static const Color sidebarHeaderText = Color(0xFF1D2A33);
-  static const Color errorAccent = Colors.redAccent;
-  static const Color viewControlSurface = Color(0xEAF6FAFD);
-  static const Color viewControlBorder = Color(0xFFD0DEE8);
-  static const Color viewControlIcon = Color(0xFF1F2C36);
-  static const Color viewControlAccent = Color(0xFF007FB7);
+  static const Color ncdBlue = DesignTokens.brand;
+  static const Color toolbarBackground = DesignTokens.surface;
+  static const Color canvasFooterBorder = DesignTokens.hairline;
+  static const Color sidebarBackground = DesignTokens.surface;
+  static const Color sidebarIconNeutral = DesignTokens.inkPrimary;
+  static const Color sidebarIconMuted = DesignTokens.inkSecondary;
+  static const Color sidebarFileAccent = DesignTokens.brandBright;
+  static const Color sidebarDestructiveAccent = DesignTokens.danger;
+  static const Color sidebarSelectedTint = DesignTokens.selectedFill;
+  static const Color sidebarSelectedIndicator = DesignTokens.brand;
+  static const Color sidebarSectionLabel = DesignTokens.inkSecondary;
+  static const Color sidebarDivider = DesignTokens.hairline;
+  static const Color sidebarHeaderText = DesignTokens.inkPrimary;
+  static const Color errorAccent = DesignTokens.danger;
+  static const Color viewControlSurface = DesignTokens.surfaceRaised;
+  static const Color viewControlBorder = DesignTokens.hairline;
+  static const Color viewControlIcon = DesignTokens.inkPrimary;
+  static const Color viewControlAccent = DesignTokens.brandBright;
 }
 
 class ImageImportConstants {
@@ -223,9 +227,9 @@ class ImageImportConstants {
 class UiCopyConstants {
   const UiCopyConstants._();
 
-  static const String emptyStateTitle = 'Photo Canvas Placeholder';
+  static const String emptyStateTitle = 'No photo open';
   static const String emptyStateMessage =
-      'Open or import a photo to start marking it up.';
+      'Open a photo to start marking it up.';
   static const String splashFallbackLabel = 'NCD Photo Markup';
   static const String dimensionLabelDialogTitle = 'Dimension Label';
   static const String dimensionLabelHint = 'Example: 72" or 6\'-0"';
@@ -582,6 +586,7 @@ class UiLayoutConstants {
   static const double dimensionLabelDialogFieldMinHeight = 64;
   static const double dimensionLabelDialogFieldPadding = 12;
   static const double dimensionLabelDialogButtonTopGap = 8;
+  static const double railSwipeVelocity = 260;
 }
 
 class DimensionLineConstants {
@@ -799,6 +804,56 @@ class MarkupStrokeConstants {
     }
     return allScaleLabels[bestIndex];
   }
+}
+
+/// Desktop keyboard shortcuts, kept next to the labels they belong to so the
+/// tooltip text and the key handler can never drift apart.
+class KeyboardShortcutConstants {
+  const KeyboardShortcutConstants._();
+
+  static const String selectMode = 'V';
+  static const String dimension = 'D';
+  static const String textNote = 'T';
+  static const String arrow = 'A';
+  static const String line = 'L';
+  static const String rectangle = 'R';
+  static const String circle = 'C';
+  static const String freehand = 'F';
+  static const String highlighter = 'H';
+  static const String callout = 'N';
+  static const String blur = 'B';
+  static const String undo = 'Ctrl+Z';
+  static const String redo = 'Ctrl+Shift+Z';
+  static const String erase = 'Del';
+  static const String export = 'Ctrl+E';
+  static const String openPhoto = 'Ctrl+O';
+  static const String saveMarkup = 'Ctrl+S';
+  static const String rotateLeft = '[';
+  static const String rotateRight = ']';
+  static const String toggleSidebar = 'Tab';
+
+  static const Map<String, String> byAction = <String, String>{
+    ToolbarConstants.openPhoto: openPhoto,
+    ToolbarConstants.saveMarkup: saveMarkup,
+    ToolbarConstants.export: export,
+    ToolbarConstants.dimension: dimension,
+    ToolbarConstants.textNote: textNote,
+    ToolbarConstants.arrow: arrow,
+    ToolbarConstants.line: line,
+    ToolbarConstants.rectangle: rectangle,
+    ToolbarConstants.circle: circle,
+    ToolbarConstants.freehand: freehand,
+    ToolbarConstants.highlighter: highlighter,
+    ToolbarConstants.callout: callout,
+    ToolbarConstants.blur: blur,
+    ToolbarConstants.undo: undo,
+    ToolbarConstants.redo: redo,
+    ToolbarConstants.erase: erase,
+    ToolbarConstants.rotateLeft: rotateLeft,
+    ToolbarConstants.rotateRight: rotateRight,
+  };
+
+  static String? hintForAction(String action) => byAction[action];
 }
 
 class MarkupHistoryConstants {

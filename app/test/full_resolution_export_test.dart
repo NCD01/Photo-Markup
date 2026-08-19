@@ -142,28 +142,31 @@ void main() {
     );
   });
 
-  test('export writes the photo at its own pixel size, not the canvas size', () async {
-    final ui.Image source = await whiteImage(3000, 2000);
-    final String path = '${outputDir.path}/full_res.png';
+  test(
+    'export writes the photo at its own pixel size, not the canvas size',
+    () async {
+      final ui.Image source = await whiteImage(3000, 2000);
+      final String path = '${outputDir.path}/full_res.png';
 
-    final FullResolutionExportResult result =
-        await FullResolutionExportService.renderToPng(
-          sourceImage: source,
-          scene: sceneWith(),
-          // The canvas on screen was only 600pt wide.
-          displayImageRect: const Rect.fromLTWH(12, 40, 600, 400),
-          outputPath: path,
-        );
-    source.dispose();
+      final FullResolutionExportResult result =
+          await FullResolutionExportService.renderToPng(
+            sourceImage: source,
+            scene: sceneWith(),
+            // The canvas on screen was only 600pt wide.
+            displayImageRect: const Rect.fromLTWH(12, 40, 600, 400),
+            outputPath: path,
+          );
+      source.dispose();
 
-    expect(result.pixelWidth, 3000);
-    expect(result.pixelHeight, 2000);
-    expect(result.markupScale, 5.0);
+      expect(result.pixelWidth, 3000);
+      expect(result.pixelHeight, 2000);
+      expect(result.markupScale, 5.0);
 
-    final DecodedPng decoded = await readPng(path);
-    expect(decoded.width, 3000);
-    expect(decoded.height, 2000);
-  });
+      final DecodedPng decoded = await readPng(path);
+      expect(decoded.width, 3000);
+      expect(decoded.height, 2000);
+    },
+  );
 
   test('a portrait photo exports portrait, at full size', () async {
     final ui.Image source = await whiteImage(1200, 1600);
@@ -185,96 +188,102 @@ void main() {
     expect(decoded.height, 1600);
   });
 
-  test('annotations land on the same part of the photo they did on screen', () async {
-    final ui.Image source = await whiteImage(2000, 1000);
-    final String path = '${outputDir.path}/placement.png';
+  test(
+    'annotations land on the same part of the photo they did on screen',
+    () async {
+      final ui.Image source = await whiteImage(2000, 1000);
+      final String path = '${outputDir.path}/placement.png';
 
-    // A filled black box covering the middle half of the photo.
-    await FullResolutionExportService.renderToPng(
-      sourceImage: source,
-      scene: sceneWith(
-        rectangles: const <RectangleMarkup>[
-          RectangleMarkup(
+      // A filled black box covering the middle half of the photo.
+      await FullResolutionExportService.renderToPng(
+        sourceImage: source,
+        scene: sceneWith(
+          rectangles: const <RectangleMarkup>[
+            RectangleMarkup(
+              id: 1,
+              startNormalized: Offset(0.25, 0.25),
+              endNormalized: Offset(0.75, 0.75),
+              stylePresetId: MarkupStylePresetId.black,
+              filled: true,
+            ),
+          ],
+        ),
+        displayImageRect: const Rect.fromLTWH(0, 0, 500, 250),
+        outputPath: path,
+      );
+      source.dispose();
+
+      final DecodedPng decoded = await readPng(path);
+      // Centre of the photo is inside the box, so it is darkened.
+      expect(decoded.redAt(1000, 500), lessThan(200));
+      // Well outside the box the photo is untouched white.
+      expect(decoded.redAt(100, 100), greaterThan(240));
+      expect(decoded.redAt(1900, 900), greaterThan(240));
+      // Just inside the top-left corner of the box is darkened; just outside is not.
+      expect(decoded.redAt(520, 260), lessThan(240));
+      expect(decoded.redAt(460, 200), greaterThan(240));
+    },
+  );
+
+  test(
+    'annotation weight scales with the photo instead of staying hairline',
+    () async {
+      final String thinPath = '${outputDir.path}/small.png';
+      final String widePath = '${outputDir.path}/large.png';
+      const MarkupScene scene = MarkupScene(
+        lines: <DimensionLine>[],
+        arrows: <ArrowMarkup>[
+          ArrowMarkup(
             id: 1,
-            startNormalized: Offset(0.25, 0.25),
-            endNormalized: Offset(0.75, 0.75),
+            startNormalized: Offset(0.1, 0.5),
+            endNormalized: Offset(0.9, 0.5),
             stylePresetId: MarkupStylePresetId.black,
-            filled: true,
           ),
         ],
-      ),
-      displayImageRect: const Rect.fromLTWH(0, 0, 500, 250),
-      outputPath: path,
-    );
-    source.dispose();
+        rectangles: <RectangleMarkup>[],
+        ovals: <OvalMarkup>[],
+        freehands: <FreehandMarkup>[],
+        textNotes: <TextNoteMarkup>[],
+      );
 
-    final DecodedPng decoded = await readPng(path);
-    // Centre of the photo is inside the box, so it is darkened.
-    expect(decoded.redAt(1000, 500), lessThan(200));
-    // Well outside the box the photo is untouched white.
-    expect(decoded.redAt(100, 100), greaterThan(240));
-    expect(decoded.redAt(1900, 900), greaterThan(240));
-    // Just inside the top-left corner of the box is darkened; just outside is not.
-    expect(decoded.redAt(520, 260), lessThan(240));
-    expect(decoded.redAt(460, 200), greaterThan(240));
-  });
+      final ui.Image small = await whiteImage(500, 250);
+      await FullResolutionExportService.renderToPng(
+        sourceImage: small,
+        scene: scene,
+        displayImageRect: const Rect.fromLTWH(0, 0, 500, 250),
+        outputPath: thinPath,
+      );
+      small.dispose();
 
-  test('annotation weight scales with the photo instead of staying hairline', () async {
-    final String thinPath = '${outputDir.path}/small.png';
-    final String widePath = '${outputDir.path}/large.png';
-    const MarkupScene scene = MarkupScene(
-      lines: <DimensionLine>[],
-      arrows: <ArrowMarkup>[
-        ArrowMarkup(
-          id: 1,
-          startNormalized: Offset(0.1, 0.5),
-          endNormalized: Offset(0.9, 0.5),
-          stylePresetId: MarkupStylePresetId.black,
-        ),
-      ],
-      rectangles: <RectangleMarkup>[],
-      ovals: <OvalMarkup>[],
-      freehands: <FreehandMarkup>[],
-      textNotes: <TextNoteMarkup>[],
-    );
+      final ui.Image large = await whiteImage(4000, 2000);
+      await FullResolutionExportService.renderToPng(
+        sourceImage: large,
+        scene: scene,
+        displayImageRect: const Rect.fromLTWH(0, 0, 500, 250),
+        outputPath: widePath,
+      );
+      large.dispose();
 
-    final ui.Image small = await whiteImage(500, 250);
-    await FullResolutionExportService.renderToPng(
-      sourceImage: small,
-      scene: scene,
-      displayImageRect: const Rect.fromLTWH(0, 0, 500, 250),
-      outputPath: thinPath,
-    );
-    small.dispose();
+      final DecodedPng smallPng = await readPng(thinPath);
+      final DecodedPng largePng = await readPng(widePath);
 
-    final ui.Image large = await whiteImage(4000, 2000);
-    await FullResolutionExportService.renderToPng(
-      sourceImage: large,
-      scene: scene,
-      displayImageRect: const Rect.fromLTWH(0, 0, 500, 250),
-      outputPath: widePath,
-    );
-    large.dispose();
-
-    final DecodedPng smallPng = await readPng(thinPath);
-    final DecodedPng largePng = await readPng(widePath);
-
-    int darkRowHeight(DecodedPng png, int column) {
-      int count = 0;
-      for (int y = 0; y < png.height; y++) {
-        if (png.redAt(column, y) < 160) {
-          count++;
+      int darkRowHeight(DecodedPng png, int column) {
+        int count = 0;
+        for (int y = 0; y < png.height; y++) {
+          if (png.redAt(column, y) < 160) {
+            count++;
+          }
         }
+        return count;
       }
-      return count;
-    }
 
-    final int smallThickness = darkRowHeight(smallPng, 250);
-    final int largeThickness = darkRowHeight(largePng, 2000);
-    expect(smallThickness, greaterThan(0));
-    // 8x the photo width means roughly 8x the line thickness in pixels.
-    expect(largeThickness, greaterThan(smallThickness * 5));
-  });
+      final int smallThickness = darkRowHeight(smallPng, 250);
+      final int largeThickness = darkRowHeight(largePng, 2000);
+      expect(smallThickness, greaterThan(0));
+      // 8x the photo width means roughly 8x the line thickness in pixels.
+      expect(largeThickness, greaterThan(smallThickness * 5));
+    },
+  );
 
   test('selection handles are never baked into the export', () async {
     final String withSelection = '${outputDir.path}/selected.png';
@@ -330,79 +339,85 @@ void main() {
     decoded.dispose();
   });
 
-  test('a blur region actually destroys detail in the exported pixels', () async {
-    final ui.Image source = await stripedImage(1200, 600, 20);
-    final String path = '${outputDir.path}/blurred.png';
+  test(
+    'a blur region actually destroys detail in the exported pixels',
+    () async {
+      final ui.Image source = await stripedImage(1200, 600, 20);
+      final String path = '${outputDir.path}/blurred.png';
 
-    await FullResolutionExportService.renderToPng(
-      sourceImage: source,
-      scene: sceneWith(
-        blurs: const <BlurMarkup>[
-          // Covers the left half of the photo.
-          BlurMarkup(
-            id: 1,
-            startNormalized: Offset(0.0, 0.0),
-            endNormalized: Offset(0.5, 1.0),
-            strengthScale: 2.6,
-          ),
-        ],
-      ),
-      displayImageRect: const Rect.fromLTWH(0, 0, 600, 300),
-      outputPath: path,
-    );
-    source.dispose();
+      await FullResolutionExportService.renderToPng(
+        sourceImage: source,
+        scene: sceneWith(
+          blurs: const <BlurMarkup>[
+            // Covers the left half of the photo.
+            BlurMarkup(
+              id: 1,
+              startNormalized: Offset(0.0, 0.0),
+              endNormalized: Offset(0.5, 1.0),
+              strengthScale: 2.6,
+            ),
+          ],
+        ),
+        displayImageRect: const Rect.fromLTWH(0, 0, 600, 300),
+        outputPath: path,
+      );
+      source.dispose();
 
-    final DecodedPng decoded = await readPng(path);
+      final DecodedPng decoded = await readPng(path);
 
-    int spread(int fromX, int toX, int y) {
+      int spread(int fromX, int toX, int y) {
+        int lowest = 255;
+        int highest = 0;
+        for (int x = fromX; x < toX; x++) {
+          final int value = decoded.redAt(x, y);
+          lowest = value < lowest ? value : lowest;
+          highest = value > highest ? value : highest;
+        }
+        return highest - lowest;
+      }
+
+      // Untouched half still swings the full black-to-white range.
+      expect(spread(700, 1100, 300), greaterThan(200));
+      // Blurred half has had that contrast averaged away.
+      expect(spread(100, 500, 300), lessThan(120));
+    },
+  );
+
+  test(
+    'blur strength scales up with the export so a face stays hidden',
+    () async {
+      final String path = '${outputDir.path}/blur_big.png';
+      final ui.Image source = await stripedImage(4000, 2000, 60);
+
+      await FullResolutionExportService.renderToPng(
+        sourceImage: source,
+        scene: sceneWith(
+          blurs: const <BlurMarkup>[
+            BlurMarkup(
+              id: 1,
+              startNormalized: Offset(0.1, 0.1),
+              endNormalized: Offset(0.6, 0.9),
+              strengthScale: 2.6,
+            ),
+          ],
+        ),
+        // On screen the photo was only 500pt wide, an 8x scale up.
+        displayImageRect: const Rect.fromLTWH(0, 0, 500, 250),
+        outputPath: path,
+      );
+      source.dispose();
+
+      final DecodedPng decoded = await readPng(path);
       int lowest = 255;
       int highest = 0;
-      for (int x = fromX; x < toX; x++) {
-        final int value = decoded.redAt(x, y);
+      for (int x = 800; x < 2200; x++) {
+        final int value = decoded.redAt(x, 1000);
         lowest = value < lowest ? value : lowest;
         highest = value > highest ? value : highest;
       }
-      return highest - lowest;
-    }
-
-    // Untouched half still swings the full black-to-white range.
-    expect(spread(700, 1100, 300), greaterThan(200));
-    // Blurred half has had that contrast averaged away.
-    expect(spread(100, 500, 300), lessThan(120));
-  });
-
-  test('blur strength scales up with the export so a face stays hidden', () async {
-    final String path = '${outputDir.path}/blur_big.png';
-    final ui.Image source = await stripedImage(4000, 2000, 60);
-
-    await FullResolutionExportService.renderToPng(
-      sourceImage: source,
-      scene: sceneWith(
-        blurs: const <BlurMarkup>[
-          BlurMarkup(
-            id: 1,
-            startNormalized: Offset(0.1, 0.1),
-            endNormalized: Offset(0.6, 0.9),
-            strengthScale: 2.6,
-          ),
-        ],
-      ),
-      // On screen the photo was only 500pt wide, an 8x scale up.
-      displayImageRect: const Rect.fromLTWH(0, 0, 500, 250),
-      outputPath: path,
-    );
-    source.dispose();
-
-    final DecodedPng decoded = await readPng(path);
-    int lowest = 255;
-    int highest = 0;
-    for (int x = 800; x < 2200; x++) {
-      final int value = decoded.redAt(x, 1000);
-      lowest = value < lowest ? value : lowest;
-      highest = value > highest ? value : highest;
-    }
-    expect(highest - lowest, lessThan(140));
-  });
+      expect(highest - lowest, lessThan(140));
+    },
+  );
 
   test('callout pins are drawn into the export', () async {
     final String withPin = '${outputDir.path}/with_pin.png';

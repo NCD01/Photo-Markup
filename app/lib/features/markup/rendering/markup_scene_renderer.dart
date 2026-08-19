@@ -343,11 +343,7 @@ class MarkupSceneRenderer {
     );
     canvas.drawRect(
       rect,
-      haloPaintFor(
-        strokeColor: strokeColor,
-        strokeWidth: width,
-        scale: scale,
-      ),
+      haloPaintFor(strokeColor: strokeColor, strokeWidth: width, scale: scale),
     );
     canvas.drawRect(
       rect,
@@ -393,11 +389,7 @@ class MarkupSceneRenderer {
     );
     canvas.drawOval(
       rect,
-      haloPaintFor(
-        strokeColor: strokeColor,
-        strokeWidth: width,
-        scale: scale,
-      ),
+      haloPaintFor(strokeColor: strokeColor, strokeWidth: width, scale: scale),
     );
     canvas.drawOval(
       rect,
@@ -437,11 +429,7 @@ class MarkupSceneRenderer {
     );
     canvas.drawPath(
       path,
-      haloPaintFor(
-        strokeColor: strokeColor,
-        strokeWidth: width,
-        scale: scale,
-      ),
+      haloPaintFor(strokeColor: strokeColor, strokeWidth: width, scale: scale),
     );
     canvas.drawPath(
       path,
@@ -555,21 +543,13 @@ class MarkupSceneRenderer {
       selectedMultiplier: FreehandMarkupConstants.selectedStrokeMultiplier,
     );
     if (points.length == 1) {
-      canvas.drawCircle(
-        points.first,
-        width / 2,
-        Paint()..color = strokeColor,
-      );
+      canvas.drawCircle(points.first, width / 2, Paint()..color = strokeColor);
       return;
     }
     final Path path = smoothPath(points);
     canvas.drawPath(
       path,
-      haloPaintFor(
-        strokeColor: strokeColor,
-        strokeWidth: width,
-        scale: scale,
-      ),
+      haloPaintFor(strokeColor: strokeColor, strokeWidth: width, scale: scale),
     );
     canvas.drawPath(
       path,
@@ -666,11 +646,7 @@ class MarkupSceneRenderer {
 
     canvas.drawPath(
       path,
-      haloPaintFor(
-        strokeColor: strokeColor,
-        strokeWidth: width,
-        scale: scale,
-      ),
+      haloPaintFor(strokeColor: strokeColor, strokeWidth: width, scale: scale),
     );
     canvas.drawPath(
       path,
@@ -863,20 +839,19 @@ class MarkupSceneRenderer {
         ..style = PaintingStyle.stroke,
     );
 
-    final TextPainter painter =
-        TextPainter(
-          text: TextSpan(
-            text: callout.label,
-            style: TextStyle(
-              color: preset.textColor,
-              fontSize: radius * CalloutMarkupConstants.fontSizeFactor,
-              fontWeight: FontWeight.w800,
-              height: 1.0,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-          maxLines: 1,
-        )..layout();
+    final TextPainter painter = TextPainter(
+      text: TextSpan(
+        text: callout.label,
+        style: TextStyle(
+          color: preset.textColor,
+          fontSize: radius * CalloutMarkupConstants.fontSizeFactor,
+          fontWeight: FontWeight.w800,
+          height: 1.0,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
     painter.paint(
       canvas,
       Offset(center.dx - (painter.width / 2), center.dy - (painter.height / 2)),

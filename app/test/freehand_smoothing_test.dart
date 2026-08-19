@@ -97,7 +97,8 @@ void main() {
 
   test('smoothing keeps where the stroke started and ended', () {
     final List<Offset> shaky = <Offset>[
-      for (int i = 0; i <= 30; i++) Offset(i * 4, (i.isEven ? 3 : -3).toDouble()),
+      for (int i = 0; i <= 30; i++)
+        Offset(i * 4, (i.isEven ? 3 : -3).toDouble()),
     ];
     final List<Offset> smoothed = FreehandSmoothing.smooth(shaky);
     expect(smoothed.first, shaky.first);

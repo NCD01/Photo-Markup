@@ -32,7 +32,10 @@ class FreehandSmoothing {
 
   /// Ramer-Douglas-Peucker. Keeps the points that define the shape and drops
   /// the ones that only record hand tremor.
-  static List<Offset> simplify(List<Offset> points, {required double tolerance}) {
+  static List<Offset> simplify(
+    List<Offset> points, {
+    required double tolerance,
+  }) {
     if (points.length < 3 || tolerance <= 0) {
       return List<Offset>.of(points);
     }
@@ -122,14 +125,12 @@ class FreehandSmoothing {
       for (int i = 0; i < current.length - 1; i++) {
         final Offset a = current[i];
         final Offset b = current[i + 1];
-        next.add(Offset(
-          (a.dx * 0.75) + (b.dx * 0.25),
-          (a.dy * 0.75) + (b.dy * 0.25),
-        ));
-        next.add(Offset(
-          (a.dx * 0.25) + (b.dx * 0.75),
-          (a.dy * 0.25) + (b.dy * 0.75),
-        ));
+        next.add(
+          Offset((a.dx * 0.75) + (b.dx * 0.25), (a.dy * 0.75) + (b.dy * 0.25)),
+        );
+        next.add(
+          Offset((a.dx * 0.25) + (b.dx * 0.75), (a.dy * 0.25) + (b.dy * 0.75)),
+        );
       }
       next.add(current.last);
       current = next;

@@ -151,13 +151,22 @@ void main() {
       sample(),
       clockwise: true,
     );
-    expect(rotated.dimensionLines.single.startNormalized, isNot(const Offset(0.1, 0.2)));
+    expect(
+      rotated.dimensionLines.single.startNormalized,
+      isNot(const Offset(0.1, 0.2)),
+    );
     expect(rotated.arrows.single.startNormalized, const Offset(1.0, 0.0));
-    expect(rotated.rectangles.single.startNormalized, isNot(const Offset(0.2, 0.3)));
+    expect(
+      rotated.rectangles.single.startNormalized,
+      isNot(const Offset(0.2, 0.3)),
+    );
     expect(rotated.ovals.single.startNormalized, isNot(const Offset(0.1, 0.1)));
     expect(rotated.textNotes.single.anchorNormalized, const Offset(0.25, 0.25));
     expect(rotated.callouts.single.anchorNormalized, const Offset(0.9, 0.9));
-    expect(rotated.blurs.single.startNormalized, isNot(const Offset(0.05, 0.05)));
+    expect(
+      rotated.blurs.single.startNormalized,
+      isNot(const Offset(0.05, 0.05)),
+    );
     expect(rotated.imagePixelSize, const Size(1200, 1600));
     expect(rotated.quarterTurns, 1);
   });
