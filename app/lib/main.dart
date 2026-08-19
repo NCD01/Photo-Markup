@@ -17,6 +17,8 @@ import 'package:ncd_photo_markup/features/import/services/dwg_preview_conversion
 import 'package:ncd_photo_markup/features/import/services/image_import_service.dart';
 import 'package:ncd_photo_markup/features/import/utils/load_error_visibility_policy.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/blur_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/callout_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/editable_markup_document.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
@@ -37,6 +39,7 @@ import 'package:ncd_photo_markup/features/markup/utils/markup_text_layout_utils.
 import 'package:ncd_photo_markup/features/markup/utils/markup_typography_utils.dart';
 import 'package:ncd_photo_markup/features/markup/rendering/markup_scene_renderer.dart';
 import 'package:ncd_photo_markup/features/markup/utils/unsaved_changes_tracker.dart';
+import 'package:ncd_photo_markup/features/markup/widgets/blur_regions_layer.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/features/sidebar/models/sidebar_icon_pack.dart';
 import 'package:ncd_photo_markup/features/view/utils/canvas_view_transform_utils.dart';
@@ -270,12 +273,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   final List<OvalMarkup> _ovals = <OvalMarkup>[];
   final List<FreehandMarkup> _freehands = <FreehandMarkup>[];
   final List<TextNoteMarkup> _textNotes = <TextNoteMarkup>[];
+  final List<CalloutMarkup> _callouts = <CalloutMarkup>[];
+  final List<BlurMarkup> _blurs = <BlurMarkup>[];
   int? _selectedDimensionId;
   int? _selectedArrowId;
   int? _selectedRectangleId;
   int? _selectedOvalId;
   int? _selectedFreehandId;
   int? _selectedTextNoteId;
+  int? _selectedCalloutId;
+  int? _selectedBlurId;
+  CalloutLabelStyle _calloutLabelStyle = CalloutLabelStyle.numbers;
   int _nextMarkupId = 1;
   Offset? _activeDimensionStart;
   Offset? _activeDimensionCurrent;
@@ -467,6 +475,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _ovals.clear();
       _freehands.clear();
       _textNotes.clear();
+      _callouts.clear();
+      _blurs.clear();
       _activeFreehandPoints.clear();
       _activeMoveSession = null;
       _activeHandleDragSession = null;
@@ -849,6 +859,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
+    if (label == ToolbarConstants.callout) {
+      _selectMarkupTool(MarkupTool.callout);
+      return;
+    }
+
+    if (label == ToolbarConstants.blur) {
+      _selectMarkupTool(MarkupTool.blur);
+      return;
+    }
+
     if (label == ToolbarConstants.rectangle) {
       _selectMarkupTool(MarkupTool.rectangle);
       return;
@@ -1154,6 +1174,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       ovals: List<OvalMarkup>.unmodifiable(_ovals),
       freehands: List<FreehandMarkup>.unmodifiable(_freehands),
       textNotes: List<TextNoteMarkup>.unmodifiable(_textNotes),
+      callouts: List<CalloutMarkup>.unmodifiable(_callouts),
+      blurs: List<BlurMarkup>.unmodifiable(_blurs),
     );
   }
 
@@ -1187,6 +1209,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     _textNotes
       ..clear()
       ..addAll(document.textNotes);
+    _callouts
+      ..clear()
+      ..addAll(document.callouts);
+    _blurs
+      ..clear()
+      ..addAll(document.blurs);
 
     int maxId = 0;
     for (final DimensionLine line in _dimensionLines) {
@@ -1217,6 +1245,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     for (final TextNoteMarkup note in _textNotes) {
       if (note.id > maxId) {
         maxId = note.id;
+      }
+    }
+    for (final CalloutMarkup callout in _callouts) {
+      if (callout.id > maxId) {
+        maxId = callout.id;
+      }
+    }
+    for (final BlurMarkup blur in _blurs) {
+      if (blur.id > maxId) {
+        maxId = blur.id;
       }
     }
     _nextMarkupId = math.max(document.nextMarkupId, maxId + 1);
@@ -1593,6 +1631,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return ToolbarConstants.freehand;
       case MarkupTool.highlighter:
         return ToolbarConstants.highlighter;
+      case MarkupTool.callout:
+        return ToolbarConstants.callout;
+      case MarkupTool.blur:
+        return ToolbarConstants.blur;
       case MarkupTool.none:
         return UiCopyConstants.toolbarActiveToolNone;
     }
@@ -1605,6 +1647,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       (label == ToolbarConstants.line && _selectedTool == MarkupTool.line) ||
       (label == ToolbarConstants.highlighter &&
           _selectedTool == MarkupTool.highlighter) ||
+      (label == ToolbarConstants.callout &&
+          _selectedTool == MarkupTool.callout) ||
+      (label == ToolbarConstants.blur && _selectedTool == MarkupTool.blur) ||
       (label == ToolbarConstants.circle && _selectedTool == MarkupTool.oval) ||
       (label == ToolbarConstants.rectangle &&
           _selectedTool == MarkupTool.rectangle) ||
@@ -2068,6 +2113,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         MarkupStylePresetId pendingPresetId = _selectedStylePresetId;
         double pendingStrokeWidthScale = _selectedStrokeWidthScale;
         bool pendingFilled = _selectedShapeFilled;
+        CalloutLabelStyle pendingCalloutStyle = _calloutLabelStyle;
         String pendingFontFamily =
             selectedDimension?.fontFamily ??
             selectedTextNote?.fontFamily ??
@@ -2164,6 +2210,45 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                       ),
                       const Divider(height: 20),
                       const Text(
+                        UiCopyConstants.styleDialogCalloutSectionTitle,
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: <Widget>[
+                          ChoiceChip(
+                            key: const ValueKey<String>('callout-style-numbers'),
+                            label: const Text(
+                              UiCopyConstants.calloutLabelStyleNumbers,
+                            ),
+                            selected:
+                                pendingCalloutStyle ==
+                                CalloutLabelStyle.numbers,
+                            onSelected: (_) {
+                              setDialogState(() {
+                                pendingCalloutStyle = CalloutLabelStyle.numbers;
+                              });
+                            },
+                          ),
+                          ChoiceChip(
+                            key: const ValueKey<String>('callout-style-letters'),
+                            label: const Text(
+                              UiCopyConstants.calloutLabelStyleLetters,
+                            ),
+                            selected:
+                                pendingCalloutStyle ==
+                                CalloutLabelStyle.letters,
+                            onSelected: (_) {
+                              setDialogState(() {
+                                pendingCalloutStyle = CalloutLabelStyle.letters;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 20),
+                      const Text(
                         UiCopyConstants.styleDialogTypographySectionTitle,
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
@@ -2230,6 +2315,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                       fontSize: pendingFontSize,
                       strokeWidthScale: pendingStrokeWidthScale,
                       filled: pendingFilled,
+                      calloutLabelStyle: pendingCalloutStyle,
                     ),
                   ),
                   child: const Text(UiCopyConstants.styleDialogApplyButton),
@@ -2268,6 +2354,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         selected.strokeWidthScale,
       );
       _selectedShapeFilled = selected.filled;
+      _calloutLabelStyle = selected.calloutLabelStyle;
       if (appliedToSelection) {
         _unsavedChangesTracker.markDirty();
       }
@@ -2377,6 +2464,35 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         );
         applied = true;
       }
+      return applied;
+    }
+
+    final int? selectedCalloutId = _selectedCalloutId;
+    if (selectedCalloutId != null) {
+      final int index = _callouts.indexWhere(
+        (CalloutMarkup callout) => callout.id == selectedCalloutId,
+      );
+      if (index != -1) {
+        _callouts[index] = _callouts[index].copyWith(
+          stylePresetId: presetId,
+          sizeScale: strokeWidthScale,
+        );
+        applied = true;
+      }
+      return applied;
+    }
+
+    final int? selectedBlurId = _selectedBlurId;
+    if (selectedBlurId != null) {
+      final int index = _blurs.indexWhere(
+        (BlurMarkup blur) => blur.id == selectedBlurId,
+      );
+      if (index != -1) {
+        _blurs[index] = _blurs[index].copyWith(
+          strengthScale: strokeWidthScale,
+        );
+        applied = true;
+      }
     }
     return applied;
   }
@@ -2389,6 +2505,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       ovals: List<OvalMarkup>.of(_ovals),
       freehands: List<FreehandMarkup>.of(_freehands),
       textNotes: List<TextNoteMarkup>.of(_textNotes),
+      callouts: List<CalloutMarkup>.of(_callouts),
+      blurs: List<BlurMarkup>.of(_blurs),
     );
   }
 
@@ -2400,6 +2518,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       ovals: _ovals,
       freehands: _freehands,
       textNotes: _textNotes,
+      callouts: _callouts,
+      blurs: _blurs,
       nextMarkupId: _nextMarkupId,
     );
   }
@@ -2423,6 +2543,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     _textNotes
       ..clear()
       ..addAll(snapshot.textNotes);
+    _callouts
+      ..clear()
+      ..addAll(snapshot.callouts);
+    _blurs
+      ..clear()
+      ..addAll(snapshot.blurs);
     _nextMarkupId = snapshot.nextMarkupId;
     _dropSelectionForMissingMarkup();
   }
@@ -2449,7 +2575,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         (_selectedTextNoteId != null &&
             _textNotes.any(
               (TextNoteMarkup note) => note.id == _selectedTextNoteId,
-            ));
+            )) ||
+        (_selectedCalloutId != null &&
+            _callouts.any(
+              (CalloutMarkup callout) => callout.id == _selectedCalloutId,
+            )) ||
+        (_selectedBlurId != null &&
+            _blurs.any((BlurMarkup blur) => blur.id == _selectedBlurId));
     if (!stillPresent) {
       _clearMarkupSelection();
     }
@@ -2495,8 +2627,20 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     _selectedOvalId = null;
     _selectedFreehandId = null;
     _selectedTextNoteId = null;
+    _selectedCalloutId = null;
+    _selectedBlurId = null;
     _activeHandleDragSession = null;
     _suppressTapActionAfterPointerDownSelection = false;
+  }
+
+  void _selectCalloutById(int id) {
+    _clearMarkupSelection();
+    _selectedCalloutId = id;
+  }
+
+  void _selectBlurById(int id) {
+    _clearMarkupSelection();
+    _selectedBlurId = id;
   }
 
   void _selectDimensionById(int id) {
@@ -2594,6 +2738,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         _ovals.clear();
         _freehands.clear();
         _textNotes.clear();
+        _callouts.clear();
+        _blurs.clear();
         _clearMarkupSelection();
         _unsavedChangesTracker.markDirty();
       });
@@ -2693,6 +2839,28 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         _textNotes.removeWhere(
           (TextNoteMarkup textNote) => textNote.id == selectedTextNoteId,
         );
+        _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
+      });
+      return;
+    }
+
+    final int? selectedCalloutId = _selectedCalloutId;
+    if (selectedCalloutId != null) {
+      setState(() {
+        _callouts.removeWhere(
+          (CalloutMarkup callout) => callout.id == selectedCalloutId,
+        );
+        _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
+      });
+      return;
+    }
+
+    final int? selectedBlurId = _selectedBlurId;
+    if (selectedBlurId != null) {
+      setState(() {
+        _blurs.removeWhere((BlurMarkup blur) => blur.id == selectedBlurId);
         _clearMarkupSelection();
         _unsavedChangesTracker.markDirty();
       });
@@ -2862,6 +3030,31 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
+    if (_selectedTool == MarkupTool.blur) {
+      final BlurMarkup blur = BlurMarkup.fromCanvasPoints(
+        id: _allocateMarkupId(),
+        startPoint: start,
+        endPoint: end,
+        imageRect: imageRect,
+        strengthScale: _selectedStrokeWidthScale,
+      );
+      if (blur.widthInRect(imageRect) < BlurMarkupConstants.minSideLength ||
+          blur.heightInRect(imageRect) < BlurMarkupConstants.minSideLength) {
+        if (mounted) {
+          setState(() {});
+        }
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _blurs.add(blur);
+          _selectBlurById(blur.id);
+          _unsavedChangesTracker.markDirty();
+        });
+      }
+      return;
+    }
+
     if (_selectedTool == MarkupTool.rectangle) {
       final RectangleMarkup rectangle = RectangleMarkup.fromCanvasPoints(
         id: _allocateMarkupId(),
@@ -2999,6 +3192,25 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return _DimensionLabelDialog(initialValue: initialValue);
       },
     );
+  }
+
+  void _createCalloutAt(Offset point, Rect imageRect) {
+    final MarkupSnapshot historyBefore = _snapshotMarkup();
+    final CalloutMarkup callout = CalloutMarkup.fromCanvasPoint(
+      id: _allocateMarkupId(),
+      anchorPoint: point,
+      sequence: CalloutMarkup.nextSequence(_callouts),
+      imageRect: imageRect,
+      labelStyle: _calloutLabelStyle,
+      stylePresetId: _selectedStylePresetId,
+      sizeScale: _selectedStrokeWidthScale,
+    );
+    setState(() {
+      _callouts.add(callout);
+      _selectCalloutById(callout.id);
+      _unsavedChangesTracker.markDirty();
+    });
+    _history.record(historyBefore, _snapshotMarkup());
   }
 
   Future<void> _createTextNoteAt(Offset point, Rect imageRect) async {
@@ -3207,6 +3419,30 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       }
     }
 
+    final int? selectedBlurId = _selectedBlurId;
+    if (selectedBlurId != null) {
+      final int index = _blurs.indexWhere(
+        (BlurMarkup blur) => blur.id == selectedBlurId,
+      );
+      if (index != -1) {
+        final Rect rect = _blurs[index].rectInRect(imageRect);
+        final int? cornerIndex = MarkupHandleUtils.hitCornerIndex(
+          point,
+          corners: MarkupHandleUtils.rectangleCorners(rect),
+          hitDistance: MarkupHandleConstants.hitDistance,
+        );
+        if (cornerIndex != null) {
+          _activeHandleDragSession = _HandleDragSession(
+            markupId: selectedBlurId,
+            handleKind: _HandleKind.blurCorner,
+            cornerIndex: cornerIndex,
+            startPoint: point,
+          );
+          return true;
+        }
+      }
+    }
+
     return false;
   }
 
@@ -3279,6 +3515,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         break;
       case _HandleKind.ovalCorner:
         changed = _resizeOvalFromCorner(
+          markupId: handleSession.markupId,
+          cornerIndex: handleSession.cornerIndex!,
+          imageRect: imageRect,
+          point: clampedPoint,
+        );
+        break;
+      case _HandleKind.blurCorner:
+        changed = _resizeBlurFromCorner(
           markupId: handleSession.markupId,
           cornerIndex: handleSession.cornerIndex!,
           imageRect: imageRect,
@@ -3497,6 +3741,44 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     return true;
   }
 
+  bool _resizeBlurFromCorner({
+    required int markupId,
+    required int cornerIndex,
+    required Rect imageRect,
+    required Offset point,
+  }) {
+    final int index = _blurs.indexWhere(
+      (BlurMarkup blur) => blur.id == markupId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final BlurMarkup blur = _blurs[index];
+    final Rect resized = MarkupHandleUtils.resizeRectFromCorner(
+      currentRect: blur.rectInRect(imageRect),
+      cornerIndex: cornerIndex,
+      dragPoint: point,
+      bounds: imageRect,
+      minWidth: BlurMarkupConstants.minSideLength,
+      minHeight: BlurMarkupConstants.minSideLength,
+    );
+    final BlurMarkup updated = BlurMarkup.fromCanvasPoints(
+      id: blur.id,
+      startPoint: resized.topLeft,
+      endPoint: resized.bottomRight,
+      imageRect: imageRect,
+      strengthScale: blur.strengthScale,
+    );
+    if (updated == blur) {
+      return false;
+    }
+    setState(() {
+      _blurs[index] = updated;
+      _unsavedChangesTracker.markDirty();
+    });
+    return true;
+  }
+
   bool _tryStartMoveSelectedMarkup(Offset point, Rect imageRect) {
     final _SelectedMarkup? selectedMarkup = _selectedMarkup();
     if (selectedMarkup == null) {
@@ -3567,6 +3849,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         case MarkupTool.textNote:
           _selectTextNoteById(nearestHit.markupId);
           break;
+        case MarkupTool.callout:
+          _selectCalloutById(nearestHit.markupId);
+          break;
+        case MarkupTool.blur:
+          _selectBlurById(nearestHit.markupId);
+          break;
         case MarkupTool.line:
         case MarkupTool.highlighter:
         case MarkupTool.none:
@@ -3611,6 +3899,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         tool: MarkupTool.textNote,
       );
     }
+    if (_selectedCalloutId != null) {
+      return _SelectedMarkup(
+        markupId: _selectedCalloutId!,
+        tool: MarkupTool.callout,
+      );
+    }
+    if (_selectedBlurId != null) {
+      return _SelectedMarkup(markupId: _selectedBlurId!, tool: MarkupTool.blur);
+    }
     return null;
   }
 
@@ -3643,6 +3940,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       case MarkupTool.highlighter:
         return math.max(
           HighlighterMarkupConstants.selectionHitDistance,
+          minimumHitDistance,
+        );
+      case MarkupTool.callout:
+        return math.max(
+          CalloutMarkupConstants.selectionHitDistance,
+          minimumHitDistance,
+        );
+      case MarkupTool.blur:
+        return math.max(
+          BlurMarkupConstants.selectionHitDistance,
           minimumHitDistance,
         );
       case MarkupTool.textNote:
@@ -3720,6 +4027,22 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           return double.infinity;
         }
         return _distanceToTextNote(_textNotes[index], point, imageRect);
+      case MarkupTool.callout:
+        final int index = _callouts.indexWhere(
+          (CalloutMarkup callout) => callout.id == selectedMarkup.markupId,
+        );
+        if (index == -1) {
+          return double.infinity;
+        }
+        return _callouts[index].distanceToPointInRect(point, imageRect, 1.0);
+      case MarkupTool.blur:
+        final int index = _blurs.indexWhere(
+          (BlurMarkup blur) => blur.id == selectedMarkup.markupId,
+        );
+        if (index == -1) {
+          return double.infinity;
+        }
+        return _blurs[index].distanceToPointInRect(point, imageRect);
       case MarkupTool.line:
       case MarkupTool.highlighter:
       case MarkupTool.none:
@@ -3779,6 +4102,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return _moveFreehandByDelta(markupId, requestedDelta, imageRect);
       case MarkupTool.textNote:
         return _moveTextNoteByDelta(markupId, requestedDelta, imageRect);
+      case MarkupTool.callout:
+        return _moveCalloutByDelta(markupId, requestedDelta, imageRect);
+      case MarkupTool.blur:
+        return _moveBlurByDelta(markupId, requestedDelta, imageRect);
       case MarkupTool.line:
       case MarkupTool.highlighter:
       case MarkupTool.none:
@@ -3988,6 +4315,75 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     return appliedDelta;
   }
 
+  Offset _moveCalloutByDelta(int markupId, Offset delta, Rect imageRect) {
+    final int index = _callouts.indexWhere(
+      (CalloutMarkup callout) => callout.id == markupId,
+    );
+    if (index == -1) {
+      return Offset.zero;
+    }
+    final CalloutMarkup callout = _callouts[index];
+    final Offset center = callout.centerInRect(imageRect);
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: <Offset>[center],
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    setState(() {
+      _callouts[index] = CalloutMarkup.fromCanvasPoint(
+        id: callout.id,
+        anchorPoint: center + appliedDelta,
+        sequence: callout.sequence,
+        imageRect: imageRect,
+        labelStyle: callout.labelStyle,
+        stylePresetId: callout.stylePresetId,
+        sizeScale: callout.sizeScale,
+      );
+      _unsavedChangesTracker.markDirty();
+    });
+    return appliedDelta;
+  }
+
+  Offset _moveBlurByDelta(int markupId, Offset delta, Rect imageRect) {
+    final int index = _blurs.indexWhere(
+      (BlurMarkup blur) => blur.id == markupId,
+    );
+    if (index == -1) {
+      return Offset.zero;
+    }
+    final BlurMarkup blur = _blurs[index];
+    final Rect rect = blur.rectInRect(imageRect);
+    final List<Offset> points = <Offset>[rect.topLeft, rect.bottomRight];
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: points,
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    final List<Offset> moved = MarkupMoveUtils.translatePoints(
+      points,
+      appliedDelta,
+    );
+    setState(() {
+      _blurs[index] = BlurMarkup.fromCanvasPoints(
+        id: blur.id,
+        startPoint: moved.first,
+        endPoint: moved.last,
+        imageRect: imageRect,
+        strengthScale: blur.strengthScale,
+      );
+      _unsavedChangesTracker.markDirty();
+    });
+    return appliedDelta;
+  }
+
   Offset _moveTextNoteByDelta(int markupId, Offset delta, Rect imageRect) {
     final int index = _textNotes.indexWhere(
       (TextNoteMarkup note) => note.id == markupId,
@@ -4031,6 +4427,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
     if (MarkupInteractionPolicy.allowsTextNoteCreation(_selectedTool)) {
       await _createTextNoteAt(point, imageRect);
+      return;
+    }
+    if (_selectedTool == MarkupTool.callout) {
+      _createCalloutAt(point, imageRect);
       return;
     }
     if (!MarkupInteractionPolicy.allowsTapSelection(_selectedTool)) {
@@ -4226,6 +4626,28 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       }
     }
 
+    for (final CalloutMarkup callout in _callouts) {
+      final double distance = callout.distanceToPointInRect(
+        point,
+        imageRect,
+        1.0,
+      );
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMarkupId = callout.id;
+        bestTool = MarkupTool.callout;
+      }
+    }
+
+    for (final BlurMarkup blur in _blurs) {
+      final double distance = blur.distanceToPointInRect(point, imageRect);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMarkupId = blur.id;
+        bestTool = MarkupTool.blur;
+      }
+    }
+
     double maxSelectionDistance = DimensionLineConstants.selectionTapDistance;
     if (RectangleMarkupConstants.selectionHitDistance > maxSelectionDistance) {
       maxSelectionDistance = RectangleMarkupConstants.selectionHitDistance;
@@ -4238,6 +4660,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
     if (TextNoteMarkupConstants.selectionHitDistance > maxSelectionDistance) {
       maxSelectionDistance = TextNoteMarkupConstants.selectionHitDistance;
+    }
+    if (CalloutMarkupConstants.selectionHitDistance > maxSelectionDistance) {
+      maxSelectionDistance = CalloutMarkupConstants.selectionHitDistance;
+    }
+    if (BlurMarkupConstants.selectionHitDistance > maxSelectionDistance) {
+      maxSelectionDistance = BlurMarkupConstants.selectionHitDistance;
     }
 
     if (bestDistance > maxSelectionDistance) {
@@ -4324,7 +4752,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
             _selectedTool == MarkupTool.rectangle ||
             _selectedTool == MarkupTool.oval ||
             _selectedTool == MarkupTool.freehand ||
-            _selectedTool == MarkupTool.highlighter) &&
+            _selectedTool == MarkupTool.highlighter ||
+            _selectedTool == MarkupTool.blur) &&
         _imagePath != null &&
         imageRect.width > 0 &&
         imageRect.height > 0;
@@ -4664,6 +5093,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                       },
                                 ),
                               ),
+                              BlurRegionsLayer(
+                                blurs: _blurs,
+                                imageRect: imageRect,
+                              ),
                               DimensionLinesOverlay(
                                 lines: _dimensionLines,
                                 arrows: _arrows,
@@ -4671,6 +5104,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                 ovals: _ovals,
                                 freehands: _freehands,
                                 textNotes: _textNotes,
+                                callouts: _callouts,
+                                blurs: _blurs,
                                 imageRect: imageRect,
                                 selectedDimensionId: _selectedDimensionId,
                                 selectedArrowId: _selectedArrowId,
@@ -4678,6 +5113,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                 selectedOvalId: _selectedOvalId,
                                 selectedFreehandId: _selectedFreehandId,
                                 selectedTextNoteId: _selectedTextNoteId,
+                                selectedCalloutId: _selectedCalloutId,
+                                selectedBlurId: _selectedBlurId,
                                 activeStylePresetId: _selectedStylePresetId,
                                 activeTool: _selectedTool,
                                 activeStart: _activeDimensionStart,
@@ -4803,6 +5240,7 @@ enum _HandleKind {
   arrowEnd,
   rectangleCorner,
   ovalCorner,
+  blurCorner,
 }
 
 class _HandleDragSession {
@@ -4829,6 +5267,7 @@ class _StyleDialogResult {
     required this.fontSize,
     required this.strokeWidthScale,
     required this.filled,
+    required this.calloutLabelStyle,
   });
 
   final MarkupStylePresetId presetId;
@@ -4836,6 +5275,7 @@ class _StyleDialogResult {
   final double fontSize;
   final double strokeWidthScale;
   final bool filled;
+  final CalloutLabelStyle calloutLabelStyle;
 }
 
 class _SidebarActionSection extends StatelessWidget {

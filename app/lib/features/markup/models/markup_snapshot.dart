@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/blur_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/callout_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
@@ -20,13 +22,17 @@ class MarkupSnapshot {
     required List<OvalMarkup> ovals,
     required List<FreehandMarkup> freehands,
     required List<TextNoteMarkup> textNotes,
+    List<CalloutMarkup> callouts = const <CalloutMarkup>[],
+    List<BlurMarkup> blurs = const <BlurMarkup>[],
     required this.nextMarkupId,
   }) : dimensionLines = List<DimensionLine>.unmodifiable(dimensionLines),
        arrows = List<ArrowMarkup>.unmodifiable(arrows),
        rectangles = List<RectangleMarkup>.unmodifiable(rectangles),
        ovals = List<OvalMarkup>.unmodifiable(ovals),
        freehands = List<FreehandMarkup>.unmodifiable(freehands),
-       textNotes = List<TextNoteMarkup>.unmodifiable(textNotes);
+       textNotes = List<TextNoteMarkup>.unmodifiable(textNotes),
+       callouts = List<CalloutMarkup>.unmodifiable(callouts),
+       blurs = List<BlurMarkup>.unmodifiable(blurs);
 
   final List<DimensionLine> dimensionLines;
   final List<ArrowMarkup> arrows;
@@ -34,6 +40,8 @@ class MarkupSnapshot {
   final List<OvalMarkup> ovals;
   final List<FreehandMarkup> freehands;
   final List<TextNoteMarkup> textNotes;
+  final List<CalloutMarkup> callouts;
+  final List<BlurMarkup> blurs;
   final int nextMarkupId;
 
   static MarkupSnapshot empty() {
@@ -44,6 +52,8 @@ class MarkupSnapshot {
       ovals: const <OvalMarkup>[],
       freehands: const <FreehandMarkup>[],
       textNotes: const <TextNoteMarkup>[],
+      callouts: const <CalloutMarkup>[],
+      blurs: const <BlurMarkup>[],
       nextMarkupId: 1,
     );
   }
@@ -54,7 +64,9 @@ class MarkupSnapshot {
       rectangles.isEmpty &&
       ovals.isEmpty &&
       freehands.isEmpty &&
-      textNotes.isEmpty;
+      textNotes.isEmpty &&
+      callouts.isEmpty &&
+      blurs.isEmpty;
 
   int get markupCount =>
       dimensionLines.length +
@@ -62,7 +74,9 @@ class MarkupSnapshot {
       rectangles.length +
       ovals.length +
       freehands.length +
-      textNotes.length;
+      textNotes.length +
+      callouts.length +
+      blurs.length;
 
   @override
   bool operator ==(Object other) {
@@ -76,7 +90,9 @@ class MarkupSnapshot {
         listEquals(other.rectangles, rectangles) &&
         listEquals(other.ovals, ovals) &&
         listEquals(other.freehands, freehands) &&
-        listEquals(other.textNotes, textNotes);
+        listEquals(other.textNotes, textNotes) &&
+        listEquals(other.callouts, callouts) &&
+        listEquals(other.blurs, blurs);
   }
 
   @override
@@ -88,5 +104,7 @@ class MarkupSnapshot {
     Object.hashAll(ovals),
     Object.hashAll(freehands),
     Object.hashAll(textNotes),
+    Object.hashAll(callouts),
+    Object.hashAll(blurs),
   );
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/blur_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/callout_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
@@ -23,6 +25,8 @@ class DimensionLinesOverlay extends StatefulWidget {
     required this.ovals,
     required this.freehands,
     required this.textNotes,
+    this.callouts = const <CalloutMarkup>[],
+    this.blurs = const <BlurMarkup>[],
     required this.imageRect,
     required this.selectedDimensionId,
     required this.selectedArrowId,
@@ -30,6 +34,8 @@ class DimensionLinesOverlay extends StatefulWidget {
     required this.selectedOvalId,
     required this.selectedFreehandId,
     required this.selectedTextNoteId,
+    this.selectedCalloutId,
+    this.selectedBlurId,
     required this.activeStylePresetId,
     required this.activeTool,
     this.activeStart,
@@ -50,6 +56,8 @@ class DimensionLinesOverlay extends StatefulWidget {
   final List<OvalMarkup> ovals;
   final List<FreehandMarkup> freehands;
   final List<TextNoteMarkup> textNotes;
+  final List<CalloutMarkup> callouts;
+  final List<BlurMarkup> blurs;
   final Rect imageRect;
   final int? selectedDimensionId;
   final int? selectedArrowId;
@@ -57,6 +65,8 @@ class DimensionLinesOverlay extends StatefulWidget {
   final int? selectedOvalId;
   final int? selectedFreehandId;
   final int? selectedTextNoteId;
+  final int? selectedCalloutId;
+  final int? selectedBlurId;
   final MarkupStylePresetId activeStylePresetId;
   final MarkupTool activeTool;
   final Offset? activeStart;
@@ -151,12 +161,16 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
             ovals: List<OvalMarkup>.of(widget.ovals),
             freehands: List<FreehandMarkup>.of(widget.freehands),
             textNotes: List<TextNoteMarkup>.of(widget.textNotes),
+            callouts: List<CalloutMarkup>.of(widget.callouts),
+            blurs: List<BlurMarkup>.of(widget.blurs),
             selectedDimensionId: widget.selectedDimensionId,
             selectedArrowId: widget.selectedArrowId,
             selectedRectangleId: widget.selectedRectangleId,
             selectedOvalId: widget.selectedOvalId,
             selectedFreehandId: widget.selectedFreehandId,
             selectedTextNoteId: widget.selectedTextNoteId,
+            selectedCalloutId: widget.selectedCalloutId,
+            selectedBlurId: widget.selectedBlurId,
             activeStylePresetId: widget.activeStylePresetId,
             activeTool: widget.activeTool,
             activeStart: widget.activeStart,

@@ -8,4 +8,6 @@ enum MarkupTool {
   freehand,
   highlighter,
   textNote,
+  callout,
+  blur,
 }

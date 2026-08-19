@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ncd_photo_markup/features/export/services/full_resolution_export_service.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/blur_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/callout_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
@@ -65,6 +67,8 @@ MarkupScene sceneWith({
   List<OvalMarkup> ovals = const <OvalMarkup>[],
   List<FreehandMarkup> freehands = const <FreehandMarkup>[],
   List<TextNoteMarkup> textNotes = const <TextNoteMarkup>[],
+  List<CalloutMarkup> callouts = const <CalloutMarkup>[],
+  List<BlurMarkup> blurs = const <BlurMarkup>[],
   int? selectedRectangleId,
 }) {
   return MarkupScene(
@@ -74,8 +78,30 @@ MarkupScene sceneWith({
     ovals: ovals,
     freehands: freehands,
     textNotes: textNotes,
+    callouts: callouts,
+    blurs: blurs,
     selectedRectangleId: selectedRectangleId,
   );
+}
+
+/// A source photo with hard vertical black and white stripes, so a blur is
+/// obvious: blurred stripes average out to grey.
+Future<ui.Image> stripedImage(int width, int height, int stripeWidth) async {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+  for (int x = 0; x < width; x += stripeWidth) {
+    canvas.drawRect(
+      Rect.fromLTWH(x.toDouble(), 0, stripeWidth.toDouble(), height.toDouble()),
+      Paint()
+        ..color = ((x ~/ stripeWidth).isEven)
+            ? const Color(0xFF000000)
+            : const Color(0xFFFFFFFF),
+    );
+  }
+  final ui.Picture picture = recorder.endRecording();
+  final ui.Image image = await picture.toImage(width, height);
+  picture.dispose();
+  return image;
 }
 
 void main() {
@@ -302,5 +328,108 @@ void main() {
     expect(decoded.width, 1234);
     expect(decoded.height, 567);
     decoded.dispose();
+  });
+
+  test('a blur region actually destroys detail in the exported pixels', () async {
+    final ui.Image source = await stripedImage(1200, 600, 20);
+    final String path = '${outputDir.path}/blurred.png';
+
+    await FullResolutionExportService.renderToPng(
+      sourceImage: source,
+      scene: sceneWith(
+        blurs: const <BlurMarkup>[
+          // Covers the left half of the photo.
+          BlurMarkup(
+            id: 1,
+            startNormalized: Offset(0.0, 0.0),
+            endNormalized: Offset(0.5, 1.0),
+            strengthScale: 2.6,
+          ),
+        ],
+      ),
+      displayImageRect: const Rect.fromLTWH(0, 0, 600, 300),
+      outputPath: path,
+    );
+    source.dispose();
+
+    final DecodedPng decoded = await readPng(path);
+
+    int spread(int fromX, int toX, int y) {
+      int lowest = 255;
+      int highest = 0;
+      for (int x = fromX; x < toX; x++) {
+        final int value = decoded.redAt(x, y);
+        lowest = value < lowest ? value : lowest;
+        highest = value > highest ? value : highest;
+      }
+      return highest - lowest;
+    }
+
+    // Untouched half still swings the full black-to-white range.
+    expect(spread(700, 1100, 300), greaterThan(200));
+    // Blurred half has had that contrast averaged away.
+    expect(spread(100, 500, 300), lessThan(120));
+  });
+
+  test('blur strength scales up with the export so a face stays hidden', () async {
+    final String path = '${outputDir.path}/blur_big.png';
+    final ui.Image source = await stripedImage(4000, 2000, 60);
+
+    await FullResolutionExportService.renderToPng(
+      sourceImage: source,
+      scene: sceneWith(
+        blurs: const <BlurMarkup>[
+          BlurMarkup(
+            id: 1,
+            startNormalized: Offset(0.1, 0.1),
+            endNormalized: Offset(0.6, 0.9),
+            strengthScale: 2.6,
+          ),
+        ],
+      ),
+      // On screen the photo was only 500pt wide, an 8x scale up.
+      displayImageRect: const Rect.fromLTWH(0, 0, 500, 250),
+      outputPath: path,
+    );
+    source.dispose();
+
+    final DecodedPng decoded = await readPng(path);
+    int lowest = 255;
+    int highest = 0;
+    for (int x = 800; x < 2200; x++) {
+      final int value = decoded.redAt(x, 1000);
+      lowest = value < lowest ? value : lowest;
+      highest = value > highest ? value : highest;
+    }
+    expect(highest - lowest, lessThan(140));
+  });
+
+  test('callout pins are drawn into the export', () async {
+    final String withPin = '${outputDir.path}/with_pin.png';
+    final ui.Image source = await whiteImage(1000, 1000);
+
+    await FullResolutionExportService.renderToPng(
+      sourceImage: source,
+      scene: sceneWith(
+        callouts: const <CalloutMarkup>[
+          CalloutMarkup(
+            id: 1,
+            anchorNormalized: Offset(0.5, 0.5),
+            sequence: 1,
+            stylePresetId: MarkupStylePresetId.black,
+          ),
+        ],
+      ),
+      displayImageRect: const Rect.fromLTWH(0, 0, 500, 500),
+      outputPath: withPin,
+    );
+    source.dispose();
+
+    final DecodedPng decoded = await readPng(withPin);
+    // The pin body sits on the middle of the photo. Sample beside the digit
+    // so the reading is the pin fill, not the glyph.
+    expect(decoded.redAt(478, 500), lessThan(200));
+    // Away from the pin the photo is untouched.
+    expect(decoded.redAt(100, 100), greaterThan(240));
   });
 }

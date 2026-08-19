@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/blur_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/callout_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
@@ -27,6 +29,8 @@ class EditableMarkupDocument {
     required this.ovals,
     required this.freehands,
     required this.textNotes,
+    this.callouts = const <CalloutMarkup>[],
+    this.blurs = const <BlurMarkup>[],
   });
 
   final String schemaVersion;
@@ -45,6 +49,8 @@ class EditableMarkupDocument {
   final List<OvalMarkup> ovals;
   final List<FreehandMarkup> freehands;
   final List<TextNoteMarkup> textNotes;
+  final List<CalloutMarkup> callouts;
+  final List<BlurMarkup> blurs;
 
   factory EditableMarkupDocument.fromJson(Map<String, dynamic> json) {
     final String schemaVersion = (json['schemaVersion'] ?? '')
@@ -80,6 +86,8 @@ class EditableMarkupDocument {
       ovals: _readOvals(json['ovals']),
       freehands: _readFreehands(json['freehands']),
       textNotes: _readTextNotes(json['textNotes']),
+      callouts: _readCallouts(json['callouts']),
+      blurs: _readBlurs(json['blurs']),
     );
   }
 
@@ -177,7 +185,88 @@ class EditableMarkupDocument {
             },
           )
           .toList(growable: false),
+      'callouts': callouts
+          .map(
+            (CalloutMarkup callout) => <String, dynamic>{
+              'id': callout.id,
+              'anchorNormalized': _offsetToJson(callout.anchorNormalized),
+              'sequence': callout.sequence,
+              'labelStyle': callout.labelStyle.name,
+              'stylePresetId': callout.stylePresetId.name,
+              'sizeScale': callout.sizeScale,
+            },
+          )
+          .toList(growable: false),
+      'blurs': blurs
+          .map(
+            (BlurMarkup blur) => <String, dynamic>{
+              'id': blur.id,
+              'startNormalized': _offsetToJson(blur.startNormalized),
+              'endNormalized': _offsetToJson(blur.endNormalized),
+              'strengthScale': blur.strengthScale,
+            },
+          )
+          .toList(growable: false),
     };
+  }
+
+  static List<CalloutMarkup> _readCallouts(dynamic raw) {
+    if (raw is! List) {
+      return const <CalloutMarkup>[];
+    }
+    final List<CalloutMarkup> callouts = <CalloutMarkup>[];
+    for (final dynamic item in raw) {
+      final Map<String, dynamic>? map = _asMap(item);
+      if (map == null) {
+        continue;
+      }
+      final int? id = _asInt(map['id']);
+      final Offset? anchor = _offsetFromJson(map['anchorNormalized']);
+      if (id == null || anchor == null) {
+        continue;
+      }
+      callouts.add(
+        CalloutMarkup(
+          id: id,
+          anchorNormalized: anchor,
+          sequence: _asInt(map['sequence']) ?? 1,
+          labelStyle: CalloutMarkup.labelStyleFromName(
+            map['labelStyle']?.toString(),
+          ),
+          stylePresetId: _stylePresetFromValue(map['stylePresetId']),
+          sizeScale: _strokeScaleFromValue(map['sizeScale']),
+        ),
+      );
+    }
+    return List<CalloutMarkup>.unmodifiable(callouts);
+  }
+
+  static List<BlurMarkup> _readBlurs(dynamic raw) {
+    if (raw is! List) {
+      return const <BlurMarkup>[];
+    }
+    final List<BlurMarkup> blurs = <BlurMarkup>[];
+    for (final dynamic item in raw) {
+      final Map<String, dynamic>? map = _asMap(item);
+      if (map == null) {
+        continue;
+      }
+      final int? id = _asInt(map['id']);
+      final Offset? start = _offsetFromJson(map['startNormalized']);
+      final Offset? end = _offsetFromJson(map['endNormalized']);
+      if (id == null || start == null || end == null) {
+        continue;
+      }
+      blurs.add(
+        BlurMarkup(
+          id: id,
+          startNormalized: start,
+          endNormalized: end,
+          strengthScale: _strokeScaleFromValue(map['strengthScale']),
+        ),
+      );
+    }
+    return List<BlurMarkup>.unmodifiable(blurs);
   }
 
   static List<DimensionLine> _readDimensionLines(dynamic raw) {

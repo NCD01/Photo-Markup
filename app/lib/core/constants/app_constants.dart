@@ -278,6 +278,9 @@ class UiCopyConstants {
   static const String unsavedChangesDiscardButton = 'Discard';
   static const String unsavedChangesCancelButton = 'Cancel';
   static const String eraseNoSelectionMessage = 'Select a markup to erase.';
+  static const String calloutLabelStyleNumbers = 'Numbers (1, 2, 3)';
+  static const String calloutLabelStyleLetters = 'Letters (A, B, C)';
+  static const String styleDialogCalloutSectionTitle = 'Callout Pins';
   static const String undoNothingMessage = 'Nothing left to undo.';
   static const String redoNothingMessage = 'Nothing to redo.';
   static const String clearAllDialogTitle = 'Clear All Markup?';
@@ -361,6 +364,8 @@ class ToolbarConstants {
   static const String arrow = 'Arrow';
   static const String line = 'Line';
   static const String highlighter = 'Highlighter';
+  static const String callout = 'Callout';
+  static const String blur = 'Blur';
   static const String circle = 'Circle';
   static const String rectangle = 'Rectangle';
   static const String freehand = 'Freehand';
@@ -390,6 +395,8 @@ class ToolbarConstants {
     circle,
     freehand,
     highlighter,
+    callout,
+    blur,
   ];
   static const List<String> editActionOrder = <String>[
     style,
@@ -621,6 +628,31 @@ class OvalMarkupConstants {
   static const double selectedStrokeMultiplier = 1.35;
   static const double minAxisLength = 8;
   static const double selectionHitDistance = 26;
+}
+
+class CalloutMarkupConstants {
+  const CalloutMarkupConstants._();
+
+  static const double baseRadius = 15;
+  static const double borderWidth = 2.4;
+  static const double fontSizeFactor = 1.15;
+  static const double selectionHitDistance = 22;
+}
+
+class BlurMarkupConstants {
+  const BlurMarkupConstants._();
+
+  static const double minimumSigma = 6;
+  static const double maximumSigma = 60;
+
+  /// Blur radius as a fraction of the shorter side of the region, so a big
+  /// area gets a proportionally big blur.
+  static const double sigmaShortSideFactor = 0.09;
+  static const double minSideLength = 12;
+  static const double selectionHitDistance = 20;
+  static const double outlineWidth = 1.4;
+  static const Color outlineColor = Color(0x99FFFFFF);
+  static const Color outlineShadowColor = Color(0x99000000);
 }
 
 class MarkupFillConstants {

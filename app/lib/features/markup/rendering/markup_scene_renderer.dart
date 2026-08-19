@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/blur_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/callout_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
@@ -23,12 +25,16 @@ class MarkupScene {
     required this.ovals,
     required this.freehands,
     required this.textNotes,
+    this.callouts = const <CalloutMarkup>[],
+    this.blurs = const <BlurMarkup>[],
     this.selectedDimensionId,
     this.selectedArrowId,
     this.selectedRectangleId,
     this.selectedOvalId,
     this.selectedFreehandId,
     this.selectedTextNoteId,
+    this.selectedCalloutId,
+    this.selectedBlurId,
     this.activeStylePresetId = MarkupStylePresets.defaultPresetId,
     this.activeTool = MarkupTool.none,
     this.activeStart,
@@ -44,12 +50,16 @@ class MarkupScene {
   final List<OvalMarkup> ovals;
   final List<FreehandMarkup> freehands;
   final List<TextNoteMarkup> textNotes;
+  final List<CalloutMarkup> callouts;
+  final List<BlurMarkup> blurs;
   final int? selectedDimensionId;
   final int? selectedArrowId;
   final int? selectedRectangleId;
   final int? selectedOvalId;
   final int? selectedFreehandId;
   final int? selectedTextNoteId;
+  final int? selectedCalloutId;
+  final int? selectedBlurId;
   final MarkupStylePresetId activeStylePresetId;
   final MarkupTool activeTool;
   final Offset? activeStart;
@@ -66,6 +76,10 @@ class MarkupScene {
         listEquals(a.ovals, b.ovals) &&
         listEquals(a.freehands, b.freehands) &&
         listEquals(a.textNotes, b.textNotes) &&
+        listEquals(a.callouts, b.callouts) &&
+        listEquals(a.blurs, b.blurs) &&
+        a.selectedCalloutId == b.selectedCalloutId &&
+        a.selectedBlurId == b.selectedBlurId &&
         a.selectedDimensionId == b.selectedDimensionId &&
         a.selectedArrowId == b.selectedArrowId &&
         a.selectedRectangleId == b.selectedRectangleId &&
@@ -105,6 +119,19 @@ class MarkupSceneRenderer {
 
     canvas.save();
     canvas.clipRect(imageRect);
+
+    // The blurred pixels themselves are applied by the photo layer (on screen)
+    // and by the exporter (on save). All that is drawn here is the edge of the
+    // region, so the user can see and grab it.
+    for (final BlurMarkup blur in scene.blurs) {
+      _paintBlurRegionOutline(
+        canvas: canvas,
+        rect: blur.rectInRect(imageRect),
+        scale: scale,
+        isSelected: showSelection && scene.selectedBlurId == blur.id,
+        showOutline: showSelection,
+      );
+    }
 
     // Highlighter passes go underneath everything else so a highlight never
     // washes out the line it is meant to emphasise.
@@ -208,6 +235,16 @@ class MarkupSceneRenderer {
         preset: MarkupStylePresets.byId(note.stylePresetId),
         scale: scale,
         isSelected: showSelection && scene.selectedTextNoteId == note.id,
+      );
+    }
+
+    for (final CalloutMarkup callout in scene.callouts) {
+      _paintCallout(
+        canvas: canvas,
+        callout: callout,
+        imageRect: imageRect,
+        scale: scale,
+        isSelected: showSelection && scene.selectedCalloutId == callout.id,
       );
     }
 
@@ -762,6 +799,90 @@ class MarkupSceneRenderer {
     );
   }
 
+  static void _paintBlurRegionOutline({
+    required Canvas canvas,
+    required Rect rect,
+    required double scale,
+    required bool isSelected,
+    required bool showOutline,
+  }) {
+    if (!showOutline || rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+    final double width =
+        BlurMarkupConstants.outlineWidth * scale * (isSelected ? 2.0 : 1.0);
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..color = BlurMarkupConstants.outlineShadowColor
+        ..strokeWidth = width + (2 * scale)
+        ..style = PaintingStyle.stroke,
+    );
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..color = BlurMarkupConstants.outlineColor
+        ..strokeWidth = width
+        ..style = PaintingStyle.stroke,
+    );
+  }
+
+  static void _paintCallout({
+    required Canvas canvas,
+    required CalloutMarkup callout,
+    required Rect imageRect,
+    required double scale,
+    required bool isSelected,
+  }) {
+    final MarkupStylePreset preset = MarkupStylePresets.byId(
+      callout.stylePresetId,
+    );
+    final Offset center = callout.centerInRect(imageRect);
+    final double radius = callout.radiusForScale(scale);
+    final Color fillColor = isSelected
+        ? preset.selectedStrokeColor
+        : preset.strokeColor;
+    final double borderWidth = CalloutMarkupConstants.borderWidth * scale;
+
+    canvas.drawCircle(
+      center,
+      radius,
+      haloPaintFor(
+        strokeColor: fillColor,
+        strokeWidth: borderWidth,
+        scale: scale,
+      ),
+    );
+    canvas.drawCircle(center, radius, Paint()..color = fillColor);
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = preset.textColor
+        ..strokeWidth = borderWidth
+        ..style = PaintingStyle.stroke,
+    );
+
+    final TextPainter painter =
+        TextPainter(
+          text: TextSpan(
+            text: callout.label,
+            style: TextStyle(
+              color: preset.textColor,
+              fontSize: radius * CalloutMarkupConstants.fontSizeFactor,
+              fontWeight: FontWeight.w800,
+              height: 1.0,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+        )..layout();
+    painter.paint(
+      canvas,
+      Offset(center.dx - (painter.width / 2), center.dy - (painter.height / 2)),
+    );
+  }
+
   // -------------------------------------------------------- handles, preview
 
   static void _paintSelectionHandles({
@@ -823,6 +944,17 @@ class MarkupSceneRenderer {
         continue;
       }
       final Rect rect = oval.rectInRect(imageRect);
+      handle(rect.topLeft);
+      handle(rect.topRight);
+      handle(rect.bottomRight);
+      handle(rect.bottomLeft);
+      break;
+    }
+    for (final BlurMarkup blur in scene.blurs) {
+      if (blur.id != scene.selectedBlurId) {
+        continue;
+      }
+      final Rect rect = blur.rectInRect(imageRect);
       handle(rect.topLeft);
       handle(rect.topRight);
       handle(rect.bottomRight);
@@ -915,8 +1047,18 @@ class MarkupSceneRenderer {
           isSelected: false,
         );
         break;
+      case MarkupTool.blur:
+        _paintBlurRegionOutline(
+          canvas: canvas,
+          rect: Rect.fromPoints(start, end),
+          scale: scale,
+          isSelected: true,
+          showOutline: true,
+        );
+        break;
       case MarkupTool.none:
       case MarkupTool.textNote:
+      case MarkupTool.callout:
       case MarkupTool.freehand:
       case MarkupTool.highlighter:
         break;

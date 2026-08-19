@@ -70,6 +70,10 @@ class SidebarIconRegistry {
     ToolbarConstants.highlighter: SidebarIconDescriptor.icon(
       Icons.brush_outlined,
     ),
+    ToolbarConstants.callout: SidebarIconDescriptor.icon(
+      Icons.pin_drop_outlined,
+    ),
+    ToolbarConstants.blur: SidebarIconDescriptor.icon(Icons.blur_on),
         ToolbarConstants.clearAll: SidebarIconDescriptor.icon(
           Icons.layers_clear_outlined,
         ),

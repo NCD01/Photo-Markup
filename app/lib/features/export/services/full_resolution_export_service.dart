@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
+import 'package:ncd_photo_markup/features/markup/models/blur_markup.dart';
 import 'package:ncd_photo_markup/features/markup/rendering/markup_scene_renderer.dart';
 
 class FullResolutionExportResult {
@@ -85,6 +86,41 @@ class FullResolutionExportService {
     return exportWidth / displayWidth;
   }
 
+  /// Bakes each blur region into the exported pixels.
+  ///
+  /// This runs before the annotations are painted, so a blur hides part of the
+  /// photo and never smears the markup on top of it.
+  static void _paintBlurRegions({
+    required Canvas canvas,
+    required ui.Image sourceImage,
+    required List<BlurMarkup> blurs,
+    required Rect exportRect,
+    required double scale,
+  }) {
+    for (final BlurMarkup blur in blurs) {
+      final Rect rect = blur.rectInRect(exportRect).intersect(exportRect);
+      if (rect.isEmpty) {
+        continue;
+      }
+      final double sigma = blur.sigmaForRect(rect, scale);
+      canvas.save();
+      canvas.clipRect(rect);
+      canvas.drawImageRect(
+        sourceImage,
+        exportRect,
+        exportRect,
+        Paint()
+          ..imageFilter = ui.ImageFilter.blur(
+            sigmaX: sigma,
+            sigmaY: sigma,
+            tileMode: TileMode.decal,
+          )
+          ..filterQuality = FilterQuality.high,
+      );
+      canvas.restore();
+    }
+  }
+
   static Future<FullResolutionExportResult> renderToPng({
     required ui.Image sourceImage,
     required MarkupScene scene,
@@ -115,6 +151,13 @@ class FullResolutionExportService {
       exportRect,
       exportRect,
       Paint()..filterQuality = FilterQuality.high,
+    );
+    _paintBlurRegions(
+      canvas: canvas,
+      sourceImage: sourceImage,
+      blurs: scene.blurs,
+      exportRect: exportRect,
+      scale: markupScale,
     );
     MarkupSceneRenderer.paint(
       canvas: canvas,
