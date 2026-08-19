@@ -58,3 +58,60 @@ on the widest range of backgrounds. Blue is on brand.
 
 **What I need:** do you want Orange as the default instead of NCD Blue? One
 line to change.
+
+## 6. The sidebar icons
+
+Your NCD icon pack is still in the repo but the rail now uses a single
+monochrome set. The reason is mechanical rather than aesthetic: the NCD tiles
+are full-colour artwork that cannot be tinted, so on the dark rail they cannot
+show which tool is active, which command is unavailable, or which one is
+destructive. There is also no NCD artwork for the seven tools added tonight, so
+the rail was half tiles and half glyphs.
+
+**What I need:** do you want the NCD pack back? If yes, flip
+`SidebarIconRegistry.useNcdArtworkPack` to true, and either accept that the new
+tools use glyphs or send me artwork for Line, Highlighter, Callout, Blur, Set
+Scale, Redo, Clear All, Rotate and Marker Mode. If you would rather keep one
+consistent set, nothing to do.
+
+## 7. Dimension labels are still normalised to inches
+
+Your existing formatter turns `6'-0"` into `72"`, and its tests assert that. I
+left it alone, so a Field Scale measurement that computes as `4'-0"` is stored
+and displayed as `48"`. On a 20-foot wall that reads as `240"`.
+
+**What I need:** should long dimensions display as feet and inches instead? It
+is a small change to `DimensionLabelFormatter`, but it changes existing
+behaviour and two of your tests, so it is your call.
+
+## 8. Should the default tool on launch be Arrow?
+
+The app now reopens with whatever tool you last used, and a fresh install
+starts on Arrow. That means opening a photo puts you straight into drawing,
+which saves a tap, but it also means a stray drag on the photo makes a mark.
+It is undoable, and tap-to-create tools are deliberately excluded.
+
+**What I need:** is starting in a drawing tool right, or would you rather it
+always start in select mode and you pick a tool deliberately?
+
+## 9. Android
+
+The repo has an Android runner. Nothing tonight was tested on it, only on the
+Windows-shaped desktop layout. The bottom status bar and the 56px targets
+should suit a tablet better than the old rail did, but a phone-width screen
+will make the status bar scroll horizontally and I do not know whether that
+feels right in your hand.
+
+**What I need:** are you actually running this on the Samsung tablet yet, or is
+Windows still the only target? If Android matters, I would want to lay the
+status bar out differently below a certain width.
+
+## 10. What happens to a very large photo
+
+The full-resolution export decodes the whole photo into memory. A 6000x4000
+photo is tested and fine. A 100-megapixel panorama or a stitched drone image is
+not tested and could run the tablet out of memory.
+
+**What I need:** what is the biggest file you would realistically open? If
+anything above about 50MP is plausible, the exporter should cap and say so
+rather than trying and failing.
