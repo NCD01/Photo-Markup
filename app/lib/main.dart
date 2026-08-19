@@ -948,6 +948,30 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _sessionStateService.savePreferences(_currentPreferences());
 
   @visibleForTesting
+  int get debugZoomPercent => _zoomPercent;
+
+  @visibleForTesting
+  Future<void> debugSaveMarkupDocumentTo(String outputPath) async {
+    await _editableMarkupDocumentService.saveDocument(
+      document: _buildEditableMarkupDocument(),
+      outputPath: outputPath,
+    );
+  }
+
+  @visibleForTesting
+  Future<void> debugOpenMarkupDocumentFrom(String path) async {
+    final EditableMarkupDocument document = await _editableMarkupDocumentService
+        .readDocument(path);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _applyEditableMarkupDocument(document);
+      _unsavedChangesTracker.markSaved();
+    });
+  }
+
+  @visibleForTesting
   Future<void> debugCanvasTap(Offset point) async {
     final Rect? imageRect = _computeExportCropRect();
     if (imageRect == null) {
