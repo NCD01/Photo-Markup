@@ -29,6 +29,7 @@ import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
 import 'package:ncd_photo_markup/features/markup/services/markup_history.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
+import 'package:ncd_photo_markup/features/markup/utils/freehand_smoothing.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_interaction_policy.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
@@ -260,6 +261,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       MarkupStylePresets.defaultPresetId;
   String _selectedFontFamily = MarkupTypographyConstants.defaultFontFamily;
   double _selectedFontSize = MarkupTypographyConstants.defaultFontSize;
+  double _selectedStrokeWidthScale = MarkupStrokeConstants.defaultScale;
+  bool _selectedShapeFilled = false;
   final List<DimensionLine> _dimensionLines = <DimensionLine>[];
   final List<ArrowMarkup> _arrows = <ArrowMarkup>[];
   final List<RectangleMarkup> _rectangles = <RectangleMarkup>[];
@@ -829,6 +832,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
     if (label == ToolbarConstants.arrow) {
       _selectMarkupTool(MarkupTool.arrow);
+      return;
+    }
+
+    if (label == ToolbarConstants.line) {
+      _selectMarkupTool(MarkupTool.line);
+      return;
+    }
+
+    if (label == ToolbarConstants.highlighter) {
+      _selectMarkupTool(MarkupTool.highlighter);
       return;
     }
 
@@ -1496,7 +1509,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   String _sidebarStyleSummary() =>
       '${UiCopyConstants.sidebarStylePrefix}: ${_selectedStylePreset.shortLabel}';
 
-  String _currentNcdStyleIconAssetPath() {
+  /// NCD artwork only exists for the original five presets. Anything newer
+  /// falls back to a tinted glyph rather than a broken-image box.
+  String? _currentNcdStyleIconAssetPath() {
     switch (_selectedStylePresetId) {
       case MarkupStylePresetId.red:
         return SidebarAssetConstants.ncdSidebarStyleRedAssetPath;
@@ -1508,12 +1523,19 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return SidebarAssetConstants.ncdSidebarStyleBlackAssetPath;
       case MarkupStylePresetId.ncdBlue:
         return SidebarAssetConstants.ncdSidebarStyleNcdBlueAssetPath;
+      case MarkupStylePresetId.orange:
+      case MarkupStylePresetId.green:
+        return null;
     }
   }
 
   SidebarIconDescriptor _toolbarActionIconDescriptor(String label) {
     if (label == ToolbarConstants.style) {
-      return SidebarIconDescriptor.asset(_currentNcdStyleIconAssetPath());
+      final String? assetPath = _currentNcdStyleIconAssetPath();
+      if (assetPath == null) {
+        return const SidebarIconDescriptor.icon(Icons.palette);
+      }
+      return SidebarIconDescriptor.asset(assetPath);
     }
     return SidebarIconRegistry.actionIcons[label] ??
         const SidebarIconDescriptor.icon(Icons.help_outline);
@@ -1553,12 +1575,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return ToolbarConstants.textNote;
       case MarkupTool.arrow:
         return ToolbarConstants.arrow;
+      case MarkupTool.line:
+        return ToolbarConstants.line;
       case MarkupTool.rectangle:
         return ToolbarConstants.rectangle;
       case MarkupTool.oval:
         return ToolbarConstants.circle;
       case MarkupTool.freehand:
         return ToolbarConstants.freehand;
+      case MarkupTool.highlighter:
+        return ToolbarConstants.highlighter;
       case MarkupTool.none:
         return UiCopyConstants.toolbarActiveToolNone;
     }
@@ -1568,6 +1594,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       (label == ToolbarConstants.dimension &&
           _selectedTool == MarkupTool.dimension) ||
       (label == ToolbarConstants.arrow && _selectedTool == MarkupTool.arrow) ||
+      (label == ToolbarConstants.line && _selectedTool == MarkupTool.line) ||
+      (label == ToolbarConstants.highlighter &&
+          _selectedTool == MarkupTool.highlighter) ||
       (label == ToolbarConstants.circle && _selectedTool == MarkupTool.oval) ||
       (label == ToolbarConstants.rectangle &&
           _selectedTool == MarkupTool.rectangle) ||
@@ -2029,6 +2058,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       context: context,
       builder: (BuildContext context) {
         MarkupStylePresetId pendingPresetId = _selectedStylePresetId;
+        double pendingStrokeWidthScale = _selectedStrokeWidthScale;
+        bool pendingFilled = _selectedShapeFilled;
         String pendingFontFamily =
             selectedDimension?.fontFamily ??
             selectedTextNote?.fontFamily ??
@@ -2073,6 +2104,56 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                             });
                           },
                         ),
+                      const Divider(height: 20),
+                      const Text(
+                        UiCopyConstants.styleDialogWidthSectionTitle,
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: <Widget>[
+                          for (int i = 0;
+                              i < MarkupStrokeConstants.allScales.length;
+                              i++)
+                            ChoiceChip(
+                              key: ValueKey<String>(
+                                'style-width-'
+                                '${MarkupStrokeConstants.allScaleLabels[i]}',
+                              ),
+                              label: Text(
+                                MarkupStrokeConstants.allScaleLabels[i],
+                              ),
+                              selected:
+                                  (pendingStrokeWidthScale -
+                                          MarkupStrokeConstants.allScales[i])
+                                      .abs() <
+                                  0.01,
+                              onSelected: (_) {
+                                setDialogState(() {
+                                  pendingStrokeWidthScale =
+                                      MarkupStrokeConstants.allScales[i];
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      SwitchListTile(
+                        key: const ValueKey<String>('style-fill-toggle'),
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text(UiCopyConstants.styleDialogFillLabel),
+                        subtitle: const Text(
+                          UiCopyConstants.styleDialogFillHelp,
+                        ),
+                        value: pendingFilled,
+                        onChanged: (bool value) {
+                          setDialogState(() {
+                            pendingFilled = value;
+                          });
+                        },
+                      ),
                       const Divider(height: 20),
                       const Text(
                         UiCopyConstants.styleDialogTypographySectionTitle,
@@ -2139,6 +2220,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                       presetId: pendingPresetId,
                       fontFamily: pendingFontFamily,
                       fontSize: pendingFontSize,
+                      strokeWidthScale: pendingStrokeWidthScale,
+                      filled: pendingFilled,
                     ),
                   ),
                   child: const Text(UiCopyConstants.styleDialogApplyButton),
@@ -2159,6 +2242,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       presetId: selected.presetId,
       fontFamily: selected.fontFamily,
       fontSize: selected.fontSize,
+      strokeWidthScale: selected.strokeWidthScale,
+      filled: selected.filled,
     );
     if (appliedToSelection) {
       _history.record(historyBefore, _snapshotMarkup());
@@ -2171,6 +2256,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _selectedFontSize = MarkupTypographyUtils.normalizeFontSize(
         selected.fontSize,
       );
+      _selectedStrokeWidthScale = MarkupStrokeConstants.normalizeScale(
+        selected.strokeWidthScale,
+      );
+      _selectedShapeFilled = selected.filled;
       if (appliedToSelection) {
         _unsavedChangesTracker.markDirty();
       }
@@ -2184,6 +2273,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     required MarkupStylePresetId presetId,
     required String fontFamily,
     required double fontSize,
+    required double strokeWidthScale,
+    required bool filled,
   }) {
     bool applied = false;
     final int? selectedDimensionId = _selectedDimensionId;
@@ -2196,6 +2287,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           stylePresetId: presetId,
           fontFamily: fontFamily,
           fontSize: fontSize,
+          strokeWidthScale: strokeWidthScale,
         );
         applied = true;
       }
@@ -2208,7 +2300,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         (ArrowMarkup arrow) => arrow.id == selectedArrowId,
       );
       if (index != -1) {
-        _arrows[index] = _arrows[index].copyWith(stylePresetId: presetId);
+        _arrows[index] = _arrows[index].copyWith(
+          stylePresetId: presetId,
+          strokeWidthScale: strokeWidthScale,
+        );
         applied = true;
       }
       return applied;
@@ -2222,6 +2317,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       if (index != -1) {
         _rectangles[index] = _rectangles[index].copyWith(
           stylePresetId: presetId,
+          strokeWidthScale: strokeWidthScale,
+          filled: filled,
         );
         applied = true;
       }
@@ -2234,7 +2331,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         (OvalMarkup oval) => oval.id == selectedOvalId,
       );
       if (index != -1) {
-        _ovals[index] = _ovals[index].copyWith(stylePresetId: presetId);
+        _ovals[index] = _ovals[index].copyWith(
+          stylePresetId: presetId,
+          strokeWidthScale: strokeWidthScale,
+          filled: filled,
+        );
         applied = true;
       }
       return applied;
@@ -2246,7 +2347,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         (FreehandMarkup freehand) => freehand.id == selectedFreehandId,
       );
       if (index != -1) {
-        _freehands[index] = _freehands[index].copyWith(stylePresetId: presetId);
+        _freehands[index] = _freehands[index].copyWith(
+          stylePresetId: presetId,
+          strokeWidthScale: strokeWidthScale,
+        );
         applied = true;
       }
       return applied;
@@ -2612,7 +2716,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _activeDimensionStart = clamped;
       _activeDimensionCurrent = clamped;
       _activeFreehandPoints.clear();
-      if (_selectedTool == MarkupTool.freehand) {
+      if (_isStrokeTool(_selectedTool)) {
         _activeFreehandPoints.add(clamped);
       }
       _clearMarkupSelection();
@@ -2634,13 +2738,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     final Offset clamped = DimensionLine.clampToRect(currentPoint, imageRect);
     setState(() {
       _activeDimensionCurrent = clamped;
-      if (_selectedTool == MarkupTool.freehand) {
+      if (_isStrokeTool(_selectedTool)) {
         final Offset? lastPoint = _activeFreehandPoints.isEmpty
             ? null
             : _activeFreehandPoints.last;
-        if (lastPoint == null ||
-            (clamped - lastPoint).distance >=
-                FreehandMarkupConstants.pointMinDistance) {
+        final double minDistance = _selectedTool == MarkupTool.highlighter
+            ? HighlighterMarkupConstants.pointMinDistance
+            : FreehandMarkupConstants.pointMinDistance;
+        if (lastPoint == null || (clamped - lastPoint).distance >= minDistance) {
           _activeFreehandPoints.add(clamped);
         }
       }
@@ -2684,13 +2789,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
-    if (_selectedTool == MarkupTool.arrow) {
+    if (_selectedTool == MarkupTool.arrow || _selectedTool == MarkupTool.line) {
       final ArrowMarkup arrow = ArrowMarkup.fromCanvasPoints(
         id: _allocateMarkupId(),
         startPoint: start,
         endPoint: end,
         imageRect: imageRect,
         stylePresetId: _selectedStylePresetId,
+        strokeWidthScale: _selectedStrokeWidthScale,
+        hasHead: _selectedTool == MarkupTool.arrow,
       );
       if (arrow.lengthInRect(imageRect) < ArrowMarkupConstants.minLength) {
         if (mounted) {
@@ -2708,18 +2815,23 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
-    if (_selectedTool == MarkupTool.freehand) {
+    if (_isStrokeTool(_selectedTool)) {
       if (freehandPoints.length < FreehandMarkupConstants.minimumPointCount) {
         if (mounted) {
           setState(() {});
         }
         return;
       }
+      final bool isHighlighter = _selectedTool == MarkupTool.highlighter;
       final FreehandMarkup freehand = FreehandMarkup.fromCanvasPoints(
         id: _allocateMarkupId(),
-        points: freehandPoints,
+        points: isHighlighter
+            ? freehandPoints
+            : FreehandSmoothing.smooth(freehandPoints),
         imageRect: imageRect,
         stylePresetId: _selectedStylePresetId,
+        strokeWidthScale: _selectedStrokeWidthScale,
+        isHighlighter: isHighlighter,
       );
       if (mounted) {
         setState(() {
@@ -2738,6 +2850,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         endPoint: end,
         imageRect: imageRect,
         stylePresetId: _selectedStylePresetId,
+        strokeWidthScale: _selectedStrokeWidthScale,
+        filled: _selectedShapeFilled,
       );
       if (rectangle.widthInRect(imageRect) <
               RectangleMarkupConstants.minSideLength ||
@@ -2765,6 +2879,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         endPoint: end,
         imageRect: imageRect,
         stylePresetId: _selectedStylePresetId,
+        strokeWidthScale: _selectedStrokeWidthScale,
+        filled: _selectedShapeFilled,
       );
       if (oval.widthInRect(imageRect) < OvalMarkupConstants.minAxisLength ||
           oval.heightInRect(imageRect) < OvalMarkupConstants.minAxisLength) {
@@ -2790,6 +2906,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         endPoint: end,
         imageRect: imageRect,
         stylePresetId: _selectedStylePresetId,
+        strokeWidthScale: _selectedStrokeWidthScale,
       ).copyWith(fontFamily: _selectedFontFamily, fontSize: _selectedFontSize);
 
       int? newLineId;
@@ -3177,6 +3294,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           endPoint: end,
           imageRect: imageRect,
           stylePresetId: line.stylePresetId,
+          strokeWidthScale: line.strokeWidthScale,
         ).copyWith(
           label: line.label,
           labelOffsetNormalized: line.labelOffsetNormalized,
@@ -3267,6 +3385,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       endPoint: end,
       imageRect: imageRect,
       stylePresetId: arrow.stylePresetId,
+      strokeWidthScale: arrow.strokeWidthScale,
+      hasHead: arrow.hasHead,
     );
     if (updated == arrow) {
       return false;
@@ -3305,6 +3425,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       endPoint: resized.bottomRight,
       imageRect: imageRect,
       stylePresetId: rectangle.stylePresetId,
+      strokeWidthScale: rectangle.strokeWidthScale,
+      filled: rectangle.filled,
     );
     if (updated == rectangle) {
       return false;
@@ -3343,6 +3465,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       endPoint: resized.bottomRight,
       imageRect: imageRect,
       stylePresetId: oval.stylePresetId,
+      strokeWidthScale: oval.strokeWidthScale,
+      filled: oval.filled,
     );
     if (updated == oval) {
       return false;
@@ -3424,6 +3548,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         case MarkupTool.textNote:
           _selectTextNoteById(nearestHit.markupId);
           break;
+        case MarkupTool.line:
+        case MarkupTool.highlighter:
         case MarkupTool.none:
           break;
       }
@@ -3475,6 +3601,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     switch (tool) {
       case MarkupTool.dimension:
       case MarkupTool.arrow:
+      case MarkupTool.line:
         return math.max(
           DimensionLineConstants.selectionTapDistance,
           minimumHitDistance,
@@ -3492,6 +3619,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       case MarkupTool.freehand:
         return math.max(
           FreehandMarkupConstants.selectionHitDistance,
+          minimumHitDistance,
+        );
+      case MarkupTool.highlighter:
+        return math.max(
+          HighlighterMarkupConstants.selectionHitDistance,
           minimumHitDistance,
         );
       case MarkupTool.textNote:
@@ -3569,6 +3701,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           return double.infinity;
         }
         return _distanceToTextNote(_textNotes[index], point, imageRect);
+      case MarkupTool.line:
+      case MarkupTool.highlighter:
       case MarkupTool.none:
         return double.infinity;
     }
@@ -3626,6 +3760,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return _moveFreehandByDelta(markupId, requestedDelta, imageRect);
       case MarkupTool.textNote:
         return _moveTextNoteByDelta(markupId, requestedDelta, imageRect);
+      case MarkupTool.line:
+      case MarkupTool.highlighter:
       case MarkupTool.none:
         return Offset.zero;
     }
@@ -3663,6 +3799,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           endPoint: moved.last,
           imageRect: imageRect,
           stylePresetId: line.stylePresetId,
+          strokeWidthScale: line.strokeWidthScale,
         ).copyWith(
           label: line.label,
           labelOffsetNormalized: line.labelOffsetNormalized,
@@ -3707,6 +3844,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       endPoint: moved.last,
       imageRect: imageRect,
       stylePresetId: arrow.stylePresetId,
+      strokeWidthScale: arrow.strokeWidthScale,
+      hasHead: arrow.hasHead,
     );
     setState(() {
       _arrows[index] = movedArrow;
@@ -3744,6 +3883,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       endPoint: moved.last,
       imageRect: imageRect,
       stylePresetId: rectangle.stylePresetId,
+      strokeWidthScale: rectangle.strokeWidthScale,
+      filled: rectangle.filled,
     );
     setState(() {
       _rectangles[index] = movedRectangle;
@@ -3781,6 +3922,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       endPoint: moved.last,
       imageRect: imageRect,
       stylePresetId: oval.stylePresetId,
+      strokeWidthScale: oval.strokeWidthScale,
+      filled: oval.filled,
     );
     setState(() {
       _ovals[index] = movedOval;
@@ -3816,6 +3959,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       points: moved,
       imageRect: imageRect,
       stylePresetId: freehand.stylePresetId,
+      strokeWidthScale: freehand.strokeWidthScale,
+      isHighlighter: freehand.isHighlighter,
     );
     setState(() {
       _freehands[index] = movedFreehand;
@@ -4150,12 +4295,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     return KeyEventResult.ignored;
   }
 
+  static bool _isStrokeTool(MarkupTool tool) =>
+      tool == MarkupTool.freehand || tool == MarkupTool.highlighter;
+
   bool _canDrawMarkup(Rect imageRect) {
     return (_selectedTool == MarkupTool.dimension ||
             _selectedTool == MarkupTool.arrow ||
+            _selectedTool == MarkupTool.line ||
             _selectedTool == MarkupTool.rectangle ||
             _selectedTool == MarkupTool.oval ||
-            _selectedTool == MarkupTool.freehand) &&
+            _selectedTool == MarkupTool.freehand ||
+            _selectedTool == MarkupTool.highlighter) &&
         _imagePath != null &&
         imageRect.width > 0 &&
         imageRect.height > 0;
@@ -4514,6 +4664,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                 activeStart: _activeDimensionStart,
                                 activeEnd: _activeDimensionCurrent,
                                 activeFreehandPoints: _activeFreehandPoints,
+                                activeStrokeWidthScale:
+                                    _selectedStrokeWidthScale,
+                                activeFilled: _selectedShapeFilled,
                                 isEnabled: _isOverlayInteractionEnabled(
                                   imageRect,
                                 ),
@@ -4655,11 +4808,15 @@ class _StyleDialogResult {
     required this.presetId,
     required this.fontFamily,
     required this.fontSize,
+    required this.strokeWidthScale,
+    required this.filled,
   });
 
   final MarkupStylePresetId presetId;
   final String fontFamily;
   final double fontSize;
+  final double strokeWidthScale;
+  final bool filled;
 }
 
 class _SidebarActionSection extends StatelessWidget {

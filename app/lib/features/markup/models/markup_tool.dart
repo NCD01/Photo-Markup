@@ -1,1 +1,11 @@
-enum MarkupTool { none, dimension, arrow, rectangle, oval, freehand, textNote }
+enum MarkupTool {
+  none,
+  dimension,
+  arrow,
+  line,
+  rectangle,
+  oval,
+  freehand,
+  highlighter,
+  textNote,
+}

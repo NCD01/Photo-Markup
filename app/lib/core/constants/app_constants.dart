@@ -241,6 +241,10 @@ class UiCopyConstants {
   static const String styleDialogTitle = 'Markup Style & Text';
   static const String styleDialogPresetsSectionTitle = 'Color Preset';
   static const String styleDialogTypographySectionTitle = 'Text Typography';
+  static const String styleDialogWidthSectionTitle = 'Stroke Width';
+  static const String styleDialogFillLabel = 'Fill shapes';
+  static const String styleDialogFillHelp =
+      'Solid interior for new rectangles and circles.';
   static const String styleDialogFontFamilyLabel = 'Font';
   static const String styleDialogFontSizeLabel = 'Size';
   static const String styleDialogApplyButton = 'Apply';
@@ -355,6 +359,8 @@ class ToolbarConstants {
   static const String saveMarkup = 'Save Markup';
   static const String dimension = 'Dimension';
   static const String arrow = 'Arrow';
+  static const String line = 'Line';
+  static const String highlighter = 'Highlighter';
   static const String circle = 'Circle';
   static const String rectangle = 'Rectangle';
   static const String freehand = 'Freehand';
@@ -379,9 +385,11 @@ class ToolbarConstants {
     dimension,
     textNote,
     arrow,
+    line,
     rectangle,
     circle,
     freehand,
+    highlighter,
   ];
   static const List<String> editActionOrder = <String>[
     style,
@@ -572,6 +580,7 @@ class DimensionLineConstants {
   static const double labelLeaderStrokeWidth = 1.6;
   static const double labelLeaderVisibilityThreshold = 12;
   static const double labelHitDistance = 18;
+  static const double endTickLength = 7;
   static const double labelTextMaxWidthFactor = 0.8;
   static const double selectionTapDistance = 26;
   static const double tapMoveThreshold = 8;
@@ -612,6 +621,36 @@ class OvalMarkupConstants {
   static const double selectedStrokeMultiplier = 1.35;
   static const double minAxisLength = 8;
   static const double selectionHitDistance = 26;
+}
+
+class MarkupFillConstants {
+  const MarkupFillConstants._();
+
+  /// Alpha used when a shape is switched from outline to filled.
+  static const double solidFillOpacity = 0.45;
+}
+
+class FreehandSmoothingConstants {
+  const FreehandSmoothingConstants._();
+
+  /// Points closer than this to the line between their neighbours carry no
+  /// shape information and get dropped. In logical pixels.
+  static const double simplifyTolerance = 1.6;
+  static const int chaikinPasses = 2;
+  static const int maxChaikinPasses = 3;
+
+  /// Guard so a very long stroke cannot balloon the point count.
+  static const int maxSmoothedPoints = 4000;
+}
+
+class HighlighterMarkupConstants {
+  const HighlighterMarkupConstants._();
+
+  static const double strokeWidth = 22;
+  static const double opacity = 0.38;
+  static const double selectionHitDistance = 26;
+  static const double pointMinDistance = 5;
+  static const int minimumPointCount = 2;
 }
 
 class FreehandMarkupConstants {
@@ -664,6 +703,57 @@ class MarkupHandleConstants {
   static const Color activeBorderColor = AppThemeConstants.ncdBlue;
   static const double borderWidth = 1.8;
   static const double activeBorderWidth = 2.4;
+}
+
+class MarkupStrokeConstants {
+  const MarkupStrokeConstants._();
+
+  /// Multipliers applied to every tool's base stroke width. One control, so a
+  /// thin line stays thin whether it is an arrow, a box or a freehand stroke.
+  static const double fine = 0.6;
+  static const double medium = 1.0;
+  static const double bold = 1.7;
+  static const double heavy = 2.6;
+  static const double defaultScale = medium;
+  static const double minScale = fine;
+  static const double maxScale = heavy;
+
+  static const List<double> allScales = <double>[fine, medium, bold, heavy];
+  static const List<String> allScaleLabels = <String>[
+    'Fine',
+    'Medium',
+    'Bold',
+    'Heavy',
+  ];
+
+  /// Width of the auto-contrast outline drawn behind every stroke, as a
+  /// multiple of that stroke's own width. This is what keeps markup readable
+  /// on a white soffit and on dark asphalt without the user thinking about it.
+  static const double haloWidthFactor = 0.55;
+  static const double haloMinimumWidth = 1.6;
+  static const Color darkHalo = Color(0xB3000000);
+  static const Color lightHalo = Color(0xCCFFFFFF);
+
+  static double normalizeScale(double? value) {
+    final double raw = value ?? defaultScale;
+    if (raw.isNaN || raw.isInfinite) {
+      return defaultScale;
+    }
+    return raw.clamp(minScale, maxScale);
+  }
+
+  static String labelForScale(double scale) {
+    int bestIndex = 0;
+    double bestDelta = double.infinity;
+    for (int i = 0; i < allScales.length; i++) {
+      final double delta = (allScales[i] - scale).abs();
+      if (delta < bestDelta) {
+        bestDelta = delta;
+        bestIndex = i;
+      }
+    }
+    return allScaleLabels[bestIndex];
+  }
 }
 
 class MarkupHistoryConstants {

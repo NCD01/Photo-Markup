@@ -66,6 +66,10 @@ class SidebarIconRegistry {
         // No NCD artwork exists for these yet, so they use Material glyphs that
         // pick up the sidebar tint like the rest of the rail.
         ToolbarConstants.redo: SidebarIconDescriptor.icon(Icons.redo),
+    ToolbarConstants.line: SidebarIconDescriptor.icon(Icons.horizontal_rule),
+    ToolbarConstants.highlighter: SidebarIconDescriptor.icon(
+      Icons.brush_outlined,
+    ),
         ToolbarConstants.clearAll: SidebarIconDescriptor.icon(
           Icons.layers_clear_outlined,
         ),

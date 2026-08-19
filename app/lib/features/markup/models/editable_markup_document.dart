@@ -112,6 +112,7 @@ class EditableMarkupDocument {
               'fontFamily': line.fontFamily,
               'fontSize': line.fontSize,
               'stylePresetId': line.stylePresetId.name,
+              'strokeWidthScale': line.strokeWidthScale,
             },
           )
           .toList(growable: false),
@@ -122,6 +123,8 @@ class EditableMarkupDocument {
               'startNormalized': _offsetToJson(arrow.startNormalized),
               'endNormalized': _offsetToJson(arrow.endNormalized),
               'stylePresetId': arrow.stylePresetId.name,
+              'strokeWidthScale': arrow.strokeWidthScale,
+              'hasHead': arrow.hasHead,
             },
           )
           .toList(growable: false),
@@ -132,6 +135,8 @@ class EditableMarkupDocument {
               'startNormalized': _offsetToJson(rectangle.startNormalized),
               'endNormalized': _offsetToJson(rectangle.endNormalized),
               'stylePresetId': rectangle.stylePresetId.name,
+              'strokeWidthScale': rectangle.strokeWidthScale,
+              'filled': rectangle.filled,
             },
           )
           .toList(growable: false),
@@ -142,6 +147,8 @@ class EditableMarkupDocument {
               'startNormalized': _offsetToJson(oval.startNormalized),
               'endNormalized': _offsetToJson(oval.endNormalized),
               'stylePresetId': oval.stylePresetId.name,
+              'strokeWidthScale': oval.strokeWidthScale,
+              'filled': oval.filled,
             },
           )
           .toList(growable: false),
@@ -153,6 +160,8 @@ class EditableMarkupDocument {
                   .map(_offsetToJson)
                   .toList(growable: false),
               'stylePresetId': freehand.stylePresetId.name,
+              'strokeWidthScale': freehand.strokeWidthScale,
+              'isHighlighter': freehand.isHighlighter,
             },
           )
           .toList(growable: false),
@@ -197,6 +206,7 @@ class EditableMarkupDocument {
           fontFamily: _fontFamilyFromValue(map['fontFamily']),
           fontSize: _fontSizeFromValue(map['fontSize']),
           stylePresetId: _stylePresetFromValue(map['stylePresetId']),
+          strokeWidthScale: _strokeScaleFromValue(map['strokeWidthScale']),
         ),
       );
     }
@@ -225,6 +235,8 @@ class EditableMarkupDocument {
           startNormalized: start,
           endNormalized: end,
           stylePresetId: _stylePresetFromValue(map['stylePresetId']),
+          strokeWidthScale: _strokeScaleFromValue(map['strokeWidthScale']),
+          hasHead: _boolFromValue(map['hasHead'], fallback: true),
         ),
       );
     }
@@ -253,6 +265,8 @@ class EditableMarkupDocument {
           startNormalized: start,
           endNormalized: end,
           stylePresetId: _stylePresetFromValue(map['stylePresetId']),
+          strokeWidthScale: _strokeScaleFromValue(map['strokeWidthScale']),
+          filled: _boolFromValue(map['filled'], fallback: false),
         ),
       );
     }
@@ -281,6 +295,8 @@ class EditableMarkupDocument {
           startNormalized: start,
           endNormalized: end,
           stylePresetId: _stylePresetFromValue(map['stylePresetId']),
+          strokeWidthScale: _strokeScaleFromValue(map['strokeWidthScale']),
+          filled: _boolFromValue(map['filled'], fallback: false),
         ),
       );
     }
@@ -316,6 +332,8 @@ class EditableMarkupDocument {
           id: id,
           normalizedPoints: points,
           stylePresetId: _stylePresetFromValue(map['stylePresetId']),
+          strokeWidthScale: _strokeScaleFromValue(map['strokeWidthScale']),
+          isHighlighter: _boolFromValue(map['isHighlighter'], fallback: false),
         ),
       );
     }
@@ -405,6 +423,28 @@ class EditableMarkupDocument {
 
   static Map<String, dynamic> _offsetToJson(Offset offset) {
     return <String, dynamic>{'x': offset.dx, 'y': offset.dy};
+  }
+
+  /// Fields added after schema 1.0 shipped are all optional on read, so a
+  /// markup file written by an older build still opens with sane defaults.
+  static double _strokeScaleFromValue(dynamic value) {
+    return MarkupStrokeConstants.normalizeScale(_asDouble(value));
+  }
+
+  static bool _boolFromValue(dynamic value, {required bool fallback}) {
+    if (value is bool) {
+      return value;
+    }
+    if (value is String) {
+      final String normalized = value.trim().toLowerCase();
+      if (normalized == 'true') {
+        return true;
+      }
+      if (normalized == 'false') {
+        return false;
+      }
+    }
+    return fallback;
   }
 
   static MarkupStylePresetId _stylePresetFromValue(dynamic value) {

@@ -12,6 +12,7 @@ class DimensionLine {
     this.fontFamily = MarkupTypographyConstants.defaultFontFamily,
     this.fontSize = MarkupTypographyConstants.defaultFontSize,
     this.stylePresetId = MarkupStylePresets.defaultPresetId,
+    this.strokeWidthScale = MarkupStrokeConstants.defaultScale,
   });
 
   final int id;
@@ -22,6 +23,7 @@ class DimensionLine {
   final String fontFamily;
   final double fontSize;
   final MarkupStylePresetId stylePresetId;
+  final double strokeWidthScale;
 
   factory DimensionLine.fromCanvasPoints({
     required int id,
@@ -29,9 +31,11 @@ class DimensionLine {
     required Offset endPoint,
     required Rect imageRect,
     MarkupStylePresetId stylePresetId = MarkupStylePresets.defaultPresetId,
+    double strokeWidthScale = MarkupStrokeConstants.defaultScale,
   }) {
     return DimensionLine(
       id: id,
+      strokeWidthScale: MarkupStrokeConstants.normalizeScale(strokeWidthScale),
       startNormalized: _normalizePoint(
         _clampPoint(startPoint, imageRect),
         imageRect,
@@ -53,6 +57,7 @@ class DimensionLine {
     String? fontFamily,
     double? fontSize,
     MarkupStylePresetId? stylePresetId,
+    double? strokeWidthScale,
     bool clearLabel = false,
     bool clearLabelOffset = false,
   }) {
@@ -67,6 +72,7 @@ class DimensionLine {
       fontFamily: fontFamily ?? this.fontFamily,
       fontSize: fontSize ?? this.fontSize,
       stylePresetId: stylePresetId ?? this.stylePresetId,
+      strokeWidthScale: strokeWidthScale ?? this.strokeWidthScale,
     );
   }
 
@@ -152,7 +158,8 @@ class DimensionLine {
         other.labelOffsetNormalized == labelOffsetNormalized &&
         other.fontFamily == fontFamily &&
         other.fontSize == fontSize &&
-        other.stylePresetId == stylePresetId;
+        other.stylePresetId == stylePresetId &&
+        other.strokeWidthScale == strokeWidthScale;
   }
 
   @override
@@ -165,5 +172,6 @@ class DimensionLine {
     fontFamily,
     fontSize,
     stylePresetId,
+    strokeWidthScale,
   );
 }

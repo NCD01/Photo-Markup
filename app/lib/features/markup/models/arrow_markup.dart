@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 class ArrowMarkup {
@@ -7,12 +8,18 @@ class ArrowMarkup {
     required this.startNormalized,
     required this.endNormalized,
     this.stylePresetId = MarkupStylePresets.defaultPresetId,
+    this.strokeWidthScale = MarkupStrokeConstants.defaultScale,
+    this.hasHead = true,
   });
 
   final int id;
   final Offset startNormalized;
   final Offset endNormalized;
   final MarkupStylePresetId stylePresetId;
+  final double strokeWidthScale;
+
+  /// False turns the arrow into a plain straight line.
+  final bool hasHead;
 
   factory ArrowMarkup.fromCanvasPoints({
     required int id,
@@ -20,9 +27,13 @@ class ArrowMarkup {
     required Offset endPoint,
     required Rect imageRect,
     MarkupStylePresetId stylePresetId = MarkupStylePresets.defaultPresetId,
+    double strokeWidthScale = MarkupStrokeConstants.defaultScale,
+    bool hasHead = true,
   }) {
     return ArrowMarkup(
       id: id,
+      strokeWidthScale: MarkupStrokeConstants.normalizeScale(strokeWidthScale),
+      hasHead: hasHead,
       startNormalized: _normalizePoint(
         _clampPoint(startPoint, imageRect),
         imageRect,
@@ -40,12 +51,16 @@ class ArrowMarkup {
     Offset? startNormalized,
     Offset? endNormalized,
     MarkupStylePresetId? stylePresetId,
+    double? strokeWidthScale,
+    bool? hasHead,
   }) {
     return ArrowMarkup(
       id: id ?? this.id,
       startNormalized: startNormalized ?? this.startNormalized,
       endNormalized: endNormalized ?? this.endNormalized,
       stylePresetId: stylePresetId ?? this.stylePresetId,
+      strokeWidthScale: strokeWidthScale ?? this.strokeWidthScale,
+      hasHead: hasHead ?? this.hasHead,
     );
   }
 
@@ -117,10 +132,18 @@ class ArrowMarkup {
         other.id == id &&
         other.startNormalized == startNormalized &&
         other.endNormalized == endNormalized &&
-        other.stylePresetId == stylePresetId;
+        other.stylePresetId == stylePresetId &&
+        other.strokeWidthScale == strokeWidthScale &&
+        other.hasHead == hasHead;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, startNormalized, endNormalized, stylePresetId);
+  int get hashCode => Object.hash(
+    id,
+    startNormalized,
+    endNormalized,
+    stylePresetId,
+    strokeWidthScale,
+    hasHead,
+  );
 }

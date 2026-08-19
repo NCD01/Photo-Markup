@@ -13,6 +13,7 @@ class DimensionLabelLayout {
     required this.leaderStart,
     required this.leaderEnd,
     required this.showLeader,
+    required this.textPainter,
   });
 
   final Rect labelRect;
@@ -21,6 +22,7 @@ class DimensionLabelLayout {
   final Offset leaderStart;
   final Offset leaderEnd;
   final bool showLeader;
+  final TextPainter textPainter;
 }
 
 class TextNoteLayout {
@@ -38,10 +40,14 @@ class TextNoteLayout {
 class MarkupTextLayoutUtils {
   const MarkupTextLayoutUtils._();
 
-  static TextStyle dimensionLabelTextStyle(DimensionLine line) {
+  static TextStyle dimensionLabelTextStyle(
+    DimensionLine line, {
+    MarkupStylePreset? preset,
+    double scale = 1.0,
+  }) {
     return MarkupTypographyUtils.baseTextStyle(
-      color: DimensionLineConstants.labelTextColor,
-      fontSize: line.fontSize,
+      color: preset?.textColor ?? DimensionLineConstants.labelTextColor,
+      fontSize: MarkupTypographyUtils.normalizeFontSize(line.fontSize) * scale,
       fontWeight: FontWeight.w700,
       fontFamily: line.fontFamily,
     );
@@ -49,11 +55,12 @@ class MarkupTextLayoutUtils {
 
   static TextStyle textNoteTextStyle(
     TextNoteMarkup note,
-    MarkupStylePreset preset,
-  ) {
+    MarkupStylePreset preset, {
+    double scale = 1.0,
+  }) {
     return MarkupTypographyUtils.baseTextStyle(
       color: preset.textNoteTextColor,
-      fontSize: note.fontSize,
+      fontSize: MarkupTypographyUtils.normalizeFontSize(note.fontSize) * scale,
       fontWeight: FontWeight.w600,
       fontFamily: note.fontFamily,
     );
@@ -65,15 +72,26 @@ class MarkupTextLayoutUtils {
     required Offset start,
     required Offset end,
     Offset? overrideLabelOffsetNormalized,
+    double scale = 1.0,
   }) {
     final String label = line.label?.trim() ?? '';
     if (label.isEmpty || imageRect.width <= 0 || imageRect.height <= 0) {
       return null;
     }
 
+    final MarkupStylePreset preset = MarkupStylePresets.byId(
+      line.stylePresetId,
+    );
     final TextPainter textPainter =
         TextPainter(
-          text: TextSpan(text: label, style: dimensionLabelTextStyle(line)),
+          text: TextSpan(
+            text: label,
+            style: dimensionLabelTextStyle(
+              line,
+              preset: preset,
+              scale: scale,
+            ),
+          ),
           textDirection: TextDirection.ltr,
           maxLines: 2,
           ellipsis: '...',
@@ -96,7 +114,9 @@ class MarkupTextLayoutUtils {
 
     final Offset defaultCenter =
         midpoint +
-        (perpendicular * DimensionLineConstants.defaultLabelOffsetFromLine);
+        (perpendicular *
+            DimensionLineConstants.defaultLabelOffsetFromLine *
+            scale);
     final Offset? normalizedOffset =
         overrideLabelOffsetNormalized ?? line.labelOffsetNormalized;
     final Offset requestedCenter = normalizedOffset == null
@@ -109,26 +129,20 @@ class MarkupTextLayoutUtils {
 
     final double boxWidth =
         textPainter.width +
-        (UiLayoutConstants.dimensionLabelHorizontalPadding * 2);
+        (UiLayoutConstants.dimensionLabelHorizontalPadding * 2 * scale);
     final double boxHeight =
         textPainter.height +
-        (UiLayoutConstants.dimensionLabelVerticalPadding * 2);
+        (UiLayoutConstants.dimensionLabelVerticalPadding * 2 * scale);
 
     double left = requestedCenter.dx - (boxWidth / 2);
     double top = requestedCenter.dy - (boxHeight / 2);
 
-    final double minLeft =
-        imageRect.left + UiLayoutConstants.dimensionLabelClampPadding;
-    final double maxLeft =
-        imageRect.right -
-        boxWidth -
-        UiLayoutConstants.dimensionLabelClampPadding;
-    final double minTop =
-        imageRect.top + UiLayoutConstants.dimensionLabelClampPadding;
-    final double maxTop =
-        imageRect.bottom -
-        boxHeight -
-        UiLayoutConstants.dimensionLabelClampPadding;
+    final double clampPadding =
+        UiLayoutConstants.dimensionLabelClampPadding * scale;
+    final double minLeft = imageRect.left + clampPadding;
+    final double maxLeft = imageRect.right - boxWidth - clampPadding;
+    final double minTop = imageRect.top + clampPadding;
+    final double maxTop = imageRect.bottom - boxHeight - clampPadding;
     left = left.clamp(minLeft, maxLeft >= minLeft ? maxLeft : minLeft);
     top = top.clamp(minTop, maxTop >= minTop ? maxTop : minTop);
 
@@ -138,18 +152,21 @@ class MarkupTextLayoutUtils {
     final bool showLeader =
         normalizedOffset != null &&
         (leaderEnd - midpoint).distance >=
-            DimensionLineConstants.labelLeaderVisibilityThreshold;
+            DimensionLineConstants.labelLeaderVisibilityThreshold * scale;
 
     return DimensionLabelLayout(
       labelRect: labelRect,
       labelCenter: labelCenter,
       textOffset: Offset(
-        labelRect.left + UiLayoutConstants.dimensionLabelHorizontalPadding,
-        labelRect.top + UiLayoutConstants.dimensionLabelVerticalPadding,
+        labelRect.left +
+            (UiLayoutConstants.dimensionLabelHorizontalPadding * scale),
+        labelRect.top +
+            (UiLayoutConstants.dimensionLabelVerticalPadding * scale),
       ),
       leaderStart: midpoint,
       leaderEnd: leaderEnd,
       showLeader: showLeader,
+      textPainter: textPainter,
     );
   }
 
@@ -157,12 +174,13 @@ class MarkupTextLayoutUtils {
     required TextNoteMarkup note,
     required Rect imageRect,
     required MarkupStylePreset preset,
+    double scale = 1.0,
   }) {
     final TextPainter textPainter =
         TextPainter(
           text: TextSpan(
             text: note.text.trim(),
-            style: textNoteTextStyle(note, preset),
+            style: textNoteTextStyle(note, preset, scale: scale),
           ),
           textDirection: TextDirection.ltr,
           maxLines: 4,
@@ -176,13 +194,14 @@ class MarkupTextLayoutUtils {
       anchor: anchor,
       textPainter: textPainter,
       imageRect: imageRect,
+      scale: scale,
     );
 
     return TextNoteLayout(
       chipRect: chipRect,
       textOffset: Offset(
-        chipRect.left + TextNoteMarkupConstants.horizontalPadding,
-        chipRect.top + TextNoteMarkupConstants.verticalPadding,
+        chipRect.left + (TextNoteMarkupConstants.horizontalPadding * scale),
+        chipRect.top + (TextNoteMarkupConstants.verticalPadding * scale),
       ),
       textPainter: textPainter,
     );
@@ -192,22 +211,23 @@ class MarkupTextLayoutUtils {
     required Offset anchor,
     required TextPainter textPainter,
     required Rect imageRect,
+    double scale = 1.0,
   }) {
     final double width =
-        textPainter.width + (TextNoteMarkupConstants.horizontalPadding * 2);
+        textPainter.width +
+        (TextNoteMarkupConstants.horizontalPadding * 2 * scale);
     final double height =
-        textPainter.height + (TextNoteMarkupConstants.verticalPadding * 2);
+        textPainter.height +
+        (TextNoteMarkupConstants.verticalPadding * 2 * scale);
 
     double left = anchor.dx;
     double top = anchor.dy;
 
-    final double minLeft =
-        imageRect.left + TextNoteMarkupConstants.clampPadding;
-    final double maxLeft =
-        imageRect.right - width - TextNoteMarkupConstants.clampPadding;
-    final double minTop = imageRect.top + TextNoteMarkupConstants.clampPadding;
-    final double maxTop =
-        imageRect.bottom - height - TextNoteMarkupConstants.clampPadding;
+    final double clampPadding = TextNoteMarkupConstants.clampPadding * scale;
+    final double minLeft = imageRect.left + clampPadding;
+    final double maxLeft = imageRect.right - width - clampPadding;
+    final double minTop = imageRect.top + clampPadding;
+    final double maxTop = imageRect.bottom - height - clampPadding;
 
     left = left.clamp(minLeft, maxLeft >= minLeft ? maxLeft : minLeft);
     top = top.clamp(minTop, maxTop >= minTop ? maxTop : minTop);

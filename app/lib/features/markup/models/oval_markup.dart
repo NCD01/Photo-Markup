@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 class OvalMarkup {
@@ -7,12 +8,19 @@ class OvalMarkup {
     required this.startNormalized,
     required this.endNormalized,
     this.stylePresetId = MarkupStylePresets.defaultPresetId,
+    this.strokeWidthScale = MarkupStrokeConstants.defaultScale,
+    this.filled = false,
   });
 
   final int id;
   final Offset startNormalized;
   final Offset endNormalized;
   final MarkupStylePresetId stylePresetId;
+  final double strokeWidthScale;
+
+  /// True paints a solid translucent interior instead of the light default
+  /// tint, for when a shape needs to hide what is behind it.
+  final bool filled;
 
   factory OvalMarkup.fromCanvasPoints({
     required int id,
@@ -20,9 +28,13 @@ class OvalMarkup {
     required Offset endPoint,
     required Rect imageRect,
     MarkupStylePresetId stylePresetId = MarkupStylePresets.defaultPresetId,
+    double strokeWidthScale = MarkupStrokeConstants.defaultScale,
+    bool filled = false,
   }) {
     return OvalMarkup(
       id: id,
+      strokeWidthScale: MarkupStrokeConstants.normalizeScale(strokeWidthScale),
+      filled: filled,
       startNormalized: _normalizePoint(
         _clampPoint(startPoint, imageRect),
         imageRect,
@@ -40,12 +52,16 @@ class OvalMarkup {
     Offset? startNormalized,
     Offset? endNormalized,
     MarkupStylePresetId? stylePresetId,
+    double? strokeWidthScale,
+    bool? filled,
   }) {
     return OvalMarkup(
       id: id ?? this.id,
       startNormalized: startNormalized ?? this.startNormalized,
       endNormalized: endNormalized ?? this.endNormalized,
       stylePresetId: stylePresetId ?? this.stylePresetId,
+      strokeWidthScale: strokeWidthScale ?? this.strokeWidthScale,
+      filled: filled ?? this.filled,
     );
   }
 
@@ -117,10 +133,18 @@ class OvalMarkup {
         other.id == id &&
         other.startNormalized == startNormalized &&
         other.endNormalized == endNormalized &&
-        other.stylePresetId == stylePresetId;
+        other.stylePresetId == stylePresetId &&
+        other.strokeWidthScale == strokeWidthScale &&
+        other.filled == filled;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, startNormalized, endNormalized, stylePresetId);
+  int get hashCode => Object.hash(
+    id,
+    startNormalized,
+    endNormalized,
+    stylePresetId,
+    strokeWidthScale,
+    filled,
+  );
 }

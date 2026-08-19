@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 
 class FreehandMarkup {
@@ -6,17 +7,26 @@ class FreehandMarkup {
     required this.id,
     required List<Offset> normalizedPoints,
     this.stylePresetId = MarkupStylePresets.defaultPresetId,
+    this.strokeWidthScale = MarkupStrokeConstants.defaultScale,
+    this.isHighlighter = false,
   }) : normalizedPoints = List<Offset>.unmodifiable(normalizedPoints);
 
   final int id;
   final List<Offset> normalizedPoints;
   final MarkupStylePresetId stylePresetId;
+  final double strokeWidthScale;
+
+  /// True draws the stroke as a wide translucent highlighter pass instead of
+  /// an opaque pen line.
+  final bool isHighlighter;
 
   factory FreehandMarkup.fromCanvasPoints({
     required int id,
     required List<Offset> points,
     required Rect imageRect,
     MarkupStylePresetId stylePresetId = MarkupStylePresets.defaultPresetId,
+    double strokeWidthScale = MarkupStrokeConstants.defaultScale,
+    bool isHighlighter = false,
   }) {
     final List<Offset> normalized = <Offset>[];
     for (final Offset point in points) {
@@ -27,6 +37,8 @@ class FreehandMarkup {
       id: id,
       normalizedPoints: normalized,
       stylePresetId: stylePresetId,
+      strokeWidthScale: MarkupStrokeConstants.normalizeScale(strokeWidthScale),
+      isHighlighter: isHighlighter,
     );
   }
 
@@ -34,11 +46,15 @@ class FreehandMarkup {
     int? id,
     List<Offset>? normalizedPoints,
     MarkupStylePresetId? stylePresetId,
+    double? strokeWidthScale,
+    bool? isHighlighter,
   }) {
     return FreehandMarkup(
       id: id ?? this.id,
       normalizedPoints: normalizedPoints ?? this.normalizedPoints,
       stylePresetId: stylePresetId ?? this.stylePresetId,
+      strokeWidthScale: strokeWidthScale ?? this.strokeWidthScale,
+      isHighlighter: isHighlighter ?? this.isHighlighter,
     );
   }
 
@@ -123,7 +139,9 @@ class FreehandMarkup {
     }
     if (other.id != id ||
         other.normalizedPoints.length != normalizedPoints.length ||
-        other.stylePresetId != stylePresetId) {
+        other.stylePresetId != stylePresetId ||
+        other.strokeWidthScale != strokeWidthScale ||
+        other.isHighlighter != isHighlighter) {
       return false;
     }
     for (int i = 0; i < normalizedPoints.length; i++) {
@@ -135,6 +153,11 @@ class FreehandMarkup {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, Object.hashAll(normalizedPoints), stylePresetId);
+  int get hashCode => Object.hash(
+    id,
+    Object.hashAll(normalizedPoints),
+    stylePresetId,
+    strokeWidthScale,
+    isHighlighter,
+  );
 }

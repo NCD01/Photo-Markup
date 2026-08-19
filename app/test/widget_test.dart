@@ -363,7 +363,16 @@ void main() {
       );
       expect(railToolButton, findsOneWidget);
 
-      await tester.tap(railToolButton);
+      // The rail scrolls once there are more tools than fit the viewport.
+      await tester.scrollUntilVisible(
+        railToolButton,
+        120,
+        scrollable: find.descendant(
+          of: find.byKey(const ValueKey<String>('sidebar-rail-scroll')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.tap(railToolButton, warnIfMissed: false);
       await _pumpFrames(tester, frames: 8);
 
       final dynamic stateAfter = tester.state(
