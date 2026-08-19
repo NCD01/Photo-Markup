@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/export/services/markup_export_path_service.dart';
-import 'package:ncd_photo_markup/features/export/services/marked_up_image_export_service.dart';
+import 'package:ncd_photo_markup/features/export/services/full_resolution_export_service.dart';
 import 'package:ncd_photo_markup/features/integration/models/photo_markup_launch_context.dart';
 import 'package:ncd_photo_markup/features/integration/services/launch_context_service.dart';
 import 'package:ncd_photo_markup/features/import/services/dwg_preview_conversion_service.dart';
@@ -35,6 +35,7 @@ import 'package:ncd_photo_markup/features/markup/utils/markup_interaction_policy
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_text_layout_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_typography_utils.dart';
+import 'package:ncd_photo_markup/features/markup/rendering/markup_scene_renderer.dart';
 import 'package:ncd_photo_markup/features/markup/utils/unsaved_changes_tracker.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/features/sidebar/models/sidebar_icon_pack.dart';
@@ -751,6 +752,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   void debugInvokeToolbarAction(String label) => _onToolbarPressed(label);
 
   @visibleForTesting
+  Future<bool> debugExportMarkedUpImage() => _exportMarkedUpImage();
+
+  @visibleForTesting
   Future<void> debugCanvasTap(Offset point) async {
     final Rect? imageRect = _computeExportCropRect();
     if (imageRect == null) {
@@ -949,23 +953,24 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return false;
       }
 
-      final double pixelRatio = MediaQuery.of(
-        context,
-      ).devicePixelRatio.clamp(1.0, ExportConstants.maxPixelRatio);
       final String outputPath = _markupExportPathService
           .buildSafeMarkupExportPath(_normalizeExportPath(saveLocation.path));
-      final Rect? exportCropRect = _computeExportCropRect();
-      if (exportCropRect == null || exportCropRect.isEmpty) {
+      final Rect? displayImageRect = _computeExportCropRect();
+      final String? displayPath = _imagePath;
+      if (displayImageRect == null ||
+          displayImageRect.isEmpty ||
+          displayPath == null) {
         _showSnack(UiCopyConstants.exportFailureMessage);
         return false;
       }
 
-      await MarkedUpImageExportService.exportBoundaryToPng(
-        boundaryKey: _canvasExportKey,
-        outputPath: outputPath,
-        pixelRatio: pixelRatio,
-        cropRectLogical: exportCropRect,
-      );
+      final FullResolutionExportResult result =
+          await FullResolutionExportService.exportToPng(
+            sourceImagePath: displayPath,
+            scene: _buildExportScene(),
+            displayImageRect: displayImageRect,
+            outputPath: outputPath,
+          );
 
       if (!mounted) {
         return true;
@@ -973,7 +978,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       setState(() {
         _unsavedChangesTracker.markSaved();
       });
-      _showSnack(UiCopyConstants.exportSuccessMessage);
+      _showSnack(
+        '${UiCopyConstants.exportSuccessMessage} '
+        '${result.pixelWidth}x${result.pixelHeight}',
+      );
       return true;
     } catch (_) {
       if (!mounted) {
@@ -2371,6 +2379,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       }
     }
     return applied;
+  }
+
+  MarkupScene _buildExportScene() {
+    return MarkupScene(
+      lines: List<DimensionLine>.of(_dimensionLines),
+      arrows: List<ArrowMarkup>.of(_arrows),
+      rectangles: List<RectangleMarkup>.of(_rectangles),
+      ovals: List<OvalMarkup>.of(_ovals),
+      freehands: List<FreehandMarkup>.of(_freehands),
+      textNotes: List<TextNoteMarkup>.of(_textNotes),
+    );
   }
 
   MarkupSnapshot _snapshotMarkup() {

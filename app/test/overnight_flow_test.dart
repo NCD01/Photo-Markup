@@ -1,5 +1,10 @@
 // End-to-end drive of the markup shell: create with every tool, select, move,
 // undo, redo, clear. Runs against the real widget tree and the real painter.
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
@@ -214,5 +219,95 @@ void main() {
     state.debugInvokeToolbarAction(ToolbarConstants.undo);
     await pumpFrames(tester);
     expect(find.text(UiCopyConstants.undoNothingMessage), findsOneWidget);
+  });
+
+  testWidgets('export from the shell writes the photo at full resolution', (
+    WidgetTester tester,
+  ) async {
+    final Directory workDir = Directory.systemTemp.createTempSync('ncd_shell');
+    addTearDown(() {
+      if (workDir.existsSync()) {
+        workDir.deleteSync(recursive: true);
+      }
+    });
+
+    // A real 2400x1600 photo on disk for the shell to load and export.
+    final String sourcePath = '${workDir.path}/site_photo.png';
+    late final Uint8List sourceBytes;
+    await tester.runAsync(() async {
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      canvas.drawRect(
+        const Rect.fromLTWH(0, 0, 2400, 1600),
+        Paint()..color = const Color(0xFFFFFFFF),
+      );
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image image = await picture.toImage(2400, 1600);
+      final ByteData? encoded = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      sourceBytes = encoded!.buffer.asUint8List();
+      image.dispose();
+      picture.dispose();
+      await File(sourcePath).writeAsBytes(sourceBytes);
+    });
+
+    final String exportPath = '${workDir.path}/exported.png';
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      NcdPhotoMarkupApp(
+        showStartupSplash: false,
+        saveLocationOverride:
+            ({
+              String? initialDirectory,
+              String? suggestedName,
+              String? confirmButtonText,
+              List<XTypeGroup> acceptedTypeGroups = const <XTypeGroup>[],
+            }) async => FileSaveLocation(exportPath),
+      ),
+    );
+    await pumpFrames(tester, frames: 20);
+
+    final dynamic state = tester.state(find.byType(PhotoMarkupShellScreen));
+    state.debugSeedLoadedImageState(
+      path: sourcePath,
+      pixelSize: const Size(2400, 1600),
+    );
+    await pumpFrames(tester, frames: 20);
+
+    final Rect imageRect = state.debugCurrentImageRect() as Rect;
+    expect(imageRect.width, lessThan(2400));
+
+    await tapRailAction(tester, ToolbarConstants.arrow);
+    await dragOnCanvas(
+      tester,
+      imageRect.topLeft + const Offset(80, 80),
+      imageRect.topLeft + const Offset(260, 220),
+    );
+    expect(state.debugMarkupCount, 1);
+
+    late final bool exported;
+    await tester.runAsync(() async {
+      exported = await state.debugExportMarkedUpImage() as bool;
+    });
+    expect(exported, isTrue);
+
+    late final int width;
+    late final int height;
+    await tester.runAsync(() async {
+      final Uint8List bytes = await File(exportPath).readAsBytes();
+      final ui.Codec codec = await ui.instantiateImageCodec(bytes);
+      final ui.FrameInfo frame = await codec.getNextFrame();
+      width = frame.image.width;
+      height = frame.image.height;
+      frame.image.dispose();
+      codec.dispose();
+    });
+
+    expect(width, 2400);
+    expect(height, 1600);
   });
 }
