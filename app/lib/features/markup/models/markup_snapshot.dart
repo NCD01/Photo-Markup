@@ -1,0 +1,92 @@
+import 'package:flutter/foundation.dart';
+import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
+import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
+
+/// An immutable copy of every markup on the current photo.
+///
+/// This is the unit that undo and redo push around. Snapshotting the whole
+/// markup set instead of recording per-type edit commands means a new markup
+/// type costs one field here and nothing at all in the undo path.
+@immutable
+class MarkupSnapshot {
+  MarkupSnapshot({
+    required List<DimensionLine> dimensionLines,
+    required List<ArrowMarkup> arrows,
+    required List<RectangleMarkup> rectangles,
+    required List<OvalMarkup> ovals,
+    required List<FreehandMarkup> freehands,
+    required List<TextNoteMarkup> textNotes,
+    required this.nextMarkupId,
+  }) : dimensionLines = List<DimensionLine>.unmodifiable(dimensionLines),
+       arrows = List<ArrowMarkup>.unmodifiable(arrows),
+       rectangles = List<RectangleMarkup>.unmodifiable(rectangles),
+       ovals = List<OvalMarkup>.unmodifiable(ovals),
+       freehands = List<FreehandMarkup>.unmodifiable(freehands),
+       textNotes = List<TextNoteMarkup>.unmodifiable(textNotes);
+
+  final List<DimensionLine> dimensionLines;
+  final List<ArrowMarkup> arrows;
+  final List<RectangleMarkup> rectangles;
+  final List<OvalMarkup> ovals;
+  final List<FreehandMarkup> freehands;
+  final List<TextNoteMarkup> textNotes;
+  final int nextMarkupId;
+
+  static MarkupSnapshot empty() {
+    return MarkupSnapshot(
+      dimensionLines: const <DimensionLine>[],
+      arrows: const <ArrowMarkup>[],
+      rectangles: const <RectangleMarkup>[],
+      ovals: const <OvalMarkup>[],
+      freehands: const <FreehandMarkup>[],
+      textNotes: const <TextNoteMarkup>[],
+      nextMarkupId: 1,
+    );
+  }
+
+  bool get isEmpty =>
+      dimensionLines.isEmpty &&
+      arrows.isEmpty &&
+      rectangles.isEmpty &&
+      ovals.isEmpty &&
+      freehands.isEmpty &&
+      textNotes.isEmpty;
+
+  int get markupCount =>
+      dimensionLines.length +
+      arrows.length +
+      rectangles.length +
+      ovals.length +
+      freehands.length +
+      textNotes.length;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is MarkupSnapshot &&
+        other.nextMarkupId == nextMarkupId &&
+        listEquals(other.dimensionLines, dimensionLines) &&
+        listEquals(other.arrows, arrows) &&
+        listEquals(other.rectangles, rectangles) &&
+        listEquals(other.ovals, ovals) &&
+        listEquals(other.freehands, freehands) &&
+        listEquals(other.textNotes, textNotes);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    nextMarkupId,
+    Object.hashAll(dimensionLines),
+    Object.hashAll(arrows),
+    Object.hashAll(rectangles),
+    Object.hashAll(ovals),
+    Object.hashAll(freehands),
+    Object.hashAll(textNotes),
+  );
+}

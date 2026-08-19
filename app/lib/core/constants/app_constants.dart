@@ -274,6 +274,15 @@ class UiCopyConstants {
   static const String unsavedChangesDiscardButton = 'Discard';
   static const String unsavedChangesCancelButton = 'Cancel';
   static const String eraseNoSelectionMessage = 'Select a markup to erase.';
+  static const String undoNothingMessage = 'Nothing left to undo.';
+  static const String redoNothingMessage = 'Nothing to redo.';
+  static const String clearAllDialogTitle = 'Clear All Markup?';
+  static const String clearAllDialogBody =
+      'This removes every markup on this photo. Undo can bring it back.';
+  static const String clearAllConfirmButton = 'Clear All';
+  static const String clearAllCancelButton = 'Keep Markup';
+  static const String clearAllNothingMessage = 'There is no markup to clear.';
+  static const String clearAllDoneMessage = 'All markup cleared.';
   static const String launchContextFileNotFoundMessage =
       'Launch context file was not found. You can still open a photo manually.';
   static const String launchContextInvalidJsonMessage =
@@ -353,6 +362,8 @@ class ToolbarConstants {
   static const String style = 'Style';
   static const String erase = 'Erase';
   static const String undo = 'Undo';
+  static const String redo = 'Redo';
+  static const String clearAll = 'Clear All';
   static const String export = 'Export';
   static const String fileSectionTitle = 'File';
   static const String markupSectionTitle = 'Markup Tools';
@@ -372,7 +383,13 @@ class ToolbarConstants {
     circle,
     freehand,
   ];
-  static const List<String> editActionOrder = <String>[style, undo, erase];
+  static const List<String> editActionOrder = <String>[
+    style,
+    undo,
+    redo,
+    erase,
+    clearAll,
+  ];
 
   static const List<ToolbarSectionDefinition>
   sections = <ToolbarSectionDefinition>[
@@ -647,6 +664,12 @@ class MarkupHandleConstants {
   static const Color activeBorderColor = AppThemeConstants.ncdBlue;
   static const double borderWidth = 1.8;
   static const double activeBorderWidth = 2.4;
+}
+
+class MarkupHistoryConstants {
+  const MarkupHistoryConstants._();
+
+  static const int maxSteps = 80;
 }
 
 class ExportConstants {

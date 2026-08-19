@@ -21,11 +21,13 @@ import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/editable_markup_document.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_snapshot.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
+import 'package:ncd_photo_markup/features/markup/services/markup_history.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_interaction_policy.dart';
@@ -243,6 +245,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   bool _isSavingMarkupDocument = false;
   bool _isShowingLoadErrorDialog = false;
   final UnsavedChangesTracker _unsavedChangesTracker = UnsavedChangesTracker();
+  final MarkupHistory _history = MarkupHistory();
+  MarkupSnapshot? _gestureSnapshot;
   Size? _loadedImagePixelSize;
   final GlobalKey _canvasExportKey = GlobalKey();
   final TransformationController _canvasTransformController =
@@ -464,6 +468,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _activeHandleDragSession = null;
       _didMoveSelectedMarkup = false;
       _nextMarkupId = 1;
+      _resetMarkupHistory();
       _unsavedChangesTracker.markSaved();
     });
     importStopwatch.stop();
@@ -728,6 +733,21 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   Rect? debugCurrentImageRect() => _computeExportCropRect();
 
   @visibleForTesting
+  int get debugMarkupCount => _snapshotMarkup().markupCount;
+
+  @visibleForTesting
+  Object get debugMarkupFingerprint => _snapshotMarkup();
+
+  @visibleForTesting
+  bool get debugCanUndo => _history.canUndo;
+
+  @visibleForTesting
+  bool get debugCanRedo => _history.canRedo;
+
+  @visibleForTesting
+  void debugInvokeToolbarAction(String label) => _onToolbarPressed(label);
+
+  @visibleForTesting
   Future<void> debugCanvasTap(Offset point) async {
     final Rect? imageRect = _computeExportCropRect();
     if (imageRect == null) {
@@ -838,7 +858,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
 
     if (label == ToolbarConstants.undo) {
-      _undoMostRecentMarkup();
+      _undoMarkup();
+      return;
+    }
+
+    if (label == ToolbarConstants.redo) {
+      _redoMarkup();
+      return;
+    }
+
+    if (label == ToolbarConstants.clearAll) {
+      unawaited(_clearAllMarkup());
       return;
     }
 
@@ -1169,6 +1199,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       }
     }
     _nextMarkupId = math.max(document.nextMarkupId, maxId + 1);
+    _resetMarkupHistory();
   }
 
   Future<String?> _resolveSourceImagePathForDocument(
@@ -1502,10 +1533,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (label == ToolbarConstants.style) {
       return _selectedStylePreset.dimensionLineColor;
     }
-    if (label == ToolbarConstants.erase) {
+    if (label == ToolbarConstants.erase || label == ToolbarConstants.clearAll) {
       return AppThemeConstants.sidebarDestructiveAccent;
     }
-    if (label == ToolbarConstants.undo) {
+    if (label == ToolbarConstants.undo || label == ToolbarConstants.redo) {
       return AppThemeConstants.sidebarIconMuted;
     }
     if (_isFileAction(label)) {
@@ -1548,6 +1579,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   bool _isToolbarActionDisabled(String label) =>
       (label == ToolbarConstants.saveMarkup && _isSavingMarkupDocument) ||
       (label == ToolbarConstants.undo && !_isUndoEnabled()) ||
+      (label == ToolbarConstants.redo && !_isRedoEnabled()) ||
+      (label == ToolbarConstants.clearAll && !_hasAnyMarkup()) ||
       (label == ToolbarConstants.export && _isExporting);
 
   double _sidebarDrawerWidthForViewport(double viewportWidth) {
@@ -2121,11 +2154,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
+    final MarkupSnapshot historyBefore = _snapshotMarkup();
     final bool appliedToSelection = _applyTypographyAndStyleToSelection(
       presetId: selected.presetId,
       fontFamily: selected.fontFamily,
       fontSize: selected.fontSize,
     );
+    if (appliedToSelection) {
+      _history.record(historyBefore, _snapshotMarkup());
+    }
     setState(() {
       _selectedStylePresetId = selected.presetId;
       _selectedFontFamily = MarkupTypographyUtils.normalizeFontFamily(
@@ -2232,6 +2269,96 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     return applied;
   }
 
+  MarkupSnapshot _snapshotMarkup() {
+    return MarkupSnapshot(
+      dimensionLines: _dimensionLines,
+      arrows: _arrows,
+      rectangles: _rectangles,
+      ovals: _ovals,
+      freehands: _freehands,
+      textNotes: _textNotes,
+      nextMarkupId: _nextMarkupId,
+    );
+  }
+
+  void _restoreMarkupSnapshot(MarkupSnapshot snapshot) {
+    _dimensionLines
+      ..clear()
+      ..addAll(snapshot.dimensionLines);
+    _arrows
+      ..clear()
+      ..addAll(snapshot.arrows);
+    _rectangles
+      ..clear()
+      ..addAll(snapshot.rectangles);
+    _ovals
+      ..clear()
+      ..addAll(snapshot.ovals);
+    _freehands
+      ..clear()
+      ..addAll(snapshot.freehands);
+    _textNotes
+      ..clear()
+      ..addAll(snapshot.textNotes);
+    _nextMarkupId = snapshot.nextMarkupId;
+    _dropSelectionForMissingMarkup();
+  }
+
+  void _dropSelectionForMissingMarkup() {
+    final bool stillPresent =
+        (_selectedDimensionId != null &&
+            _dimensionLines.any(
+              (DimensionLine line) => line.id == _selectedDimensionId,
+            )) ||
+        (_selectedArrowId != null &&
+            _arrows.any((ArrowMarkup arrow) => arrow.id == _selectedArrowId)) ||
+        (_selectedRectangleId != null &&
+            _rectangles.any(
+              (RectangleMarkup rectangle) =>
+                  rectangle.id == _selectedRectangleId,
+            )) ||
+        (_selectedOvalId != null &&
+            _ovals.any((OvalMarkup oval) => oval.id == _selectedOvalId)) ||
+        (_selectedFreehandId != null &&
+            _freehands.any(
+              (FreehandMarkup freehand) => freehand.id == _selectedFreehandId,
+            )) ||
+        (_selectedTextNoteId != null &&
+            _textNotes.any(
+              (TextNoteMarkup note) => note.id == _selectedTextNoteId,
+            ));
+    if (!stillPresent) {
+      _clearMarkupSelection();
+    }
+  }
+
+  /// Remembers the markup state at the start of a pointer gesture so a whole
+  /// drag lands as one undo step rather than one step per pointer move.
+  void _beginMarkupGesture() {
+    _gestureSnapshot ??= _snapshotMarkup();
+  }
+
+  void _endMarkupGesture() {
+    final MarkupSnapshot? before = _gestureSnapshot;
+    _gestureSnapshot = null;
+    if (before == null) {
+      return;
+    }
+    _history.record(before, _snapshotMarkup());
+  }
+
+  /// Runs a discrete markup edit as a single undo step.
+  void _runMarkupCommand(VoidCallback body) {
+    final MarkupSnapshot before = _snapshotMarkup();
+    body();
+    _history.record(before, _snapshotMarkup());
+  }
+
+  void _resetMarkupHistory() {
+    _history.clear();
+    _gestureSnapshot = null;
+  }
+
   int _allocateMarkupId() {
     final int id = _nextMarkupId;
     _nextMarkupId += 1;
@@ -2303,113 +2430,84 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     _selectedFreehandId = null;
   }
 
-  void _undoMostRecentMarkup() {
-    int latestDimensionId = -1;
-    for (final DimensionLine line in _dimensionLines) {
-      if (line.id > latestDimensionId) {
-        latestDimensionId = line.id;
-      }
-    }
-
-    int latestArrowId = -1;
-    for (final ArrowMarkup arrow in _arrows) {
-      if (arrow.id > latestArrowId) {
-        latestArrowId = arrow.id;
-      }
-    }
-
-    int latestRectangleId = -1;
-    for (final RectangleMarkup rectangle in _rectangles) {
-      if (rectangle.id > latestRectangleId) {
-        latestRectangleId = rectangle.id;
-      }
-    }
-
-    int latestOvalId = -1;
-    for (final OvalMarkup oval in _ovals) {
-      if (oval.id > latestOvalId) {
-        latestOvalId = oval.id;
-      }
-    }
-
-    int latestFreehandId = -1;
-    for (final FreehandMarkup freehand in _freehands) {
-      if (freehand.id > latestFreehandId) {
-        latestFreehandId = freehand.id;
-      }
-    }
-
-    int latestTextNoteId = -1;
-    for (final TextNoteMarkup textNote in _textNotes) {
-      if (textNote.id > latestTextNoteId) {
-        latestTextNoteId = textNote.id;
-      }
-    }
-
-    if (latestDimensionId == -1 &&
-        latestArrowId == -1 &&
-        latestRectangleId == -1 &&
-        latestOvalId == -1 &&
-        latestFreehandId == -1 &&
-        latestTextNoteId == -1) {
+  void _undoMarkup() {
+    final MarkupSnapshot? previous = _history.undo(_snapshotMarkup());
+    if (previous == null) {
+      _showSnack(UiCopyConstants.undoNothingMessage);
       return;
     }
-
     setState(() {
-      if (latestDimensionId >= latestArrowId &&
-          latestDimensionId >= latestRectangleId &&
-          latestDimensionId >= latestOvalId &&
-          latestDimensionId >= latestFreehandId &&
-          latestDimensionId >= latestTextNoteId) {
-        _dimensionLines.removeWhere(
-          (DimensionLine line) => line.id == latestDimensionId,
-        );
-        if (_selectedDimensionId == latestDimensionId) {
-          _clearMarkupSelection();
-        }
-      } else if (latestArrowId >= latestRectangleId &&
-          latestArrowId >= latestOvalId &&
-          latestArrowId >= latestFreehandId &&
-          latestArrowId >= latestTextNoteId) {
-        _arrows.removeWhere((ArrowMarkup arrow) => arrow.id == latestArrowId);
-        if (_selectedArrowId == latestArrowId) {
-          _clearMarkupSelection();
-        }
-      } else if (latestRectangleId >= latestOvalId &&
-          latestRectangleId >= latestFreehandId &&
-          latestRectangleId >= latestTextNoteId) {
-        _rectangles.removeWhere(
-          (RectangleMarkup rectangle) => rectangle.id == latestRectangleId,
-        );
-        if (_selectedRectangleId == latestRectangleId) {
-          _clearMarkupSelection();
-        }
-      } else if (latestOvalId >= latestFreehandId &&
-          latestOvalId >= latestTextNoteId) {
-        _ovals.removeWhere((OvalMarkup oval) => oval.id == latestOvalId);
-        if (_selectedOvalId == latestOvalId) {
-          _clearMarkupSelection();
-        }
-      } else if (latestFreehandId >= latestTextNoteId) {
-        _freehands.removeWhere(
-          (FreehandMarkup freehand) => freehand.id == latestFreehandId,
-        );
-        if (_selectedFreehandId == latestFreehandId) {
-          _clearMarkupSelection();
-        }
-      } else {
-        _textNotes.removeWhere(
-          (TextNoteMarkup textNote) => textNote.id == latestTextNoteId,
-        );
-        if (_selectedTextNoteId == latestTextNoteId) {
-          _clearMarkupSelection();
-        }
-      }
+      _restoreMarkupSnapshot(previous);
       _unsavedChangesTracker.markDirty();
     });
   }
 
+  void _redoMarkup() {
+    final MarkupSnapshot? next = _history.redo(_snapshotMarkup());
+    if (next == null) {
+      _showSnack(UiCopyConstants.redoNothingMessage);
+      return;
+    }
+    setState(() {
+      _restoreMarkupSnapshot(next);
+      _unsavedChangesTracker.markDirty();
+    });
+  }
+
+  Future<void> _clearAllMarkup() async {
+    if (_snapshotMarkup().isEmpty) {
+      _showSnack(UiCopyConstants.clearAllNothingMessage);
+      return;
+    }
+    final bool confirmed = await _showClearAllConfirmation();
+    if (!confirmed || !mounted) {
+      return;
+    }
+    setState(() {
+      _runMarkupCommand(() {
+        _dimensionLines.clear();
+        _arrows.clear();
+        _rectangles.clear();
+        _ovals.clear();
+        _freehands.clear();
+        _textNotes.clear();
+        _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
+      });
+    });
+    _showSnack(UiCopyConstants.clearAllDoneMessage);
+  }
+
+  Future<bool> _showClearAllConfirmation() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text(UiCopyConstants.clearAllDialogTitle),
+          content: const Text(UiCopyConstants.clearAllDialogBody),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text(UiCopyConstants.clearAllCancelButton),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text(UiCopyConstants.clearAllConfirmButton),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
+  }
+
   void _eraseSelectedMarkup() {
+    final MarkupSnapshot historyBefore = _snapshotMarkup();
+    _eraseSelectedMarkupInternal();
+    _history.record(historyBefore, _snapshotMarkup());
+  }
+
+  void _eraseSelectedMarkupInternal() {
     final int? selectedDimensionId = _selectedDimensionId;
     if (selectedDimensionId != null) {
       setState(() {
@@ -2485,6 +2583,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (!imageRect.contains(startPoint)) {
       return;
     }
+    _beginMarkupGesture();
     _didMoveSelectedMarkup = false;
     if (MarkupInteractionPolicy.allowsTapSelection(_selectedTool)) {
       if (_tryStartHandleDrag(startPoint, imageRect)) {
@@ -2549,14 +2648,24 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   Future<void> _onDimensionEnd(Rect imageRect) async {
+    try {
+      await _onDimensionEndInternal(imageRect);
+    } finally {
+      _endMarkupGesture();
+    }
+  }
+
+  Future<void> _onDimensionEndInternal(Rect imageRect) async {
     if (_activeHandleDragSession != null) {
       _activeHandleDragSession = null;
       _suppressTapActionAfterPointerDownSelection = false;
+      _endMarkupGesture();
       return;
     }
     if (_activeMoveSession != null) {
       _activeMoveSession = null;
       _suppressTapActionAfterPointerDownSelection = false;
+      _endMarkupGesture();
       return;
     }
 
@@ -2568,6 +2677,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     _activeFreehandPoints.clear();
 
     if (start == null || end == null || !_canDrawMarkup(imageRect)) {
+      _endMarkupGesture();
       if (mounted) {
         setState(() {});
       }
@@ -2696,11 +2806,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       if (!mounted || newLineId == null) {
         return;
       }
-      await _promptForDimensionLabelById(newLineId!);
+      await _promptForDimensionLabelById(newLineId!, recordHistory: false);
     }
   }
 
-  Future<void> _promptForDimensionLabelById(int dimensionId) async {
+  Future<void> _promptForDimensionLabelById(
+    int dimensionId, {
+    bool recordHistory = true,
+  }) async {
+    final MarkupSnapshot historyBefore = _snapshotMarkup();
     final int lineIndex = _dimensionLines.indexWhere(
       (DimensionLine line) => line.id == dimensionId,
     );
@@ -2735,6 +2849,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _selectDimensionById(dimensionId);
       _unsavedChangesTracker.markDirty();
     });
+    if (recordHistory) {
+      _history.record(historyBefore, _snapshotMarkup());
+    }
   }
 
   Future<String?> _showDimensionLabelDialog({
@@ -2749,6 +2866,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   Future<void> _createTextNoteAt(Offset point, Rect imageRect) async {
+    final MarkupSnapshot historyBefore = _snapshotMarkup();
     final String? noteText = await _showTextNoteDialog(initialValue: '');
     if (!mounted || noteText == null) {
       return;
@@ -2771,9 +2889,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _selectTextNoteById(note.id);
       _unsavedChangesTracker.markDirty();
     });
+    _history.record(historyBefore, _snapshotMarkup());
   }
 
   Future<void> _editTextNoteById(int noteId) async {
+    final MarkupSnapshot historyBefore = _snapshotMarkup();
     final int index = _textNotes.indexWhere(
       (TextNoteMarkup note) => note.id == noteId,
     );
@@ -2802,6 +2922,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         _clearMarkupSelection();
         _unsavedChangesTracker.markDirty();
       });
+      _history.record(historyBefore, _snapshotMarkup());
       return;
     }
 
@@ -2812,6 +2933,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _selectTextNoteById(noteId);
       _unsavedChangesTracker.markDirty();
     });
+    _history.record(historyBefore, _snapshotMarkup());
   }
 
   Future<String?> _showTextNoteDialog({required String initialValue}) async {
@@ -3998,6 +4120,21 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return KeyEventResult.handled;
       }
     }
+    if (ctrlOrMetaPressed) {
+      final bool shiftPressed = HardwareKeyboard.instance.isShiftPressed;
+      if (event.logicalKey == LogicalKeyboardKey.keyZ) {
+        if (shiftPressed) {
+          _redoMarkup();
+        } else {
+          _undoMarkup();
+        }
+        return KeyEventResult.handled;
+      }
+      if (event.logicalKey == LogicalKeyboardKey.keyY) {
+        _redoMarkup();
+        return KeyEventResult.handled;
+      }
+    }
     if (event.logicalKey == LogicalKeyboardKey.delete ||
         event.logicalKey == LogicalKeyboardKey.backspace) {
       _eraseSelectedMarkup();
@@ -4031,14 +4168,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         imageRect.height > 0;
   }
 
-  bool _isUndoEnabled() {
-    return _dimensionLines.isNotEmpty ||
-        _arrows.isNotEmpty ||
-        _rectangles.isNotEmpty ||
-        _ovals.isNotEmpty ||
-        _freehands.isNotEmpty ||
-        _textNotes.isNotEmpty;
-  }
+  bool _isUndoEnabled() => _history.canUndo;
+
+  bool _isRedoEnabled() => _history.canRedo;
+
+  bool _hasAnyMarkup() => !_snapshotMarkup().isEmpty;
 
   String _fileExtension(String path) {
     final List<String> parts = path.split('.');
