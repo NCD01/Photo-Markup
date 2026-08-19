@@ -16,6 +16,7 @@ class SessionPreferences {
     this.fontFamily = MarkupTypographyConstants.defaultFontFamily,
     this.fontSize = MarkupTypographyConstants.defaultFontSize,
     this.sidebarExpanded = false,
+    this.markerMode = MarkerModeConstants.defaultEnabled,
     this.lastExportDirectory,
   });
 
@@ -27,6 +28,10 @@ class SessionPreferences {
   final String fontFamily;
   final double fontSize;
   final bool sidebarExpanded;
+
+  /// See MarkerMode. Off unless the user turns it on, because it changes what
+  /// an export looks like.
+  final bool markerMode;
   final String? lastExportDirectory;
 
   static const SessionPreferences defaults = SessionPreferences();
@@ -40,6 +45,7 @@ class SessionPreferences {
     String? fontFamily,
     double? fontSize,
     bool? sidebarExpanded,
+    bool? markerMode,
     String? lastExportDirectory,
   }) {
     return SessionPreferences(
@@ -51,6 +57,7 @@ class SessionPreferences {
       fontFamily: fontFamily ?? this.fontFamily,
       fontSize: fontSize ?? this.fontSize,
       sidebarExpanded: sidebarExpanded ?? this.sidebarExpanded,
+      markerMode: markerMode ?? this.markerMode,
       lastExportDirectory: lastExportDirectory ?? this.lastExportDirectory,
     );
   }
@@ -66,6 +73,7 @@ class SessionPreferences {
       'fontFamily': fontFamily,
       'fontSize': fontSize,
       'sidebarExpanded': sidebarExpanded,
+      'markerMode': markerMode,
       if (lastExportDirectory != null)
         'lastExportDirectory': lastExportDirectory,
     };
@@ -94,6 +102,7 @@ class SessionPreferences {
         _asDouble(json['fontSize']),
       ),
       sidebarExpanded: json['sidebarExpanded'] == true,
+      markerMode: json['markerMode'] == true,
       lastExportDirectory: _cleanString(json['lastExportDirectory']),
     );
   }

@@ -13,6 +13,7 @@ import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
+import 'package:ncd_photo_markup/features/markup/rendering/marker_mode.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_text_layout_utils.dart';
 
 /// Everything the renderer needs to draw one frame of markup.
@@ -42,6 +43,7 @@ class MarkupScene {
     this.activeFreehandPoints = const <Offset>[],
     this.activeStrokeWidthScale = MarkupStrokeConstants.defaultScale,
     this.activeFilled = false,
+    this.markerMode = MarkerModeConstants.defaultEnabled,
   });
 
   final List<DimensionLine> lines;
@@ -68,6 +70,9 @@ class MarkupScene {
   final double activeStrokeWidthScale;
   final bool activeFilled;
 
+  /// Renders strokes as if drawn by hand. See [MarkerMode].
+  final bool markerMode;
+
   /// Cheap repaint check for the overlay painter.
   static bool sameContent(MarkupScene a, MarkupScene b) {
     return listEquals(a.lines, b.lines) &&
@@ -92,6 +97,7 @@ class MarkupScene {
         a.activeEnd == b.activeEnd &&
         a.activeStrokeWidthScale == b.activeStrokeWidthScale &&
         a.activeFilled == b.activeFilled &&
+        a.markerMode == b.markerMode &&
         listEquals(a.activeFreehandPoints, b.activeFreehandPoints);
   }
 }
@@ -145,6 +151,7 @@ class MarkupSceneRenderer {
         imageRect: imageRect,
         scale: scale,
         isSelected: showSelection && scene.selectedFreehandId == freehand.id,
+        markerMode: scene.markerMode,
       );
     }
 
@@ -157,6 +164,8 @@ class MarkupSceneRenderer {
         filled: rectangle.filled,
         scale: scale,
         isSelected: showSelection && scene.selectedRectangleId == rectangle.id,
+        markerMode: scene.markerMode,
+        seed: rectangle.id,
       );
     }
 
@@ -169,6 +178,8 @@ class MarkupSceneRenderer {
         filled: oval.filled,
         scale: scale,
         isSelected: showSelection && scene.selectedOvalId == oval.id,
+        markerMode: scene.markerMode,
+        seed: oval.id,
       );
     }
 
@@ -182,6 +193,7 @@ class MarkupSceneRenderer {
         imageRect: imageRect,
         scale: scale,
         isSelected: showSelection && scene.selectedFreehandId == freehand.id,
+        markerMode: scene.markerMode,
       );
     }
 
@@ -195,6 +207,8 @@ class MarkupSceneRenderer {
         hasHead: arrow.hasHead,
         scale: scale,
         isSelected: showSelection && scene.selectedArrowId == arrow.id,
+        markerMode: scene.markerMode,
+        seed: arrow.id,
       );
     }
 
@@ -309,6 +323,51 @@ class MarkupSceneRenderer {
 
   // ------------------------------------------------------------------ shapes
 
+  /// Strokes a path with its halo behind it, and with a second offset pass
+  /// when Marker Mode is on so the line reads as inked rather than plotted.
+  static void _strokePath({
+    required Canvas canvas,
+    required Path path,
+    required Color color,
+    required double width,
+    required double scale,
+    required bool markerMode,
+    StrokeCap cap = StrokeCap.round,
+    StrokeJoin join = StrokeJoin.round,
+  }) {
+    canvas.drawPath(
+      path,
+      haloPaintFor(strokeColor: color, strokeWidth: width, scale: scale),
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..strokeWidth = width
+        ..strokeCap = cap
+        ..strokeJoin = join
+        ..style = PaintingStyle.stroke,
+    );
+    if (!markerMode) {
+      return;
+    }
+    canvas.save();
+    canvas.translate(
+      MarkerModeConstants.secondPassOffset * scale,
+      MarkerModeConstants.secondPassOffset * scale,
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color.withValues(alpha: MarkerModeConstants.secondPassOpacity)
+        ..strokeWidth = width * 0.7
+        ..strokeCap = cap
+        ..strokeJoin = join
+        ..style = PaintingStyle.stroke,
+    );
+    canvas.restore();
+  }
+
   static void _paintRectangle({
     required Canvas canvas,
     required Rect rect,
@@ -317,6 +376,8 @@ class MarkupSceneRenderer {
     required bool filled,
     required double scale,
     required bool isSelected,
+    bool markerMode = false,
+    int seed = 0,
   }) {
     if (rect.width <= 0 || rect.height <= 0) {
       return;
@@ -331,8 +392,20 @@ class MarkupSceneRenderer {
     final Color strokeColor = isSelected
         ? preset.selectedStrokeColor
         : preset.strokeColor;
-    canvas.drawRect(
-      rect,
+    final Path rectanglePath = markerMode
+        ? smoothPath(
+            MarkerMode.wobble(
+              points: MarkerMode.rectangleOutline(rect, seed),
+              seed: seed,
+              amplitude: MarkerMode.amplitudeFor(
+                strokeWidth: width,
+                scale: scale,
+              ),
+            ),
+          )
+        : (Path()..addRect(rect));
+    canvas.drawPath(
+      rectanglePath,
       Paint()
         ..color = filled
             ? preset.strokeColor.withValues(
@@ -341,17 +414,24 @@ class MarkupSceneRenderer {
             : preset.fillColor
         ..style = PaintingStyle.fill,
     );
-    canvas.drawRect(
-      rect,
-      haloPaintFor(strokeColor: strokeColor, strokeWidth: width, scale: scale),
-    );
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..color = strokeColor
-        ..strokeWidth = width
-        ..strokeJoin = StrokeJoin.round
-        ..style = PaintingStyle.stroke,
+    _strokePath(
+      canvas: canvas,
+      path: markerMode
+          ? smoothPath(
+              MarkerMode.wobble(
+                points: MarkerMode.rectangleOutline(rect, seed),
+                seed: seed,
+                amplitude: MarkerMode.amplitudeFor(
+                  strokeWidth: width,
+                  scale: scale,
+                ),
+              ),
+            )
+          : rectanglePath,
+      color: strokeColor,
+      width: width,
+      scale: scale,
+      markerMode: markerMode,
     );
   }
 
@@ -363,6 +443,8 @@ class MarkupSceneRenderer {
     required bool filled,
     required double scale,
     required bool isSelected,
+    bool markerMode = false,
+    int seed = 0,
   }) {
     if (rect.width <= 0 || rect.height <= 0) {
       return;
@@ -377,8 +459,20 @@ class MarkupSceneRenderer {
     final Color strokeColor = isSelected
         ? preset.selectedStrokeColor
         : preset.strokeColor;
-    canvas.drawOval(
-      rect,
+    final Path ovalPath = markerMode
+        ? smoothPath(
+            MarkerMode.wobble(
+              points: MarkerMode.ovalOutline(rect),
+              seed: seed,
+              amplitude: MarkerMode.amplitudeFor(
+                strokeWidth: width,
+                scale: scale,
+              ),
+            ),
+          )
+        : (Path()..addOval(rect));
+    canvas.drawPath(
+      ovalPath,
       Paint()
         ..color = filled
             ? preset.strokeColor.withValues(
@@ -387,16 +481,13 @@ class MarkupSceneRenderer {
             : preset.fillColor
         ..style = PaintingStyle.fill,
     );
-    canvas.drawOval(
-      rect,
-      haloPaintFor(strokeColor: strokeColor, strokeWidth: width, scale: scale),
-    );
-    canvas.drawOval(
-      rect,
-      Paint()
-        ..color = strokeColor
-        ..strokeWidth = width
-        ..style = PaintingStyle.stroke,
+    _strokePath(
+      canvas: canvas,
+      path: ovalPath,
+      color: strokeColor,
+      width: width,
+      scale: scale,
+      markerMode: markerMode,
     );
   }
 
@@ -409,6 +500,8 @@ class MarkupSceneRenderer {
     required bool hasHead,
     required double scale,
     required bool isSelected,
+    bool markerMode = false,
+    int seed = 0,
   }) {
     final double width = resolveStrokeWidth(
       baseWidth: ArrowMarkupConstants.strokeWidth,
@@ -420,25 +513,30 @@ class MarkupSceneRenderer {
     final Color strokeColor = isSelected
         ? preset.selectedStrokeColor
         : preset.strokeColor;
-    final Path path = _arrowPath(
-      start: start,
-      end: end,
-      hasHead: hasHead,
-      strokeWidthScale: strokeWidthScale,
+    Offset markerStart = start;
+    Offset markerEnd = end;
+    if (markerMode) {
+      final List<Offset> nudged = MarkerMode.wobble(
+        points: <Offset>[start, end],
+        seed: seed,
+        amplitude: MarkerMode.amplitudeFor(strokeWidth: width, scale: scale),
+      );
+      markerStart = nudged.first;
+      markerEnd = nudged.last;
+    }
+    _strokePath(
+      canvas: canvas,
+      path: _arrowPath(
+        start: markerStart,
+        end: markerEnd,
+        hasHead: hasHead,
+        strokeWidthScale: strokeWidthScale,
+        scale: scale,
+      ),
+      color: strokeColor,
+      width: width,
       scale: scale,
-    );
-    canvas.drawPath(
-      path,
-      haloPaintFor(strokeColor: strokeColor, strokeWidth: width, scale: scale),
-    );
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = strokeColor
-        ..strokeWidth = width
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..style = PaintingStyle.stroke,
+      markerMode: markerMode,
     );
   }
 
@@ -489,6 +587,7 @@ class MarkupSceneRenderer {
     required Rect imageRect,
     required double scale,
     required bool isSelected,
+    bool markerMode = false,
   }) {
     final List<Offset> points = freehand.pointsInRect(imageRect);
     if (points.isEmpty) {
@@ -546,19 +645,23 @@ class MarkupSceneRenderer {
       canvas.drawCircle(points.first, width / 2, Paint()..color = strokeColor);
       return;
     }
-    final Path path = smoothPath(points);
-    canvas.drawPath(
-      path,
-      haloPaintFor(strokeColor: strokeColor, strokeWidth: width, scale: scale),
-    );
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = strokeColor
-        ..strokeWidth = width
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..style = PaintingStyle.stroke,
+    _strokePath(
+      canvas: canvas,
+      path: smoothPath(
+        markerMode
+            ? MarkerMode.wobble(
+                points: points,
+                seed: freehand.id,
+                amplitude:
+                    MarkerMode.amplitudeFor(strokeWidth: width, scale: scale) *
+                    0.5,
+              )
+            : points,
+      ),
+      color: strokeColor,
+      width: width,
+      scale: scale,
+      markerMode: markerMode,
     );
   }
 
@@ -957,6 +1060,7 @@ class MarkupSceneRenderer {
       }
       _paintFreehand(
         canvas: canvas,
+        markerMode: scene.markerMode,
         freehand: FreehandMarkup.fromCanvasPoints(
           id: -1,
           points: scene.activeFreehandPoints,
@@ -1012,6 +1116,7 @@ class MarkupSceneRenderer {
         );
         break;
       case MarkupTool.dimension:
+      case MarkupTool.scale:
         _paintDimensionLine(
           canvas: canvas,
           start: start,

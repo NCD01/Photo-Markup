@@ -74,6 +74,9 @@ class SidebarIconRegistry {
       Icons.filter_1_outlined,
     ),
     ToolbarConstants.blur: SidebarIconDescriptor.icon(Icons.blur_on),
+    ToolbarConstants.scale: SidebarIconDescriptor.icon(
+      Icons.square_foot_outlined,
+    ),
     ToolbarConstants.style: SidebarIconDescriptor.icon(Icons.palette_outlined),
     ToolbarConstants.undo: SidebarIconDescriptor.icon(Icons.undo),
     ToolbarConstants.redo: SidebarIconDescriptor.icon(Icons.redo),
@@ -86,6 +89,9 @@ class SidebarIconRegistry {
     ),
     ToolbarConstants.rotateRight: SidebarIconDescriptor.icon(
       Icons.rotate_90_degrees_cw_outlined,
+    ),
+    ToolbarConstants.markerMode: SidebarIconDescriptor.icon(
+      Icons.draw_outlined,
     ),
   };
 

@@ -8,6 +8,7 @@ import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/photo_scale.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 
@@ -31,6 +32,8 @@ class EditableMarkupDocument {
     required this.textNotes,
     this.callouts = const <CalloutMarkup>[],
     this.blurs = const <BlurMarkup>[],
+    this.photoScale,
+    this.quarterTurns = 0,
   });
 
   final String schemaVersion;
@@ -51,6 +54,8 @@ class EditableMarkupDocument {
   final List<TextNoteMarkup> textNotes;
   final List<CalloutMarkup> callouts;
   final List<BlurMarkup> blurs;
+  final PhotoScale? photoScale;
+  final int quarterTurns;
 
   factory EditableMarkupDocument.fromJson(Map<String, dynamic> json) {
     final String schemaVersion = (json['schemaVersion'] ?? '')
@@ -88,6 +93,8 @@ class EditableMarkupDocument {
       textNotes: _readTextNotes(json['textNotes']),
       callouts: _readCallouts(json['callouts']),
       blurs: _readBlurs(json['blurs']),
+      photoScale: PhotoScale.fromJson(json['photoScale']),
+      quarterTurns: ((_asInt(json['quarterTurns']) ?? 0) % 4 + 4) % 4,
     );
   }
 
@@ -185,6 +192,8 @@ class EditableMarkupDocument {
             },
           )
           .toList(growable: false),
+      if (photoScale != null) 'photoScale': photoScale!.toJson(),
+      'quarterTurns': quarterTurns,
       'callouts': callouts
           .map(
             (CalloutMarkup callout) => <String, dynamic>{

@@ -48,6 +48,7 @@ class DimensionLinesOverlay extends StatefulWidget {
     this.onTap,
     this.activeStrokeWidthScale = MarkupStrokeConstants.defaultScale,
     this.activeFilled = false,
+    this.markerMode = MarkerModeConstants.defaultEnabled,
   });
 
   final List<DimensionLine> lines;
@@ -79,6 +80,7 @@ class DimensionLinesOverlay extends StatefulWidget {
   final ValueChanged<Offset>? onTap;
   final double activeStrokeWidthScale;
   final bool activeFilled;
+  final bool markerMode;
 
   @override
   State<DimensionLinesOverlay> createState() => _DimensionLinesOverlayState();
@@ -230,6 +232,7 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
             activeFreehandPoints: List<Offset>.of(widget.activeFreehandPoints),
             activeStrokeWidthScale: widget.activeStrokeWidthScale,
             activeFilled: widget.activeFilled,
+            markerMode: widget.markerMode,
           ),
           imageRect: widget.imageRect,
         ),

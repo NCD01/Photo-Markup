@@ -382,6 +382,7 @@ class ToolbarConstants {
   static const String highlighter = 'Highlighter';
   static const String callout = 'Callout';
   static const String blur = 'Blur';
+  static const String scale = 'Set Scale';
   static const String circle = 'Circle';
   static const String rectangle = 'Rectangle';
   static const String freehand = 'Freehand';
@@ -393,6 +394,7 @@ class ToolbarConstants {
   static const String clearAll = 'Clear All';
   static const String rotateLeft = 'Rotate Left';
   static const String rotateRight = 'Rotate Right';
+  static const String markerMode = MarkerModeConstants.toggleLabel;
   static const String export = 'Export';
   static const String exportAs = 'Export As...';
   static const String fileSectionTitle = 'File';
@@ -417,6 +419,7 @@ class ToolbarConstants {
     highlighter,
     callout,
     blur,
+    scale,
   ];
   static const List<String> editActionOrder = <String>[
     style,
@@ -428,6 +431,7 @@ class ToolbarConstants {
   static const List<String> photoActionOrder = <String>[
     rotateLeft,
     rotateRight,
+    markerMode,
   ];
   static const String photoSectionTitle = 'Photo';
 
@@ -753,6 +757,76 @@ class MarkupMoveConstants {
   static const double selectionStartHitDistance = 24;
   static const double boundsPadding = 0;
   static const double minimumMoveDelta = 0.5;
+}
+
+class HiddenExtraConstants {
+  const HiddenExtraConstants._();
+
+  /// How many times the version label has to be pressed, and how quickly.
+  static const int requiredTaps = 7;
+  static const Duration tapWindow = Duration(seconds: 3);
+
+  static const String title = 'NCD Photo Markup';
+  static const String creditLine = 'Built for one-handed work on a ladder.';
+  static const String signature = 'Nickel City Design';
+  static const String dismiss = 'Back to work';
+  static const List<String> lines = <String>[
+    'Measure twice.',
+    'Mark once.',
+    'Then take the photo anyway, because nobody believes a tape measure.',
+  ];
+}
+
+class MarkerModeConstants {
+  const MarkerModeConstants._();
+
+  /// Off unless the user turns it on, because it changes what an export looks
+  /// like.
+  static const bool defaultEnabled = false;
+
+  static const double amplitudeStrokeFactor = 0.55;
+  static const double minimumAmplitude = 1.1;
+  static const double cornerOvershootFactor = 0.06;
+  static const int ovalSampleCount = 40;
+  static const int rectangleSamplesPerEdge = 6;
+
+  /// The second, offset pass that gives a marker its double-inked look.
+  static const double secondPassOffset = 0.9;
+  static const double secondPassOpacity = 0.45;
+
+  static const String toggleLabel = 'Marker Mode';
+  static const String toggleHelp =
+      'Draw as if by hand. Changes exports, so it is off by default.';
+  static const String enabledMessage = 'Marker Mode on.';
+  static const String disabledMessage = 'Marker Mode off.';
+}
+
+class PhotoScaleConstants {
+  const PhotoScaleConstants._();
+
+  /// A calibration line shorter than this across the photo is too small to
+  /// measure from without amplifying the error badly.
+  static const double minimumNormalizedLength = 0.02;
+  static const double minimumInches = 0.5;
+  static const double maximumInches = 12000;
+
+  static const String dialogTitle = 'Set Photo Scale';
+  static const String dialogBody =
+      'How long is what you just measured? Everything you measure on this '
+      'photo afterwards gets labelled from it.';
+  static const String dialogHint = "Example: 8' or 36\" or 6-2";
+  static const String dialogSetButton = 'Set Scale';
+  static const String dialogCancelButton = 'Cancel';
+  static const String dialogClearButton = 'Clear Scale';
+  static const String scaleSetPrefix = 'Scale set:';
+  static const String scaleClearedMessage = 'Photo scale cleared.';
+  static const String scaleUnreadableMessage =
+      "Could not read that length. Try 8' or 36\" or 6-2.";
+  static const String scaleTooShortMessage =
+      'Drag across something longer to set a reliable scale.';
+  static const String statusLabel = 'Scale';
+  static const String statusNotSet = 'Not set';
+  static const String scaleBarToggleLabel = 'Scale bar on export';
 }
 
 class MarkupTapGuardConstants {

@@ -10,4 +10,5 @@ enum MarkupTool {
   textNote,
   callout,
   blur,
+  scale,
 }

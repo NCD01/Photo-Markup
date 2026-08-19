@@ -27,6 +27,7 @@ import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_snapshot.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/photo_scale.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
@@ -315,6 +316,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   CalloutLabelStyle _calloutLabelStyle = CalloutLabelStyle.numbers;
   int _nextMarkupId = 1;
   int _rotationQuarterTurns = 0;
+  PhotoScale? _photoScale;
+  bool _markerMode = MarkerModeConstants.defaultEnabled;
+  int _versionTapCount = 0;
+  DateTime? _firstVersionTapAt;
   Offset? _activeDimensionStart;
   Offset? _activeDimensionCurrent;
   final List<Offset> _activeFreehandPoints = <Offset>[];
@@ -362,6 +367,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _selectedFontFamily = preferences.fontFamily;
       _selectedFontSize = preferences.fontSize;
       _isSidebarExpanded = preferences.sidebarExpanded;
+      _markerMode = preferences.markerMode;
     });
     await _offerDraftRecovery();
   }
@@ -376,6 +382,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       fontFamily: _selectedFontFamily,
       fontSize: _selectedFontSize,
       sidebarExpanded: _isSidebarExpanded,
+      markerMode: _markerMode,
     );
   }
 
@@ -418,7 +425,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   Future<void> _offerDraftRecovery() async {
-    if (_hasPromptedForDraftRecovery || _imagePath != null) {
+    // Never ambush a photo that is already open. If Control Center handed us a
+    // specific photo, that is the job in hand; a leftover draft can wait until
+    // the app is opened on its own.
+    final String? handedInPath = widget.initialImagePath;
+    if (_hasPromptedForDraftRecovery ||
+        _imagePath != null ||
+        _hasUnsavedMarkupChanges ||
+        (handedInPath != null && handedInPath.trim().isNotEmpty)) {
       return;
     }
     _hasPromptedForDraftRecovery = true;
@@ -624,6 +638,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _loadedFileName = _fileNameFromPath(path);
       _loadedImagePixelSize = imageSize;
       _rotationQuarterTurns = 0;
+      _photoScale = null;
       _errorMessage = null;
       _isPanModeEnabled = false;
       _canvasTransformController.value = Matrix4.identity();
@@ -1037,6 +1052,20 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
+    if (label == ToolbarConstants.markerMode) {
+      _toggleMarkerMode();
+      return;
+    }
+
+    if (label == ToolbarConstants.scale) {
+      if (_photoScale != null) {
+        unawaited(_showScaleDialogForExistingScale());
+        return;
+      }
+      _selectMarkupTool(MarkupTool.scale);
+      return;
+    }
+
     if (label == ToolbarConstants.rectangle) {
       _selectMarkupTool(MarkupTool.rectangle);
       return;
@@ -1391,6 +1420,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       textNotes: List<TextNoteMarkup>.unmodifiable(_textNotes),
       callouts: List<CalloutMarkup>.unmodifiable(_callouts),
       blurs: List<BlurMarkup>.unmodifiable(_blurs),
+      photoScale: _photoScale,
+      quarterTurns: _rotationQuarterTurns,
     );
   }
 
@@ -1472,6 +1503,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         maxId = blur.id;
       }
     }
+    _photoScale = document.photoScale;
+    _rotationQuarterTurns = document.quarterTurns;
     _nextMarkupId = math.max(document.nextMarkupId, maxId + 1);
     _resetMarkupHistory();
   }
@@ -1867,6 +1900,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return ToolbarConstants.callout;
       case MarkupTool.blur:
         return ToolbarConstants.blur;
+      case MarkupTool.scale:
+        return ToolbarConstants.scale;
       case MarkupTool.none:
         return UiCopyConstants.toolbarActiveToolNone;
     }
@@ -1882,6 +1917,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       (label == ToolbarConstants.callout &&
           _selectedTool == MarkupTool.callout) ||
       (label == ToolbarConstants.blur && _selectedTool == MarkupTool.blur) ||
+      (label == ToolbarConstants.scale && _selectedTool == MarkupTool.scale) ||
+      (label == ToolbarConstants.markerMode && _markerMode) ||
       (label == ToolbarConstants.circle && _selectedTool == MarkupTool.oval) ||
       (label == ToolbarConstants.rectangle &&
           _selectedTool == MarkupTool.rectangle) ||
@@ -2053,6 +2090,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
             for (int i = 0; i < MarkupStrokeConstants.allScales.length; i++)
               _buildWidthButton(i),
             _statusDivider(),
+            _buildScaleChip(),
+            _statusDivider(),
             _buildZoomControls(),
           ],
         ),
@@ -2109,6 +2148,61 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// States whether this photo has a real-world scale, and sets or clears it.
+  Widget _buildScaleChip() {
+    final PhotoScale? scale = _photoScale;
+    final bool isSet = scale != null && scale.isUsable;
+    return Tooltip(
+      message: isSet
+          ? '${PhotoScaleConstants.scaleSetPrefix} '
+                '${PhotoScale.formatInches(scale.referenceInches)} reference'
+          : PhotoScaleConstants.dialogBody,
+      child: Material(
+        color: isSet ? DesignTokens.selectedFill : Colors.transparent,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
+        child: InkWell(
+          key: const ValueKey<String>('status-scale'),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
+          onTap: () => _onToolbarPressed(ToolbarConstants.scale),
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 96),
+            height: DesignTokens.touchTargetCompact,
+            padding: const EdgeInsets.symmetric(
+              horizontal: DesignTokens.space3,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text(
+                  PhotoScaleConstants.statusLabel,
+                  style: TextStyle(
+                    fontSize: DesignTokens.textMicro,
+                    fontWeight: DesignTokens.weightMedium,
+                    color: DesignTokens.inkSecondary,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                Text(
+                  isSet
+                      ? PhotoScale.formatInches(scale.referenceInches)
+                      : PhotoScaleConstants.statusNotSet,
+                  style: TextStyle(
+                    fontSize: DesignTokens.textLabel,
+                    fontWeight: DesignTokens.weightBold,
+                    color: isSet
+                        ? DesignTokens.brandBright
+                        : DesignTokens.inkSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2294,6 +2388,18 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (appliedToSelection) {
       _history.record(before, _snapshotMarkup());
     }
+  }
+
+  void _toggleMarkerMode() {
+    setState(() {
+      _markerMode = !_markerMode;
+    });
+    _rememberPreferencesAfterFrame();
+    _showSnack(
+      _markerMode
+          ? MarkerModeConstants.enabledMessage
+          : MarkerModeConstants.disabledMessage,
+    );
   }
 
   void _selectStrokeWidth(double scale) {
@@ -2725,6 +2831,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       textNotes: List<TextNoteMarkup>.of(_textNotes),
       callouts: List<CalloutMarkup>.of(_callouts),
       blurs: List<BlurMarkup>.of(_blurs),
+      markerMode: _markerMode,
     );
   }
 
@@ -3283,6 +3390,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
+    if (_selectedTool == MarkupTool.scale) {
+      await _calibrateScaleFromDrag(start, end, imageRect);
+      return;
+    }
+
     if (_selectedTool == MarkupTool.blur) {
       final BlurMarkup blur = BlurMarkup.fromCanvasPoints(
         id: _allocateMarkupId(),
@@ -3373,6 +3485,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         stylePresetId: _selectedStylePresetId,
         strokeWidthScale: _selectedStrokeWidthScale,
       ).copyWith(fontFamily: _selectedFontFamily, fontSize: _selectedFontSize);
+      final String? measured = _autoLabelForNormalizedSegment(
+        line.startNormalized,
+        line.endNormalized,
+      );
 
       int? newLineId;
       setState(() {
@@ -3388,13 +3504,18 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       if (!mounted || newLineId == null) {
         return;
       }
-      await _promptForDimensionLabelById(newLineId!, recordHistory: false);
+      await _promptForDimensionLabelById(
+        newLineId!,
+        recordHistory: false,
+        prefilledLabel: measured,
+      );
     }
   }
 
   Future<void> _promptForDimensionLabelById(
     int dimensionId, {
     bool recordHistory = true,
+    String? prefilledLabel,
   }) async {
     final MarkupSnapshot historyBefore = _snapshotMarkup();
     final int lineIndex = _dimensionLines.indexWhere(
@@ -3404,7 +3525,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
-    final String existingLabel = _dimensionLines[lineIndex].label ?? '';
+    final String existingLabel =
+        _dimensionLines[lineIndex].label ?? prefilledLabel ?? '';
     final String? updatedLabel = await _showDimensionLabelDialog(
       initialValue: existingLabel,
     );
@@ -3445,6 +3567,140 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return _DimensionLabelDialog(initialValue: initialValue);
       },
     );
+  }
+
+  /// Turns a drag across something of known size into a scale for the photo.
+  ///
+  /// The reference length is stored against the photo's diagonal, so it stays
+  /// correct when the window resizes and when the file is reopened.
+  Future<void> _calibrateScaleFromDrag(
+    Offset start,
+    Offset end,
+    Rect imageRect,
+  ) async {
+    final Size? pixelSize = _loadedImagePixelSize;
+    if (pixelSize == null) {
+      return;
+    }
+    final Offset startNormalized = _normalizeInRect(start, imageRect);
+    final Offset endNormalized = _normalizeInRect(end, imageRect);
+    final double normalizedLength = PhotoScale.normalizedLengthBetween(
+      startNormalized: startNormalized,
+      endNormalized: endNormalized,
+      imagePixelSize: pixelSize,
+    );
+    if (normalizedLength <= PhotoScaleConstants.minimumNormalizedLength) {
+      _showSnack(PhotoScaleConstants.scaleTooShortMessage);
+      return;
+    }
+
+    final String? entered = await _showScaleLengthDialog();
+    if (!mounted || entered == null) {
+      return;
+    }
+    final double? inches = PhotoScale.parseInches(entered);
+    if (inches == null) {
+      _showSnack(PhotoScaleConstants.scaleUnreadableMessage);
+      return;
+    }
+    final PhotoScale scale = PhotoScale(
+      referenceNormalizedLength: normalizedLength,
+      referenceInches: inches,
+      calibratedStart: startNormalized,
+      calibratedEnd: endNormalized,
+    );
+    if (!scale.isUsable) {
+      _showSnack(PhotoScaleConstants.scaleUnreadableMessage);
+      return;
+    }
+    setState(() {
+      _photoScale = scale;
+      _selectedTool = MarkupTool.dimension;
+      _unsavedChangesTracker.markDirty();
+    });
+    _showSnack(
+      '${PhotoScaleConstants.scaleSetPrefix} '
+      '${PhotoScale.formatInches(inches)}',
+    );
+  }
+
+  Offset _normalizeInRect(Offset point, Rect imageRect) {
+    if (imageRect.width <= 0 || imageRect.height <= 0) {
+      return Offset.zero;
+    }
+    return Offset(
+      ((point.dx - imageRect.left) / imageRect.width).clamp(0.0, 1.0),
+      ((point.dy - imageRect.top) / imageRect.height).clamp(0.0, 1.0),
+    );
+  }
+
+  /// The measured length of a line, when the photo has a scale.
+  String? _autoLabelForNormalizedSegment(Offset startNorm, Offset endNorm) {
+    final PhotoScale? scale = _photoScale;
+    final Size? pixelSize = _loadedImagePixelSize;
+    if (scale == null || !scale.isUsable || pixelSize == null) {
+      return null;
+    }
+    final double normalizedLength = PhotoScale.normalizedLengthBetween(
+      startNormalized: startNorm,
+      endNormalized: endNorm,
+      imagePixelSize: pixelSize,
+    );
+    if (normalizedLength <= 0) {
+      return null;
+    }
+    return PhotoScale.formatInches(
+      scale.inchesForNormalizedLength(normalizedLength),
+    );
+  }
+
+  Future<String?> _showScaleLengthDialog() {
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) => const _ScaleLengthDialog(),
+    );
+  }
+
+  Future<void> _showScaleDialogForExistingScale() async {
+    final bool? clear = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text(PhotoScaleConstants.dialogTitle),
+          content: Text(
+            '${PhotoScaleConstants.scaleSetPrefix} '
+            '${PhotoScale.formatInches(_photoScale!.referenceInches)} '
+            'across the reference you measured.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(null),
+              child: const Text(PhotoScaleConstants.dialogCancelButton),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text(PhotoScaleConstants.dialogClearButton),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text(PhotoScaleConstants.dialogSetButton),
+            ),
+          ],
+        );
+      },
+    );
+    if (!mounted || clear == null) {
+      return;
+    }
+    setState(() {
+      _photoScale = null;
+      if (!clear) {
+        _selectedTool = MarkupTool.scale;
+      }
+    });
+    if (clear) {
+      _showSnack(PhotoScaleConstants.scaleClearedMessage);
+    }
   }
 
   void _createCalloutAt(Offset point, Rect imageRect) {
@@ -4110,6 +4366,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           break;
         case MarkupTool.line:
         case MarkupTool.highlighter:
+        case MarkupTool.scale:
         case MarkupTool.none:
           break;
       }
@@ -4201,6 +4458,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
           minimumHitDistance,
         );
       case MarkupTool.blur:
+      case MarkupTool.scale:
         return math.max(
           BlurMarkupConstants.selectionHitDistance,
           minimumHitDistance,
@@ -4298,6 +4556,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return _blurs[index].distanceToPointInRect(point, imageRect);
       case MarkupTool.line:
       case MarkupTool.highlighter:
+      case MarkupTool.scale:
       case MarkupTool.none:
         return double.infinity;
     }
@@ -4361,6 +4620,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return _moveBlurByDelta(markupId, requestedDelta, imageRect);
       case MarkupTool.line:
       case MarkupTool.highlighter:
+      case MarkupTool.scale:
       case MarkupTool.none:
         return Offset.zero;
     }
@@ -5100,7 +5360,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
             _selectedTool == MarkupTool.oval ||
             _selectedTool == MarkupTool.freehand ||
             _selectedTool == MarkupTool.highlighter ||
-            _selectedTool == MarkupTool.blur) &&
+            _selectedTool == MarkupTool.blur ||
+            _selectedTool == MarkupTool.scale) &&
         _imagePath != null &&
         imageRect.width > 0 &&
         imageRect.height > 0;
@@ -5283,16 +5544,102 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                 shape: BoxShape.circle,
               ),
             ),
-          const Text(
-            AppConstants.appVersion,
-            style: TextStyle(
-              fontSize: DesignTokens.textMicro,
-              fontWeight: DesignTokens.weightMedium,
-              color: DesignTokens.inkSecondary,
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _onVersionTapped,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: DesignTokens.space2,
+                vertical: DesignTokens.space2,
+              ),
+              child: Text(
+                AppConstants.appVersion,
+                style: TextStyle(
+                  fontSize: DesignTokens.textMicro,
+                  fontWeight: DesignTokens.weightMedium,
+                  color: DesignTokens.inkSecondary,
+                ),
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Counts rapid presses on the version label.
+  ///
+  /// Deliberately unreachable by accident: the version label is a 12pt string
+  /// in the corner of the header, nowhere near the photo or any control, and
+  /// it takes seven presses inside three seconds. Nothing it does touches the
+  /// photo, the markup, or anything that gets exported.
+  void _onVersionTapped() {
+    final DateTime now = DateTime.now();
+    final DateTime? firstTap = _firstVersionTapAt;
+    if (firstTap == null ||
+        now.difference(firstTap) > HiddenExtraConstants.tapWindow) {
+      _firstVersionTapAt = now;
+      _versionTapCount = 1;
+      return;
+    }
+    _versionTapCount += 1;
+    if (_versionTapCount < HiddenExtraConstants.requiredTaps) {
+      return;
+    }
+    _versionTapCount = 0;
+    _firstVersionTapAt = null;
+    unawaited(_showHiddenExtra());
+  }
+
+  Future<void> _showHiddenExtra() {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          key: const ValueKey<String>('hidden-extra'),
+          title: const Text(HiddenExtraConstants.title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              for (final String line in HiddenExtraConstants.lines) ...<Widget>[
+                Text(
+                  line,
+                  style: const TextStyle(
+                    fontSize: DesignTokens.textBody,
+                    fontWeight: DesignTokens.weightMedium,
+                    color: DesignTokens.inkPrimary,
+                  ),
+                ),
+                const SizedBox(height: DesignTokens.space2),
+              ],
+              const SizedBox(height: DesignTokens.space2),
+              const Text(
+                HiddenExtraConstants.creditLine,
+                style: TextStyle(
+                  fontSize: DesignTokens.textLabel,
+                  color: DesignTokens.inkSecondary,
+                ),
+              ),
+              const SizedBox(height: DesignTokens.space1),
+              const Text(
+                HiddenExtraConstants.signature,
+                style: TextStyle(
+                  fontSize: DesignTokens.textLabel,
+                  fontWeight: DesignTokens.weightBold,
+                  color: DesignTokens.brandBright,
+                ),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text(HiddenExtraConstants.dismiss),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -5500,6 +5847,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                 activeStrokeWidthScale:
                                     _selectedStrokeWidthScale,
                                 activeFilled: _selectedShapeFilled,
+                                markerMode: _markerMode,
                                 isEnabled: _isOverlayInteractionEnabled(
                                   imageRect,
                                 ),
@@ -5825,6 +6173,68 @@ class _SidebarActionButton extends StatelessWidget {
       Icons.help_outline,
       size: DesignTokens.iconSize,
       color: resolvedIconColor,
+    );
+  }
+}
+
+/// Asks how long the calibration drag actually was.
+class _ScaleLengthDialog extends StatefulWidget {
+  const _ScaleLengthDialog();
+
+  @override
+  State<_ScaleLengthDialog> createState() => _ScaleLengthDialogState();
+}
+
+class _ScaleLengthDialogState extends State<_ScaleLengthDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).pop(_controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(PhotoScaleConstants.dialogTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(PhotoScaleConstants.dialogBody),
+          const SizedBox(height: DesignTokens.space4),
+          TextField(
+            key: const ValueKey<String>('scale-length-field'),
+            controller: _controller,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+            decoration: const InputDecoration(
+              hintText: PhotoScaleConstants.dialogHint,
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text(PhotoScaleConstants.dialogCancelButton),
+        ),
+        FilledButton(
+          key: const ValueKey<String>('scale-length-confirm'),
+          onPressed: _submit,
+          child: const Text(PhotoScaleConstants.dialogSetButton),
+        ),
+      ],
     );
   }
 }
