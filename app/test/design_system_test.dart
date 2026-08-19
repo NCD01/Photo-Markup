@@ -84,10 +84,10 @@ void main() {
 
     test('nothing in the type ramp is thin', () {
       expect(
-        DesignTokens.weightMedium.index,
-        greaterThan(FontWeight.w400.index),
+        DesignTokens.weightMedium.value,
+        greaterThan(FontWeight.w400.value),
       );
-      expect(DesignTokens.weightBold.index, greaterThan(FontWeight.w500.index));
+      expect(DesignTokens.weightBold.value, greaterThan(FontWeight.w500.value));
     });
 
     test('the theme uses the bundled face, not a platform default', () {

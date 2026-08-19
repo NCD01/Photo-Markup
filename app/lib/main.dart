@@ -42,6 +42,8 @@ import 'package:ncd_photo_markup/features/markup/utils/markup_typography_utils.d
 import 'package:ncd_photo_markup/features/markup/rendering/markup_scene_renderer.dart';
 import 'package:ncd_photo_markup/features/markup/utils/unsaved_changes_tracker.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/blur_regions_layer.dart';
+import 'package:ncd_photo_markup/features/session/models/session_preferences.dart';
+import 'package:ncd_photo_markup/features/session/services/session_state_service.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/features/sidebar/models/sidebar_icon_pack.dart';
 import 'package:ncd_photo_markup/features/view/utils/canvas_view_transform_utils.dart';
@@ -81,6 +83,7 @@ class NcdPhotoMarkupApp extends StatelessWidget {
     this.openFileOverride,
     this.saveLocationOverride,
     this.showStartupSplash = true,
+    this.sessionStateService,
   });
 
   final String? initialImagePath;
@@ -90,6 +93,9 @@ class NcdPhotoMarkupApp extends StatelessWidget {
   final SaveLocationCallback? saveLocationOverride;
   final bool showStartupSplash;
 
+  /// Injected by tests so a run never reads or writes the real user folder.
+  final SessionStateService? sessionStateService;
+
   @override
   Widget build(BuildContext context) {
     final Widget shell = PhotoMarkupShellScreen(
@@ -98,13 +104,18 @@ class NcdPhotoMarkupApp extends StatelessWidget {
       launchErrorMessage: launchErrorMessage,
       openFileOverride: openFileOverride,
       saveLocationOverride: saveLocationOverride,
+      sessionStateService: sessionStateService,
     );
 
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: DesignTokens.buildTheme(),
-      home: showStartupSplash ? StartupSplashGate(child: shell) : shell,
+      // When Control Center hands over a photo, there is work waiting; the
+      // splash would only delay it.
+      home: showStartupSplash && (initialImagePath ?? '').isEmpty
+          ? StartupSplashGate(child: shell)
+          : shell,
     );
   }
 }
@@ -128,15 +139,17 @@ class _StartupSplashGateState extends State<StartupSplashGate> {
       const Duration(
         milliseconds: BrandingAssetConstants.startupSplashDurationMs,
       ),
-      () {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _showSplash = false;
-        });
-      },
+      _dismiss,
     );
+  }
+
+  void _dismiss() {
+    if (!mounted || !_showSplash) {
+      return;
+    }
+    setState(() {
+      _showSplash = false;
+    });
   }
 
   @override
@@ -145,6 +158,16 @@ class _StartupSplashGateState extends State<StartupSplashGate> {
       return widget.child;
     }
 
+    // Tapping anywhere skips the wait. Standing on a ladder is not the moment
+    // to watch a logo.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _dismiss,
+      child: _buildSplash(),
+    );
+  }
+
+  Widget _buildSplash() {
     return Scaffold(
       backgroundColor: DesignTokens.canvasVoid,
       body: LayoutBuilder(
@@ -220,6 +243,7 @@ class PhotoMarkupShellScreen extends StatefulWidget {
     this.launchErrorMessage,
     this.openFileOverride,
     this.saveLocationOverride,
+    this.sessionStateService,
   });
 
   final String? initialImagePath;
@@ -227,6 +251,7 @@ class PhotoMarkupShellScreen extends StatefulWidget {
   final String? launchErrorMessage;
   final OpenFileCallback? openFileOverride;
   final SaveLocationCallback? saveLocationOverride;
+  final SessionStateService? sessionStateService;
 
   @override
   State<PhotoMarkupShellScreen> createState() => _PhotoMarkupShellScreenState();
@@ -252,6 +277,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   final UnsavedChangesTracker _unsavedChangesTracker = UnsavedChangesTracker();
   final MarkupHistory _history = MarkupHistory();
   MarkupSnapshot? _gestureSnapshot;
+  late final SessionStateService _sessionStateService =
+      widget.sessionStateService ?? SessionStateService();
+  Timer? _autosaveTimer;
+  bool _hasPromptedForDraftRecovery = false;
   Size? _loadedImagePixelSize;
   final GlobalKey _canvasExportKey = GlobalKey();
   final TransformationController _canvasTransformController =
@@ -313,11 +342,142 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (initialPath != null && initialPath.isNotEmpty) {
       _loadImageFromPath(initialPath, showErrorForFailure: true);
     }
+    unawaited(_restoreSessionPreferences());
+  }
+
+  /// Puts back the tool, colour and width from last time, so the second photo
+  /// of the day needs no setting up at all.
+  Future<void> _restoreSessionPreferences() async {
+    final SessionPreferences preferences = await _sessionStateService
+        .loadPreferences();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _selectedTool = preferences.tool;
+      _selectedStylePresetId = preferences.stylePresetId;
+      _selectedStrokeWidthScale = preferences.strokeWidthScale;
+      _selectedShapeFilled = preferences.shapesFilled;
+      _calloutLabelStyle = preferences.calloutLabelStyle;
+      _selectedFontFamily = preferences.fontFamily;
+      _selectedFontSize = preferences.fontSize;
+      _isSidebarExpanded = preferences.sidebarExpanded;
+    });
+    await _offerDraftRecovery();
+  }
+
+  SessionPreferences _currentPreferences() {
+    return SessionPreferences(
+      tool: _selectedTool,
+      stylePresetId: _selectedStylePresetId,
+      strokeWidthScale: _selectedStrokeWidthScale,
+      shapesFilled: _selectedShapeFilled,
+      calloutLabelStyle: _calloutLabelStyle,
+      fontFamily: _selectedFontFamily,
+      fontSize: _selectedFontSize,
+      sidebarExpanded: _isSidebarExpanded,
+    );
+  }
+
+  void _rememberPreferences() {
+    unawaited(_sessionStateService.savePreferences(_currentPreferences()));
+  }
+
+  /// Writes after the frame so the value being changed is the one recorded.
+  void _rememberPreferencesAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _rememberPreferences();
+      }
+    });
+  }
+
+  /// Schedules an autosave of the in-progress markup.
+  ///
+  /// Debounced so a continuous scribble writes one file when the hand stops,
+  /// not one per frame.
+  void _scheduleAutosave() {
+    _autosaveTimer?.cancel();
+    if (_imagePath == null || _loadedSourceImagePath == null) {
+      return;
+    }
+    _autosaveTimer = Timer(SessionStateConstants.autosaveDebounce, () {
+      unawaited(_writeAutosave());
+    });
+  }
+
+  Future<void> _writeAutosave() async {
+    if (_imagePath == null || _loadedSourceImagePath == null) {
+      return;
+    }
+    if (!_hasUnsavedMarkupChanges) {
+      await _sessionStateService.clearDraft();
+      return;
+    }
+    await _sessionStateService.saveDraft(_buildEditableMarkupDocument());
+  }
+
+  Future<void> _offerDraftRecovery() async {
+    if (_hasPromptedForDraftRecovery || _imagePath != null) {
+      return;
+    }
+    _hasPromptedForDraftRecovery = true;
+    final RecoverableDraft? draft = await _sessionStateService.loadDraft();
+    if (draft == null || !mounted) {
+      return;
+    }
+
+    final bool restore = await _showRecoverDraftDialog(draft);
+    if (!mounted) {
+      return;
+    }
+    if (!restore) {
+      await _sessionStateService.clearDraft();
+      return;
+    }
+    final bool loaded = await _loadImageFromPath(draft.sourceImagePath);
+    if (!loaded || !mounted) {
+      return;
+    }
+    setState(() {
+      _applyEditableMarkupDocument(draft.document);
+      _unsavedChangesTracker.markDirty();
+    });
+    _showSnack(UiCopyConstants.recoverSuccessMessage);
+  }
+
+  Future<bool> _showRecoverDraftDialog(RecoverableDraft draft) async {
+    final String fileName = _fileNameFromPath(draft.sourceImagePath);
+    final bool? restore = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text(UiCopyConstants.recoverDialogTitle),
+          content: Text(
+            '${UiCopyConstants.recoverDialogBodyPrefix} $fileName. '
+            '${UiCopyConstants.recoverDialogBodySuffix}',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text(UiCopyConstants.recoverDiscardButton),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text(UiCopyConstants.recoverButton),
+            ),
+          ],
+        );
+      },
+    );
+    return restore ?? false;
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _autosaveTimer?.cancel();
     _canvasTransformController.dispose();
     unawaited(
       _imageImportService.deleteTemporaryDisplayPath(
@@ -763,6 +923,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   Future<bool> debugExportMarkedUpImage() => _exportMarkedUpImage();
 
   @visibleForTesting
+  Future<bool> debugQuickExport() => _quickExportMarkedUpImage();
+
+  @visibleForTesting
+  Future<void> debugWriteAutosave() => _writeAutosave();
+
+  @visibleForTesting
+  Future<bool> debugSavePreferences() =>
+      _sessionStateService.savePreferences(_currentPreferences());
+
+  @visibleForTesting
   Future<void> debugCanvasTap(Offset point) async {
     final Rect? imageRect = _computeExportCropRect();
     if (imageRect == null) {
@@ -923,12 +1093,18 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
 
     if (label == ToolbarConstants.export) {
-      _exportMarkedUpImage();
+      unawaited(_quickExportMarkedUpImage());
+      return;
+    }
+
+    if (label == ToolbarConstants.exportAs) {
+      unawaited(_exportMarkedUpImage());
       return;
     }
   }
 
   void _selectMarkupTool(MarkupTool tool) {
+    _rememberPreferencesAfterFrame();
     setState(() {
       _selectedTool = _isPanModeEnabled && _selectedTool == tool
           ? tool
@@ -942,7 +1118,30 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     });
   }
 
-  Future<bool> _exportMarkedUpImage() async {
+  /// Export with no dialog: writes beside the photo (or into the folder
+  /// Control Center suggested) using the photo's own name, never overwriting.
+  ///
+  /// This is the common case in the field, and it used to cost a save dialog
+  /// and a folder hunt every single time.
+  Future<bool> _quickExportMarkedUpImage() async {
+    if (_isExporting) {
+      return false;
+    }
+    if (_imagePath == null) {
+      _showSnack(UiCopyConstants.exportNoPhotoMessage);
+      return false;
+    }
+    final String? directory = _preferredExportDirectory();
+    if (directory == null || directory.trim().isEmpty) {
+      _showSnack(UiCopyConstants.quickExportNoTargetMessage);
+      return _exportMarkedUpImage();
+    }
+    final String target =
+        '$directory${Platform.pathSeparator}${_suggestedExportName()}';
+    return _exportMarkedUpImage(presetOutputPath: target);
+  }
+
+  Future<bool> _exportMarkedUpImage({String? presetOutputPath}) async {
     if (_isExporting) {
       return false;
     }
@@ -959,7 +1158,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     try {
       final String suggestedName = _suggestedExportName();
       final String? initialDirectory = _preferredExportDirectory();
-      final FileSaveLocation? saveLocation = widget.saveLocationOverride != null
+      final FileSaveLocation? saveLocation = presetOutputPath != null
+          ? FileSaveLocation(presetOutputPath)
+          : widget.saveLocationOverride != null
           ? await widget.saveLocationOverride!(
               initialDirectory: initialDirectory,
               suggestedName: suggestedName,
@@ -1007,9 +1208,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       setState(() {
         _unsavedChangesTracker.markSaved();
       });
+      _autosaveTimer?.cancel();
+      unawaited(_sessionStateService.clearDraft());
       _showSnack(
-        '${UiCopyConstants.exportSuccessMessage} '
-        '${result.pixelWidth}x${result.pixelHeight}',
+        '${UiCopyConstants.quickExportSuccessPrefix} '
+        '${_fileNameFromPath(result.path)} '
+        '(${result.pixelWidth}x${result.pixelHeight})',
       );
       return true;
     } catch (_) {
@@ -1150,6 +1354,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       setState(() {
         _unsavedChangesTracker.markSaved();
       });
+      _autosaveTimer?.cancel();
+      unawaited(_sessionStateService.clearDraft());
       _showSnack(UiCopyConstants.markupDocumentSaveSuccessMessage);
     } catch (_) {
       if (!mounted) {
@@ -1494,7 +1700,24 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   @override
   Future<ui.AppExitResponse> didRequestAppExit() async {
+    _autosaveTimer?.cancel();
+    await _writeAutosave();
+    _rememberPreferences();
     return _resolveAppExitRequest();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      // Backgrounded, screen locked, or the app is about to be killed: write
+      // now rather than waiting out the debounce.
+      _autosaveTimer?.cancel();
+      unawaited(_writeAutosave());
+      _rememberPreferences();
+    }
   }
 
   bool get _showLaunchContextBanner =>
@@ -2056,6 +2279,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     bool appliedToSelection = false;
     setState(() {
       _selectedStylePresetId = presetId;
+      _rememberPreferencesAfterFrame();
       appliedToSelection = _applyTypographyAndStyleToSelection(
         presetId: presetId,
         fontFamily: _selectedFontFamily,
@@ -2077,6 +2301,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     bool appliedToSelection = false;
     setState(() {
       _selectedStrokeWidthScale = MarkupStrokeConstants.normalizeScale(scale);
+      _rememberPreferencesAfterFrame();
       appliedToSelection = _applyTypographyAndStyleToSelection(
         presetId: _selectedStylePresetId,
         fontFamily: _selectedFontFamily,
@@ -2598,14 +2823,18 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (before == null) {
       return;
     }
-    _history.record(before, _snapshotMarkup());
+    if (_history.record(before, _snapshotMarkup())) {
+      _scheduleAutosave();
+    }
   }
 
   /// Runs a discrete markup edit as a single undo step.
   void _runMarkupCommand(VoidCallback body) {
     final MarkupSnapshot before = _snapshotMarkup();
     body();
-    _history.record(before, _snapshotMarkup());
+    if (_history.record(before, _snapshotMarkup())) {
+      _scheduleAutosave();
+    }
   }
 
   void _resetMarkupHistory() {
@@ -4712,58 +4941,152 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     );
   }
 
+  /// Desktop keyboard handling.
+  ///
+  /// Single letters pick tools the way every drawing app does, so the hand can
+  /// stay on the pen and off the toolbar. Keys are ignored while a text field
+  /// has focus, otherwise typing a note would switch tools.
   KeyEventResult _onShellKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) {
       return KeyEventResult.ignored;
     }
-    final bool ctrlOrMetaPressed =
+    final FocusNode? focused = FocusManager.instance.primaryFocus;
+    if (focused != null && focused.context?.widget is EditableText) {
+      return KeyEventResult.ignored;
+    }
+
+    final bool ctrlOrMeta =
         HardwareKeyboard.instance.isControlPressed ||
         HardwareKeyboard.instance.isMetaPressed;
-    if (ctrlOrMetaPressed) {
-      if (event.logicalKey == LogicalKeyboardKey.equal ||
-          event.logicalKey == LogicalKeyboardKey.numpadAdd) {
+    final bool shift = HardwareKeyboard.instance.isShiftPressed;
+    final LogicalKeyboardKey key = event.logicalKey;
+
+    if (ctrlOrMeta) {
+      if (key == LogicalKeyboardKey.equal ||
+          key == LogicalKeyboardKey.numpadAdd) {
         _zoomInView();
         return KeyEventResult.handled;
       }
-      if (event.logicalKey == LogicalKeyboardKey.minus ||
-          event.logicalKey == LogicalKeyboardKey.numpadSubtract) {
+      if (key == LogicalKeyboardKey.minus ||
+          key == LogicalKeyboardKey.numpadSubtract) {
         _zoomOutView();
         return KeyEventResult.handled;
       }
-      if (event.logicalKey == LogicalKeyboardKey.digit0 ||
-          event.logicalKey == LogicalKeyboardKey.numpad0) {
+      if (key == LogicalKeyboardKey.digit0 ||
+          key == LogicalKeyboardKey.numpad0) {
         _fitCanvasToScreen();
         return KeyEventResult.handled;
       }
-    }
-    if (ctrlOrMetaPressed) {
-      final bool shiftPressed = HardwareKeyboard.instance.isShiftPressed;
-      if (event.logicalKey == LogicalKeyboardKey.keyZ) {
-        if (shiftPressed) {
+      if (key == LogicalKeyboardKey.keyZ) {
+        if (shift) {
           _redoMarkup();
         } else {
           _undoMarkup();
         }
         return KeyEventResult.handled;
       }
-      if (event.logicalKey == LogicalKeyboardKey.keyY) {
+      if (key == LogicalKeyboardKey.keyY) {
         _redoMarkup();
         return KeyEventResult.handled;
       }
+      if (key == LogicalKeyboardKey.keyO) {
+        unawaited(_openPhoto());
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyS) {
+        unawaited(_saveMarkupDocument());
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyE) {
+        unawaited(shift ? _exportMarkedUpImage() : _quickExportMarkedUpImage());
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
     }
-    if (event.logicalKey == LogicalKeyboardKey.delete ||
-        event.logicalKey == LogicalKeyboardKey.backspace) {
+
+    if (key == LogicalKeyboardKey.delete ||
+        key == LogicalKeyboardKey.backspace) {
       _eraseSelectedMarkup();
       return KeyEventResult.handled;
     }
-    if ((event.logicalKey == LogicalKeyboardKey.enter ||
-            event.logicalKey == LogicalKeyboardKey.numpadEnter) &&
+    if (key == LogicalKeyboardKey.escape) {
+      if (_selectedTool != MarkupTool.none) {
+        _selectMarkupTool(_selectedTool);
+      } else if (_selectedMarkup() != null) {
+        setState(_clearMarkupSelection);
+      }
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.tab) {
+      setState(() {
+        _isSidebarExpanded = !_isSidebarExpanded;
+      });
+      _rememberPreferencesAfterFrame();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.bracketLeft) {
+      _rotatePhoto(clockwise: false);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.bracketRight) {
+      _rotatePhoto(clockwise: true);
+      return KeyEventResult.handled;
+    }
+    if ((key == LogicalKeyboardKey.enter ||
+            key == LogicalKeyboardKey.numpadEnter) &&
         _selectedTool == MarkupTool.none &&
         _selectedDimensionId != null) {
       unawaited(_promptForDimensionLabelById(_selectedDimensionId!));
       return KeyEventResult.handled;
     }
+
+    final MarkupTool? shortcutTool = _toolForShortcutKey(key);
+    if (shortcutTool != null) {
+      setState(() {
+        _selectedTool = shortcutTool;
+        _isPanModeEnabled = false;
+      });
+      _rememberPreferencesAfterFrame();
+      return KeyEventResult.handled;
+    }
     return KeyEventResult.ignored;
+  }
+
+  static MarkupTool? _toolForShortcutKey(LogicalKeyboardKey key) {
+    if (key == LogicalKeyboardKey.keyV) {
+      return MarkupTool.none;
+    }
+    if (key == LogicalKeyboardKey.keyD) {
+      return MarkupTool.dimension;
+    }
+    if (key == LogicalKeyboardKey.keyT) {
+      return MarkupTool.textNote;
+    }
+    if (key == LogicalKeyboardKey.keyA) {
+      return MarkupTool.arrow;
+    }
+    if (key == LogicalKeyboardKey.keyL) {
+      return MarkupTool.line;
+    }
+    if (key == LogicalKeyboardKey.keyR) {
+      return MarkupTool.rectangle;
+    }
+    if (key == LogicalKeyboardKey.keyC) {
+      return MarkupTool.oval;
+    }
+    if (key == LogicalKeyboardKey.keyF) {
+      return MarkupTool.freehand;
+    }
+    if (key == LogicalKeyboardKey.keyH) {
+      return MarkupTool.highlighter;
+    }
+    if (key == LogicalKeyboardKey.keyN) {
+      return MarkupTool.callout;
+    }
+    if (key == LogicalKeyboardKey.keyB) {
+      return MarkupTool.blur;
+    }
+    return null;
   }
 
   static bool _isStrokeTool(MarkupTool tool) =>

@@ -87,10 +87,33 @@ class DimensionLinesOverlay extends StatefulWidget {
 class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
   Offset? _pointerDownPoint;
   bool _didDrag = false;
+  int _activePointerCount = 0;
+  bool _multiTouchCancelled = false;
+  Offset? _lastTapPoint;
+  Duration _lastTapAt = Duration.zero;
+  final Stopwatch _tapClock = Stopwatch()..start();
 
   void _resetPointerState() {
     _pointerDownPoint = null;
     _didDrag = false;
+  }
+
+  /// True when the same spot was tapped a moment ago.
+  ///
+  /// A second tap in the same place within the double-tap window is almost
+  /// always a slip, not a request for a second note or a second pin stacked on
+  /// the first.
+  bool _isAccidentalRepeatTap(Offset point) {
+    final Offset? previous = _lastTapPoint;
+    final Duration now = _tapClock.elapsed;
+    final bool repeat =
+        previous != null &&
+        (point - previous).distance <=
+            MarkupTapGuardConstants.repeatTapDistance &&
+        (now - _lastTapAt) <= MarkupTapGuardConstants.repeatTapWindow;
+    _lastTapPoint = point;
+    _lastTapAt = now;
+    return repeat;
   }
 
   @override
@@ -99,10 +122,20 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
       behavior: HitTestBehavior.translucent,
       onPointerDown: widget.isEnabled
           ? (PointerDownEvent event) {
+              _activePointerCount += 1;
+              if (_activePointerCount > 1) {
+                // A second finger means pinch or pan, not a mark. Abandon the
+                // stroke in progress and let the viewer have the gesture.
+                _multiTouchCancelled = true;
+                widget.onEnd();
+                _resetPointerState();
+                return;
+              }
               if (!widget.imageRect.contains(event.localPosition)) {
                 _resetPointerState();
                 return;
               }
+              _multiTouchCancelled = false;
               final Offset clamped = DimensionLine.clampToRect(
                 event.localPosition,
                 widget.imageRect,
@@ -112,6 +145,7 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
               widget.onStart(clamped);
             }
           : (PointerDownEvent event) {
+              _activePointerCount += 1;
               if (!widget.imageRect.contains(event.localPosition)) {
                 _resetPointerState();
                 return;
@@ -123,6 +157,9 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
               _didDrag = false;
             },
       onPointerMove: (PointerMoveEvent event) {
+        if (_multiTouchCancelled || _activePointerCount > 1) {
+          return;
+        }
         final Offset clamped = DimensionLine.clampToRect(
           event.localPosition,
           widget.imageRect,
@@ -138,15 +175,30 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
         }
       },
       onPointerUp: (_) {
+        _activePointerCount = (_activePointerCount - 1).clamp(0, 20);
+        if (_multiTouchCancelled) {
+          if (_activePointerCount == 0) {
+            _multiTouchCancelled = false;
+          }
+          _resetPointerState();
+          return;
+        }
         if (widget.isEnabled) {
           widget.onEnd();
         }
-        if (_pointerDownPoint != null && !_didDrag && widget.onTap != null) {
-          widget.onTap!(_pointerDownPoint!);
+        final Offset? tapPoint = _pointerDownPoint;
+        if (tapPoint != null && !_didDrag && widget.onTap != null) {
+          if (!_isAccidentalRepeatTap(tapPoint)) {
+            widget.onTap!(tapPoint);
+          }
         }
         _resetPointerState();
       },
       onPointerCancel: (_) {
+        _activePointerCount = (_activePointerCount - 1).clamp(0, 20);
+        if (_activePointerCount == 0) {
+          _multiTouchCancelled = false;
+        }
         if (widget.isEnabled) {
           widget.onEnd();
         }

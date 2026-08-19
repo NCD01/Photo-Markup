@@ -48,7 +48,8 @@ class SidebarIconRegistry {
     ToolbarConstants.saveMarkup: SidebarIconDescriptor.icon(
       Icons.save_outlined,
     ),
-    ToolbarConstants.export: SidebarIconDescriptor.icon(
+    ToolbarConstants.export: SidebarIconDescriptor.icon(Icons.bolt_outlined),
+    ToolbarConstants.exportAs: SidebarIconDescriptor.icon(
       Icons.ios_share_outlined,
     ),
     ToolbarConstants.dimension: SidebarIconDescriptor.icon(

@@ -72,7 +72,7 @@ class BrandingAssetConstants {
 
   static const String iconV15AssetPath = 'assets/branding/icon_v1_5.png';
   static const String splashV15AssetPath = 'assets/branding/splash_v1_5.png';
-  static const int startupSplashDurationMs = 2200;
+  static const int startupSplashDurationMs = 1100;
 }
 
 /// Names the rest of the app already uses, re-pointed at the dark palette in
@@ -295,6 +295,17 @@ class UiCopyConstants {
   static const String clearAllNothingMessage = 'There is no markup to clear.';
   static const String clearAllDoneMessage = 'All markup cleared.';
   static const String rotateNoPhotoMessage = 'Load a photo before rotating.';
+  static const String recoverDialogTitle = 'Unsaved Markup Found';
+  static const String recoverDialogBodyPrefix =
+      'The app closed with unsaved markup on';
+  static const String recoverDialogBodySuffix = 'Restore it?';
+  static const String recoverButton = 'Restore';
+  static const String recoverDiscardButton = 'Discard';
+  static const String recoverSuccessMessage = 'Unsaved markup restored.';
+  static const String quickExportSuccessPrefix = 'Saved';
+  static const String quickExportNoTargetMessage =
+      'Could not work out where to save. Use Export As instead.';
+
   static const String launchContextFileNotFoundMessage =
       'Launch context file was not found. You can still open a photo manually.';
   static const String launchContextInvalidJsonMessage =
@@ -383,6 +394,7 @@ class ToolbarConstants {
   static const String rotateLeft = 'Rotate Left';
   static const String rotateRight = 'Rotate Right';
   static const String export = 'Export';
+  static const String exportAs = 'Export As...';
   static const String fileSectionTitle = 'File';
   static const String markupSectionTitle = 'Markup Tools';
   static const String editSectionTitle = 'Edit';
@@ -392,6 +404,7 @@ class ToolbarConstants {
     openMarkup,
     saveMarkup,
     export,
+    exportAs,
   ];
   static const List<String> markupActionOrder = <String>[
     dimension,
@@ -742,6 +755,15 @@ class MarkupMoveConstants {
   static const double minimumMoveDelta = 0.5;
 }
 
+class MarkupTapGuardConstants {
+  const MarkupTapGuardConstants._();
+
+  /// A second tap this close to the first, this soon after it, is treated as a
+  /// slip rather than a request for a second annotation.
+  static const double repeatTapDistance = 28;
+  static const Duration repeatTapWindow = Duration(milliseconds: 320);
+}
+
 class MarkupHandleConstants {
   const MarkupHandleConstants._();
 
@@ -826,6 +848,7 @@ class KeyboardShortcutConstants {
   static const String redo = 'Ctrl+Shift+Z';
   static const String erase = 'Del';
   static const String export = 'Ctrl+E';
+  static const String exportAsShortcut = 'Ctrl+Shift+E';
   static const String openPhoto = 'Ctrl+O';
   static const String saveMarkup = 'Ctrl+S';
   static const String rotateLeft = '[';
@@ -836,6 +859,7 @@ class KeyboardShortcutConstants {
     ToolbarConstants.openPhoto: openPhoto,
     ToolbarConstants.saveMarkup: saveMarkup,
     ToolbarConstants.export: export,
+    ToolbarConstants.exportAs: exportAsShortcut,
     ToolbarConstants.dimension: dimension,
     ToolbarConstants.textNote: textNote,
     ToolbarConstants.arrow: arrow,
@@ -854,6 +878,31 @@ class KeyboardShortcutConstants {
   };
 
   static String? hintForAction(String action) => byAction[action];
+}
+
+class SessionStateConstants {
+  const SessionStateConstants._();
+
+  static const String schemaVersion = '1.0';
+  static const String folderName = 'NCD Photo Markup';
+  static const String unixConfigFolderName = '.config';
+  static const String preferencesFileName = 'session.json';
+  static const String draftFileName = 'autosave.ncdmarkup.json';
+  static const String partialSuffix = '.partial';
+
+  /// Checked in order. APPDATA is the Windows convention; the others cover
+  /// Linux and macOS well enough for a folder to write two small files into.
+  static const String homeEnvKey = 'HOME';
+  static const List<String> baseDirectoryEnvKeys = <String>[
+    'APPDATA',
+    'XDG_CONFIG_HOME',
+    homeEnvKey,
+  ];
+
+  /// How long after the last edit the autosave runs. Long enough that a
+  /// continuous scribble does not write a file per frame, short enough that a
+  /// dead battery costs seconds of work rather than minutes.
+  static const Duration autosaveDebounce = Duration(seconds: 3);
 }
 
 class MarkupHistoryConstants {
