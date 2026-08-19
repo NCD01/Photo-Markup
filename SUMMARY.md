@@ -268,6 +268,29 @@ tree, the real painter and real files on disk.
 - Behaviour on a real touchscreen. Multi-touch was tested with synthetic
   pointers, not fingers.
 
+**FINAL CHECK, ON A FRESH CLONE:**
+
+After the last commit I cloned the branch into a clean directory, built from
+that clone, and ran the whole flow again on a build made from nothing but what
+is pushed:
+
+- First launch with no saved settings at all: opens to the dark empty state,
+  Arrow ready, blue, medium width.
+- Portrait photo: arrow, rectangle, circle, freehand, highlighter, line, two
+  callout pins, blur, text note, dimension, all drawn and all correct.
+- Field Scale calibrated at 8'-0" across a known width, then a second line drawn
+  at half that length pre-filled as 4'-0". Right answer.
+- Undo twice, redo twice, both correct.
+- Selected an ellipse, moved it, resized it by a corner handle, selected the
+  blur and deleted it.
+- Zoomed to 200 percent, drew an arrow while zoomed, returned to fit. The mark
+  stayed on the same part of the photo.
+- Marker Mode on, then exported: the file is 1200x1600, the same size as the
+  source, and the wobble in the export matches the wobble that was on screen.
+- 6000x4000 photo: opened, marked, killed with SIGKILL mid-session, relaunched.
+  The app offered the draft by name, restored it, and exported at 6000x4000 with
+  the mark in the right place and all four corner markers intact.
+
 **ONE KNOWN FAILURE, PRE-EXISTING:**
 `markup_export_path_service_test > buildSafeMarkupExportPath appends increment
 for duplicate output` fails on Linux and passes on Windows. It asserts a `\`
