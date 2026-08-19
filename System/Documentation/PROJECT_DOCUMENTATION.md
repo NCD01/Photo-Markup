@@ -5,9 +5,9 @@ Version: `v0.5`
 Pack File Version: `v1.7`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-06-18`
+Last Updated: `2026-06-19`
 Purpose: Canonical project runtime, architecture, and behavior record.
-Changes: Added Phase 1Y offline DWG converter contract notes.
+Changes: Added Phase 1Z measurement-tools working-note architecture.
 
 ## Quick Rules
 - Keep architecture aligned to implementation.
@@ -216,6 +216,11 @@ Required sections are present and updated through Phase 1W with Phase 1X working
 - DWG files without any usable converter output or embedded raster preview, or only with a tiny/partial dark embedded thumbnail, still show the converter-required message.
 - Original HEIC/HEIF source files are not modified, moved, overwritten, or deleted.
 - Loaded photo is displayed in-canvas with preserved aspect ratio and contain fit.
+- Unreleased Phase 1Z working tree adds initial calibration-based measurement-tool architecture for:
+  - `Scale Calibration`
+  - `Multi-Segment`
+  - `Area / Perimeter`
+- Phase 1Z measurement tools keep geometry normalized to the image rect and derive displayed values from saved calibration + source image pixel size instead of viewport-space transforms.
 - Dimension tool can be selected before photo load without crash.
 - When a photo is loaded and Dimension is selected, pointer drag creates a straight line overlay with endpoint markers.
 - When a photo is loaded and Arrow is selected, pointer drag creates an arrow overlay with a visible arrowhead.
@@ -286,6 +291,10 @@ Required sections are present and updated through Phase 1W with Phase 1X working
   - active text font family/size defaults
   - per-dimension label offset/font family/font size
   - per-text-note font family/font size
+  - unreleased Phase 1Z measurement-tool state:
+    - scale calibration
+    - multi-segment paths
+    - area/perimeter polygons
 - Older sidecars that do not include typography/label-offset fields reopen safely with governed defaults.
 - If sidecar source image is missing, app prompts user to locate the source image before restoring markups.
 - Quick-entry measurement normalization currently outputs inches:

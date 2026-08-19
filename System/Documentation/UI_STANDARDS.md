@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\UI_STANDARDS.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-06-18`
+Last Updated: `2026-06-19`
 Purpose: Define baseline UI standards for NCD Photo Markup.
-Changes: Added Phase 1X select-mode drawing priority, movable measurement-label, and governed typography notes.
+Changes: Added Phase 1Z measurement-tool drafting/calibration working-note guidance.
 
 ## Visual Direction
 - Prioritize touch-first control sizing and spacing.
@@ -24,6 +24,8 @@ Changes: Added Phase 1X select-mode drawing priority, movable measurement-label,
 - Drawer attachment rule: `Drawer left edge must align flush to rail right edge with no visible seam/gutter strip`
 - Canvas view-control pattern: `Use compact in-canvas control surface for zoom in/out, fit, actual-size, and pan toggle without horizontal overflow`
 - Canvas transform rule: `Apply transforms to image + markup overlay together; do not rewrite stored markup coordinates during zoom/pan`
+- Measurement tool rule: `New calibration, multi-segment, and area/perimeter tools must stay image-relative and share the same transform layer as the photo/overlay; displayed values come from calibration + image pixel size, not viewport scale`
+- Tap-sequence measurement rule: `Multi-segment and area/perimeter tools may use guided tap-sequence creation, but draft previews should remain compact, readable, and should never require horizontal UI overflow`
 - Pan/tool interaction rule: `When a markup drawing tool is selected while Pan mode is active, auto-disable Pan mode to restore immediate draw/select behavior`
 - Draw-vs-select rule: `Drawing tools own pointer intent while armed; selecting the same tool again returns the shell to Select mode for markup editing`
 - Select-mode hit priority rule: `Prefer visible selected handles first, then dimension label bubble, then dimension line body, then other markup handles/bodies so dense measurement areas stay editable without reintroducing draw-mode selection stealing`

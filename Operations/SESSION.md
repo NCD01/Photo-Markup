@@ -154,6 +154,67 @@ Purpose: Track concise session history and handoff state.
 - No auto-export/autosave added.
 - No full-resolution export added.
 - No PDF export added.
+
+# SESSION_2026-06-19_phase1z_measurement_tools_mvp
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Codex
+- Branch/Workspace: main / C:\apps\NCD_Photo_Markup
+- Baseline before work: `v0.32` / `66e7a6813995b6da438c35e1400b97187fdcd2f4`
+
+## Goal
+- Start Phase 1Z New Measurement Tools MVP after the docs-only DWG research note.
+- Add initial scale calibration, multi-segment measurement, and area/perimeter measurement plumbing without touching DWG converter scope, Control Center, export crop, or editable-sidecar schema version.
+
+## Actions
+- Added new measurement models:
+  - `ScaleCalibration`
+  - `MultiSegmentMeasurement`
+  - `AreaMeasurement`
+- Added centralized measurement math/display helpers in:
+  - `app/lib/features/markup/utils/measurement_value_utils.dart`
+- Extended `MarkupTool` and interaction policy for:
+  - `Scale Calibration`
+  - `Multi-Segment`
+  - `Area / Perimeter`
+- Wired initial shell state, sidebar actions, save/reopen persistence, selection, move, handle-drag, and overlay painting for the new measurement tools.
+- Added calibration dialog scaffolding and kept calibration values governed through centralized copy/constants.
+- Extended test coverage for:
+  - measurement value formatting/math
+  - editable sidecar round-trip with new measurement models
+  - sidebar no-image safety for the new tools
+  - pan/tool state regression coverage remains passing
+
+## Logging/Debug Notes
+- No new background converter/import logging paths were introduced in this pass.
+- Validation guardrail remained active:
+  - no indefinite waits
+  - no lingering `flutter run` app process
+  - startup smoke process was explicitly stopped after launch confirmation
+
+## Validation
+- `git status --short`: `PASS` (dirty state isolated to Phase 1Z working files)
+- `powershell -ExecutionPolicy Bypass -File scripts/verify-version-sync.ps1`: `PASS` (`v0.32`)
+- `cd app && flutter pub get`: `PASS`
+- `cd app && flutter analyze`: `PASS`
+- `cd app && flutter test test/widget_test.dart`: `PASS`
+- `cd app && flutter test test/editable_markup_document_service_test.dart`: `PASS`
+- `cd app && flutter test test/measurement_value_utils_test.dart`: `PASS`
+- `cd app && flutter test --timeout 20m -r expanded`: `PASS`
+- `cd app && flutter build windows --debug`: `PASS`
+- `cd app && flutter run -d windows --debug --no-resident`: `PASS` (startup smoke only; launched, confirmed, then stopped process id `3080`)
+- `.agent_temp` ignore check: `PASS` (`.gitignore:1 .agent_temp/`)
+
+## Constraints Confirmed
+- No commit/push/version bump performed.
+- No Control Center code changes.
+- No DWG converter work resumed in this phase.
+- No auto-export/autosave added.
+- No full-resolution export added.
+- No PDF export added.
+- No detached Flutter/app process remains running after validation.
 - Original DWG/source file mutation not introduced.
 Changes: Added Phase 1Q export-default and unsaved-guard session notes.
 

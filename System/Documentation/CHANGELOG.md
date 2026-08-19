@@ -4,9 +4,53 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-06-18`
+Last Updated: `2026-06-19`
 Purpose: Canonical changelog for project changes.
-Changes: Added Phase 1Y offline DWG converter contract entry.
+Changes: Added unreleased Phase 1Z measurement tools MVP working-note entry.
+
+## Unreleased - 2026-06-19 (Phase 1Z New Measurement Tools MVP)
+- Owner: NCD / M
+- Author: Codex
+- Type: Measurement / Canvas Workflow
+- Reason: Start the next field-value feature phase after documenting the blocked free/offline DWG research result, focusing on calibration-based measurement tools instead of more DWG renderer investigation.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/models/markup_tool.dart`
+  - `app/lib/features/markup/models/scale_calibration.dart`
+  - `app/lib/features/markup/models/multi_segment_measurement.dart`
+  - `app/lib/features/markup/models/area_measurement.dart`
+  - `app/lib/features/markup/models/editable_markup_document.dart`
+  - `app/lib/features/markup/utils/markup_interaction_policy.dart`
+  - `app/lib/features/markup/utils/measurement_value_utils.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/lib/features/sidebar/models/sidebar_icon_pack.dart`
+  - `app/test/widget_test.dart`
+  - `app/test/editable_markup_document_service_test.dart`
+  - `app/test/measurement_value_utils_test.dart`
+- Changes:
+  - Added new measurement-tool model scaffolding for:
+    - `Scale Calibration`
+    - `Multi-Segment`
+    - `Area / Perimeter`
+  - Added centralized measurement math/value formatting helpers based on normalized geometry plus source image pixel size.
+  - Added initial shell/tool/overlay/save-reopen wiring so the new measurement tools participate in:
+    - sidebar tool selection
+    - selection/move state
+    - editable sidecar persistence
+    - overlay painting/preview state
+  - Added targeted tests covering:
+    - measurement math/value formatting
+    - sidecar round-trip persistence for new measurement models
+    - safe no-image tool selection for the new sidebar actions
+- Validation Evidence:
+  - `flutter analyze`: `PASS`
+  - `flutter test --timeout 20m -r expanded`: `PASS`
+  - `flutter build windows --debug`: `PASS`
+  - `flutter run -d windows --debug --no-resident`: `PASS` (startup smoke only; stopped after validation)
+- Risks / Known Gaps:
+  - Owner manual validation is still pending for real drawing/image workflows before any Phase 1Z commit approval.
+  - TODO-040 remains open and unchanged; no new DWG converter path was added here.
 
 ## Unreleased - 2026-06-18 (Phase 1Y TODO-040 Offline DWG Converter Support)
 - Owner: NCD / M

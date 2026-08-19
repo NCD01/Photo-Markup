@@ -11,6 +11,11 @@ class MarkupInteractionPolicy {
     return activeTool == MarkupTool.textNote;
   }
 
+  static bool usesTapSequenceDrawing(MarkupTool activeTool) {
+    return activeTool == MarkupTool.multiSegmentMeasurement ||
+        activeTool == MarkupTool.areaMeasurement;
+  }
+
   static MarkupTool resolveRequestedTool({
     required MarkupTool currentTool,
     required MarkupTool requestedTool,

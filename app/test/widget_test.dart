@@ -208,6 +208,30 @@ void main() {
     expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
   });
 
+  testWidgets('selecting scale calibration without image does not crash', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    await _tapSidebarAction(tester, ToolbarConstants.scaleCalibration);
+    expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
+  });
+
+  testWidgets('selecting multi-segment without image does not crash', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    await _tapSidebarAction(tester, ToolbarConstants.multiSegmentMeasurement);
+    expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
+  });
+
+  testWidgets('selecting area measurement without image does not crash', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    await _tapSidebarAction(tester, ToolbarConstants.areaMeasurement);
+    expect(find.text(UiCopyConstants.emptyStateMessage), findsOneWidget);
+  });
+
   testWidgets('selecting freehand without image does not crash', (
     WidgetTester tester,
   ) async {
@@ -286,6 +310,9 @@ void main() {
           child: ColoredBox(
             color: Colors.white,
             child: DimensionLinesOverlay(
+              scaleCalibration: null,
+              multiSegmentMeasurements: const [],
+              areaMeasurements: const [],
               lines: const <DimensionLine>[
                 DimensionLine(
                   id: 1,
@@ -299,6 +326,10 @@ void main() {
               freehands: const <FreehandMarkup>[],
               textNotes: const <TextNoteMarkup>[],
               imageRect: const Rect.fromLTWH(20, 20, 460, 280),
+              imagePixelSize: null,
+              selectedScaleCalibrationId: null,
+              selectedMultiSegmentMeasurementId: null,
+              selectedAreaMeasurementId: null,
               selectedDimensionId: null,
               selectedArrowId: null,
               selectedRectangleId: null,
@@ -309,6 +340,8 @@ void main() {
               activeTool: MarkupTool.dimension,
               activeStart: const Offset(80, 220),
               activeEnd: const Offset(360, 240),
+              activeMeasurementPoints: const <Offset>[],
+              activeMeasurementPreviewPoint: null,
               activeFreehandPoints: const <Offset>[],
               isEnabled: true,
               onStart: (Offset point) => startPoint = point,
@@ -340,6 +373,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
     await _pumpFrames(tester, frames: 16);
+    await _expandSidebarIfCollapsed(tester);
 
     final List<String> tools = <String>[
       ToolbarConstants.dimension,
@@ -358,13 +392,7 @@ void main() {
       await _pumpFrames(tester, frames: 4);
       expect(stateBefore.debugIsPanModeEnabled, isTrue);
 
-      final Finder railToolButton = find.byKey(
-        ValueKey<String>('sidebar-rail-$tool'),
-      );
-      expect(railToolButton, findsOneWidget);
-
-      await tester.tap(railToolButton);
-      await _pumpFrames(tester, frames: 8);
+      await _tapSidebarAction(tester, tool);
 
       final dynamic stateAfter = tester.state(
         find.byType(PhotoMarkupShellScreen),
@@ -443,10 +471,7 @@ void main() {
     );
     await _pumpFrames(tester, frames: 16);
 
-    expect(
-      find.text(UiCopyConstants.importErrorDialogTitle),
-      findsOneWidget,
-    );
+    expect(find.text(UiCopyConstants.importErrorDialogTitle), findsOneWidget);
     expect(
       find.text(ImageImportConstants.dwgPreviewUnavailableMessage),
       findsWidgets,

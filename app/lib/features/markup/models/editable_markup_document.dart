@@ -1,12 +1,15 @@
 import 'dart:ui';
 
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/features/markup/models/area_measurement.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
+import 'package:ncd_photo_markup/features/markup/models/multi_segment_measurement.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 
 class EditableMarkupDocument {
@@ -21,6 +24,9 @@ class EditableMarkupDocument {
     required this.activeFontFamily,
     required this.activeFontSize,
     required this.nextMarkupId,
+    required this.scaleCalibration,
+    required this.multiSegmentMeasurements,
+    required this.areaMeasurements,
     required this.dimensionLines,
     required this.arrows,
     required this.rectangles,
@@ -39,6 +45,9 @@ class EditableMarkupDocument {
   final String activeFontFamily;
   final double activeFontSize;
   final int nextMarkupId;
+  final ScaleCalibration? scaleCalibration;
+  final List<MultiSegmentMeasurement> multiSegmentMeasurements;
+  final List<AreaMeasurement> areaMeasurements;
   final List<DimensionLine> dimensionLines;
   final List<ArrowMarkup> arrows;
   final List<RectangleMarkup> rectangles;
@@ -74,6 +83,11 @@ class EditableMarkupDocument {
       activeFontFamily: _fontFamilyFromValue(json['activeFontFamily']),
       activeFontSize: _fontSizeFromValue(json['activeFontSize']),
       nextMarkupId: _asInt(json['nextMarkupId']) ?? 1,
+      scaleCalibration: _readScaleCalibration(json['scaleCalibration']),
+      multiSegmentMeasurements: _readMultiSegmentMeasurements(
+        json['multiSegmentMeasurements'],
+      ),
+      areaMeasurements: _readAreaMeasurements(json['areaMeasurements']),
       dimensionLines: _readDimensionLines(json['dimensionLines']),
       arrows: _readArrows(json['arrows']),
       rectangles: _readRectangles(json['rectangles']),
@@ -98,6 +112,43 @@ class EditableMarkupDocument {
       'activeFontFamily': activeFontFamily,
       'activeFontSize': activeFontSize,
       'nextMarkupId': nextMarkupId,
+      if (scaleCalibration != null)
+        'scaleCalibration': <String, dynamic>{
+          'id': scaleCalibration!.id,
+          'startNormalized': _offsetToJson(scaleCalibration!.startNormalized),
+          'endNormalized': _offsetToJson(scaleCalibration!.endNormalized),
+          'realDistance': scaleCalibration!.realDistance,
+          'unitLabel': scaleCalibration!.unitLabel,
+          'fontFamily': scaleCalibration!.fontFamily,
+          'fontSize': scaleCalibration!.fontSize,
+          'stylePresetId': scaleCalibration!.stylePresetId.name,
+        },
+      'multiSegmentMeasurements': multiSegmentMeasurements
+          .map(
+            (MultiSegmentMeasurement measurement) => <String, dynamic>{
+              'id': measurement.id,
+              'normalizedPoints': measurement.normalizedPoints
+                  .map(_offsetToJson)
+                  .toList(growable: false),
+              'fontFamily': measurement.fontFamily,
+              'fontSize': measurement.fontSize,
+              'stylePresetId': measurement.stylePresetId.name,
+            },
+          )
+          .toList(growable: false),
+      'areaMeasurements': areaMeasurements
+          .map(
+            (AreaMeasurement measurement) => <String, dynamic>{
+              'id': measurement.id,
+              'normalizedPoints': measurement.normalizedPoints
+                  .map(_offsetToJson)
+                  .toList(growable: false),
+              'fontFamily': measurement.fontFamily,
+              'fontSize': measurement.fontSize,
+              'stylePresetId': measurement.stylePresetId.name,
+            },
+          )
+          .toList(growable: false),
       'dimensionLines': dimensionLines
           .map(
             (DimensionLine line) => <String, dynamic>{
@@ -169,6 +220,119 @@ class EditableMarkupDocument {
           )
           .toList(growable: false),
     };
+  }
+
+  static ScaleCalibration? _readScaleCalibration(dynamic raw) {
+    final Map<String, dynamic>? map = _asMap(raw);
+    if (map == null) {
+      return null;
+    }
+    final int? id = _asInt(map['id']);
+    final Offset? start = _offsetFromJson(map['startNormalized']);
+    final Offset? end = _offsetFromJson(map['endNormalized']);
+    final double? realDistance = _asDouble(map['realDistance']);
+    final String unitLabel = (map['unitLabel'] ?? '').toString().trim();
+    if (id == null ||
+        start == null ||
+        end == null ||
+        realDistance == null ||
+        realDistance <= 0 ||
+        unitLabel.isEmpty) {
+      return null;
+    }
+    return ScaleCalibration(
+      id: id,
+      startNormalized: start,
+      endNormalized: end,
+      realDistance: realDistance,
+      unitLabel: unitLabel,
+      fontFamily: _fontFamilyFromValue(map['fontFamily']),
+      fontSize: _fontSizeFromValue(map['fontSize']),
+      stylePresetId: _stylePresetFromValue(map['stylePresetId']),
+    );
+  }
+
+  static List<MultiSegmentMeasurement> _readMultiSegmentMeasurements(
+    dynamic raw,
+  ) {
+    if (raw is! List) {
+      return const <MultiSegmentMeasurement>[];
+    }
+    final List<MultiSegmentMeasurement> measurements =
+        <MultiSegmentMeasurement>[];
+    for (final dynamic item in raw) {
+      final Map<String, dynamic>? map = _asMap(item);
+      if (map == null) {
+        continue;
+      }
+      final int? id = _asInt(map['id']);
+      if (id == null) {
+        continue;
+      }
+      final List<Offset> points = <Offset>[];
+      final dynamic rawPoints = map['normalizedPoints'];
+      if (rawPoints is List) {
+        for (final dynamic rawPoint in rawPoints) {
+          final Offset? point = _offsetFromJson(rawPoint);
+          if (point != null) {
+            points.add(point);
+          }
+        }
+      }
+      if (points.length < 2) {
+        continue;
+      }
+      measurements.add(
+        MultiSegmentMeasurement(
+          id: id,
+          normalizedPoints: points,
+          fontFamily: _fontFamilyFromValue(map['fontFamily']),
+          fontSize: _fontSizeFromValue(map['fontSize']),
+          stylePresetId: _stylePresetFromValue(map['stylePresetId']),
+        ),
+      );
+    }
+    return List<MultiSegmentMeasurement>.unmodifiable(measurements);
+  }
+
+  static List<AreaMeasurement> _readAreaMeasurements(dynamic raw) {
+    if (raw is! List) {
+      return const <AreaMeasurement>[];
+    }
+    final List<AreaMeasurement> measurements = <AreaMeasurement>[];
+    for (final dynamic item in raw) {
+      final Map<String, dynamic>? map = _asMap(item);
+      if (map == null) {
+        continue;
+      }
+      final int? id = _asInt(map['id']);
+      if (id == null) {
+        continue;
+      }
+      final List<Offset> points = <Offset>[];
+      final dynamic rawPoints = map['normalizedPoints'];
+      if (rawPoints is List) {
+        for (final dynamic rawPoint in rawPoints) {
+          final Offset? point = _offsetFromJson(rawPoint);
+          if (point != null) {
+            points.add(point);
+          }
+        }
+      }
+      if (points.length < 3) {
+        continue;
+      }
+      measurements.add(
+        AreaMeasurement(
+          id: id,
+          normalizedPoints: points,
+          fontFamily: _fontFamilyFromValue(map['fontFamily']),
+          fontSize: _fontSizeFromValue(map['fontSize']),
+          stylePresetId: _stylePresetFromValue(map['stylePresetId']),
+        ),
+      );
+    }
+    return List<AreaMeasurement>.unmodifiable(measurements);
   }
 
   static List<DimensionLine> _readDimensionLines(dynamic raw) {

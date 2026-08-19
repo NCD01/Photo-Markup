@@ -4,9 +4,9 @@ Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\FORM_DEFINITIONS.m
 Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Codex`
-Last Updated: `2026-06-18`
+Last Updated: `2026-06-19`
 Purpose: Define app forms/screens and responsibilities.
-Changes: Added Phase 1Y governed offline DWG converter contract notes.
+Changes: Added Phase 1Z calibration/measurement tool working-note definitions.
 
 ## Primary Forms/Screens
 - `Photo Markup Shell` (implemented)
@@ -28,6 +28,8 @@ Changes: Added Phase 1Y governed offline DWG converter contract notes.
 - `Selected Markup Move/Adjust Action` (implemented, whole-markup move MVP)
 - `Endpoint/Resize Handle Adjust Action` (implemented for dimension/arrow/rectangle/oval)
 - `Unsaved Close Guard Dialog` (implemented for route pop + native Windows app-exit requests)
+- `Scale Calibration Dialog` (implemented in working tree / Phase 1Z)
+- `Measurement Tool Draft Overlay` (implemented in working tree / Phase 1Z)
 
 ## Field Work Forms
 ### `Shell` Forms
@@ -360,6 +362,35 @@ Changes: Added Phase 1Y governed offline DWG converter contract notes.
 - `If a dimension or text note is selected, font family/font size apply to that selected markup and future new text markup`
 - `If a non-text markup is selected, preset restyle still applies while typography controls continue to govern future new labels/notes`
 - `Advanced custom picker/user-default persistence remains deferred`
+
+#### `Scale Calibration Dialog` (Phase 1Z working tree)
+- Source path: `app/lib/main.dart`
+- Purpose: `Capture real-world distance + unit for the current calibration line so other measurement tools can display governed real values`
+- Parent/master form: `Photo Markup Shell`
+- Child components:
+- `Actual distance numeric field`
+- `Unit text field`
+- `Save Scale`
+- `Cancel`
+- Read/write behavior: `WRITE_ONLY`
+- Notes:
+- `Shown after drawing a scale-calibration line`
+- `Validation requires positive distance and non-empty unit`
+- `Stores calibration in normalized image coordinates with governed typography/style fields`
+
+#### `Measurement Tool Draft Overlay` (Phase 1Z working tree)
+- Source path: `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+- Purpose: `Preview tap-sequence measurement creation for multi-segment and area/perimeter tools while preserving image-relative geometry`
+- Parent/master form: `Photo Canvas Area`
+- Child components:
+- `Active draft points`
+- `Preview segment/polygon`
+- `Contextual guidance snackbar copy`
+- Read/write behavior: `MIXED`
+- Notes:
+- `Multi-Segment and Area/Perimeter tools use tap-sequence creation`
+- `Press Enter or double-tap completion paths are governed in shell state`
+- `Phase 1Z owner/manual GUI validation is still pending`
 
 #### `Sidebar Icon Rendering Standard (Phase 1U-B Production)`
 - Source path: `app/lib/main.dart` + `app/lib/features/sidebar/models/sidebar_icon_pack.dart`

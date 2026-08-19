@@ -2,14 +2,17 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ncd_photo_markup/features/markup/models/area_measurement.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/editable_markup_document.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
+import 'package:ncd_photo_markup/features/markup/models/multi_segment_measurement.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
 
@@ -72,6 +75,43 @@ void main() {
         activeFontFamily: 'Segoe UI',
         activeFontSize: 18,
         nextMarkupId: 99,
+        scaleCalibration: const ScaleCalibration(
+          id: 7,
+          startNormalized: Offset(0.1, 0.1),
+          endNormalized: Offset(0.6, 0.1),
+          realDistance: 20,
+          unitLabel: 'ft',
+          fontFamily: 'Calibri',
+          fontSize: 20,
+          stylePresetId: MarkupStylePresetId.white,
+        ),
+        multiSegmentMeasurements: <MultiSegmentMeasurement>[
+          MultiSegmentMeasurement(
+            id: 8,
+            normalizedPoints: const <Offset>[
+              Offset(0.2, 0.2),
+              Offset(0.4, 0.25),
+              Offset(0.55, 0.45),
+            ],
+            fontFamily: 'Segoe UI',
+            fontSize: 16,
+            stylePresetId: MarkupStylePresetId.black,
+          ),
+        ],
+        areaMeasurements: <AreaMeasurement>[
+          AreaMeasurement(
+            id: 9,
+            normalizedPoints: const <Offset>[
+              Offset(0.2, 0.6),
+              Offset(0.45, 0.55),
+              Offset(0.5, 0.8),
+              Offset(0.25, 0.85),
+            ],
+            fontFamily: 'Arial',
+            fontSize: 17,
+            stylePresetId: MarkupStylePresetId.yellow,
+          ),
+        ],
         dimensionLines: const <DimensionLine>[
           DimensionLine(
             id: 1,
@@ -140,6 +180,35 @@ void main() {
       expect(reopened.activeStylePresetId, MarkupStylePresetId.yellow);
       expect(reopened.activeFontFamily, 'Segoe UI');
       expect(reopened.activeFontSize, 18);
+      expect(reopened.scaleCalibration, isNotNull);
+      expect(reopened.scaleCalibration!.realDistance, 20);
+      expect(reopened.scaleCalibration!.unitLabel, 'ft');
+      expect(reopened.scaleCalibration!.fontFamily, 'Calibri');
+      expect(reopened.scaleCalibration!.fontSize, 20);
+      expect(
+        reopened.scaleCalibration!.stylePresetId,
+        MarkupStylePresetId.white,
+      );
+      expect(reopened.multiSegmentMeasurements, hasLength(1));
+      expect(
+        reopened.multiSegmentMeasurements.single.stylePresetId,
+        MarkupStylePresetId.black,
+      );
+      expect(
+        reopened.multiSegmentMeasurements.single.normalizedPoints,
+        const <Offset>[Offset(0.2, 0.2), Offset(0.4, 0.25), Offset(0.55, 0.45)],
+      );
+      expect(reopened.areaMeasurements, hasLength(1));
+      expect(
+        reopened.areaMeasurements.single.stylePresetId,
+        MarkupStylePresetId.yellow,
+      );
+      expect(reopened.areaMeasurements.single.normalizedPoints, const <Offset>[
+        Offset(0.2, 0.6),
+        Offset(0.45, 0.55),
+        Offset(0.5, 0.8),
+        Offset(0.25, 0.85),
+      ]);
       expect(
         reopened.dimensionLines.single.stylePresetId,
         MarkupStylePresetId.red,

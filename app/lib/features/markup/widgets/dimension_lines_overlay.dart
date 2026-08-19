@@ -2,20 +2,28 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/features/markup/models/area_measurement.dart';
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
+import 'package:ncd_photo_markup/features/markup/models/multi_segment_measurement.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_text_layout_utils.dart';
+import 'package:ncd_photo_markup/features/markup/utils/markup_typography_utils.dart';
+import 'package:ncd_photo_markup/features/markup/utils/measurement_value_utils.dart';
 
 class DimensionLinesOverlay extends StatefulWidget {
   const DimensionLinesOverlay({
     super.key,
+    required this.scaleCalibration,
+    required this.multiSegmentMeasurements,
+    required this.areaMeasurements,
     required this.lines,
     required this.arrows,
     required this.rectangles,
@@ -23,6 +31,10 @@ class DimensionLinesOverlay extends StatefulWidget {
     required this.freehands,
     required this.textNotes,
     required this.imageRect,
+    required this.imagePixelSize,
+    required this.selectedScaleCalibrationId,
+    required this.selectedMultiSegmentMeasurementId,
+    required this.selectedAreaMeasurementId,
     required this.selectedDimensionId,
     required this.selectedArrowId,
     required this.selectedRectangleId,
@@ -33,6 +45,8 @@ class DimensionLinesOverlay extends StatefulWidget {
     required this.activeTool,
     this.activeStart,
     this.activeEnd,
+    required this.activeMeasurementPoints,
+    this.activeMeasurementPreviewPoint,
     required this.activeFreehandPoints,
     required this.isEnabled,
     required this.onStart,
@@ -41,6 +55,9 @@ class DimensionLinesOverlay extends StatefulWidget {
     this.onTap,
   });
 
+  final ScaleCalibration? scaleCalibration;
+  final List<MultiSegmentMeasurement> multiSegmentMeasurements;
+  final List<AreaMeasurement> areaMeasurements;
   final List<DimensionLine> lines;
   final List<ArrowMarkup> arrows;
   final List<RectangleMarkup> rectangles;
@@ -48,6 +65,10 @@ class DimensionLinesOverlay extends StatefulWidget {
   final List<FreehandMarkup> freehands;
   final List<TextNoteMarkup> textNotes;
   final Rect imageRect;
+  final Size? imagePixelSize;
+  final int? selectedScaleCalibrationId;
+  final int? selectedMultiSegmentMeasurementId;
+  final int? selectedAreaMeasurementId;
   final int? selectedDimensionId;
   final int? selectedArrowId;
   final int? selectedRectangleId;
@@ -58,6 +79,8 @@ class DimensionLinesOverlay extends StatefulWidget {
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
+  final List<Offset> activeMeasurementPoints;
+  final Offset? activeMeasurementPreviewPoint;
   final List<Offset> activeFreehandPoints;
   final bool isEnabled;
   final ValueChanged<Offset> onStart;
@@ -80,6 +103,9 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final bool usesTapSequenceTool =
+        widget.activeTool == MarkupTool.multiSegmentMeasurement ||
+        widget.activeTool == MarkupTool.areaMeasurement;
     return Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: widget.isEnabled
@@ -94,7 +120,9 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
               );
               _pointerDownPoint = clamped;
               _didDrag = false;
-              widget.onStart(clamped);
+              if (!usesTapSequenceTool) {
+                widget.onStart(clamped);
+              }
             }
           : (PointerDownEvent event) {
               if (!widget.imageRect.contains(event.localPosition)) {
@@ -119,11 +147,14 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
           _didDrag = true;
         }
         if (widget.isEnabled) {
-          widget.onUpdate(clamped);
+          if (!usesTapSequenceTool ||
+              widget.activeMeasurementPoints.isNotEmpty) {
+            widget.onUpdate(clamped);
+          }
         }
       },
       onPointerUp: (_) {
-        if (widget.isEnabled) {
+        if (widget.isEnabled && !usesTapSequenceTool) {
           widget.onEnd();
         }
         if (_pointerDownPoint != null && !_didDrag && widget.onTap != null) {
@@ -139,6 +170,11 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
       },
       child: CustomPaint(
         painter: _DimensionLinesPainter(
+          scaleCalibration: widget.scaleCalibration,
+          multiSegmentMeasurements: List<MultiSegmentMeasurement>.of(
+            widget.multiSegmentMeasurements,
+          ),
+          areaMeasurements: List<AreaMeasurement>.of(widget.areaMeasurements),
           lines: List<DimensionLine>.of(widget.lines),
           arrows: List<ArrowMarkup>.of(widget.arrows),
           rectangles: List<RectangleMarkup>.of(widget.rectangles),
@@ -146,6 +182,11 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
           freehands: List<FreehandMarkup>.of(widget.freehands),
           textNotes: List<TextNoteMarkup>.of(widget.textNotes),
           imageRect: widget.imageRect,
+          imagePixelSize: widget.imagePixelSize,
+          selectedScaleCalibrationId: widget.selectedScaleCalibrationId,
+          selectedMultiSegmentMeasurementId:
+              widget.selectedMultiSegmentMeasurementId,
+          selectedAreaMeasurementId: widget.selectedAreaMeasurementId,
           selectedDimensionId: widget.selectedDimensionId,
           selectedArrowId: widget.selectedArrowId,
           selectedRectangleId: widget.selectedRectangleId,
@@ -156,6 +197,10 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
           activeTool: widget.activeTool,
           activeStart: widget.activeStart,
           activeEnd: widget.activeEnd,
+          activeMeasurementPoints: List<Offset>.of(
+            widget.activeMeasurementPoints,
+          ),
+          activeMeasurementPreviewPoint: widget.activeMeasurementPreviewPoint,
           activeFreehandPoints: List<Offset>.of(widget.activeFreehandPoints),
         ),
         child: const SizedBox.expand(),
@@ -166,6 +211,9 @@ class _DimensionLinesOverlayState extends State<DimensionLinesOverlay> {
 
 class _DimensionLinesPainter extends CustomPainter {
   const _DimensionLinesPainter({
+    required this.scaleCalibration,
+    required this.multiSegmentMeasurements,
+    required this.areaMeasurements,
     required this.lines,
     required this.arrows,
     required this.rectangles,
@@ -173,6 +221,10 @@ class _DimensionLinesPainter extends CustomPainter {
     required this.freehands,
     required this.textNotes,
     required this.imageRect,
+    required this.imagePixelSize,
+    required this.selectedScaleCalibrationId,
+    required this.selectedMultiSegmentMeasurementId,
+    required this.selectedAreaMeasurementId,
     required this.selectedDimensionId,
     required this.selectedArrowId,
     required this.selectedRectangleId,
@@ -183,9 +235,14 @@ class _DimensionLinesPainter extends CustomPainter {
     required this.activeTool,
     required this.activeStart,
     required this.activeEnd,
+    required this.activeMeasurementPoints,
+    required this.activeMeasurementPreviewPoint,
     required this.activeFreehandPoints,
   });
 
+  final ScaleCalibration? scaleCalibration;
+  final List<MultiSegmentMeasurement> multiSegmentMeasurements;
+  final List<AreaMeasurement> areaMeasurements;
   final List<DimensionLine> lines;
   final List<ArrowMarkup> arrows;
   final List<RectangleMarkup> rectangles;
@@ -193,6 +250,10 @@ class _DimensionLinesPainter extends CustomPainter {
   final List<FreehandMarkup> freehands;
   final List<TextNoteMarkup> textNotes;
   final Rect imageRect;
+  final Size? imagePixelSize;
+  final int? selectedScaleCalibrationId;
+  final int? selectedMultiSegmentMeasurementId;
+  final int? selectedAreaMeasurementId;
   final int? selectedDimensionId;
   final int? selectedArrowId;
   final int? selectedRectangleId;
@@ -203,6 +264,8 @@ class _DimensionLinesPainter extends CustomPainter {
   final MarkupTool activeTool;
   final Offset? activeStart;
   final Offset? activeEnd;
+  final List<Offset> activeMeasurementPoints;
+  final Offset? activeMeasurementPreviewPoint;
   final List<Offset> activeFreehandPoints;
 
   @override
@@ -230,6 +293,100 @@ class _DimensionLinesPainter extends CustomPainter {
 
     canvas.save();
     canvas.clipRect(imageRect);
+
+    final ScaleCalibration? currentScaleCalibration = scaleCalibration;
+    if (currentScaleCalibration != null) {
+      final MarkupStylePreset preset = MarkupStylePresets.byId(
+        currentScaleCalibration.stylePresetId,
+      );
+      final bool isSelected =
+          selectedScaleCalibrationId == currentScaleCalibration.id;
+      final Offset start = currentScaleCalibration.startInRect(imageRect);
+      final Offset end = currentScaleCalibration.endInRect(imageRect);
+      final DimensionLine calibrationLine = DimensionLine(
+        id: currentScaleCalibration.id,
+        startNormalized: currentScaleCalibration.startNormalized,
+        endNormalized: currentScaleCalibration.endNormalized,
+        label: MeasurementValueUtils.calibrationDisplayLabel(
+          currentScaleCalibration,
+        ),
+        fontFamily: currentScaleCalibration.fontFamily,
+        fontSize: currentScaleCalibration.fontSize,
+        stylePresetId: currentScaleCalibration.stylePresetId,
+      );
+      _drawLine(
+        canvas,
+        start,
+        end,
+        _measurementLinePaint(preset, isSelected: isSelected),
+        endpointFillPaint,
+        _measurementEndpointStrokePaint(preset, isSelected: isSelected),
+      );
+      _drawLabelIfPresent(
+        canvas: canvas,
+        line: calibrationLine,
+        start: start,
+        end: end,
+        labelBackgroundPaint: labelBackgroundPaint,
+        labelBorderPaint: _measurementLabelBorderPaint(preset),
+        leaderPaint: _measurementLeaderPaint(preset, isSelected: isSelected),
+      );
+    }
+
+    for (final MultiSegmentMeasurement measurement
+        in multiSegmentMeasurements) {
+      final MarkupStylePreset preset = MarkupStylePresets.byId(
+        measurement.stylePresetId,
+      );
+      final bool isSelected =
+          selectedMultiSegmentMeasurementId == measurement.id;
+      final List<Offset> points = measurement.pointsInRect(imageRect);
+      _drawPolyline(
+        canvas,
+        points,
+        _measurementLinePaint(preset, isSelected: isSelected),
+      );
+      _drawMeasurementLabel(
+        canvas: canvas,
+        label: MeasurementValueUtils.multiSegmentDisplayLabel(
+          measurement: measurement,
+          calibration: currentScaleCalibration,
+          imagePixelSize: imagePixelSize,
+        ),
+        anchor: MeasurementValueUtils.polylineLabelAnchor(points),
+        fontFamily: measurement.fontFamily,
+        fontSize: measurement.fontSize,
+        borderPaint: _measurementLabelBorderPaint(preset),
+        backgroundPaint: labelBackgroundPaint,
+      );
+    }
+
+    for (final AreaMeasurement measurement in areaMeasurements) {
+      final MarkupStylePreset preset = MarkupStylePresets.byId(
+        measurement.stylePresetId,
+      );
+      final bool isSelected = selectedAreaMeasurementId == measurement.id;
+      final List<Offset> points = measurement.pointsInRect(imageRect);
+      _drawPolygon(
+        canvas,
+        points,
+        _measurementAreaFillPaint(preset),
+        _measurementLinePaint(preset, isSelected: isSelected),
+      );
+      _drawMeasurementLabel(
+        canvas: canvas,
+        label: MeasurementValueUtils.areaDisplayLabel(
+          measurement: measurement,
+          calibration: currentScaleCalibration,
+          imagePixelSize: imagePixelSize,
+        ),
+        anchor: MeasurementValueUtils.polygonLabelAnchor(points),
+        fontFamily: measurement.fontFamily,
+        fontSize: measurement.fontSize,
+        borderPaint: _measurementLabelBorderPaint(preset),
+        backgroundPaint: labelBackgroundPaint,
+      );
+    }
 
     for (int i = 0; i < lines.length; i++) {
       final DimensionLine line = lines[i];
@@ -320,6 +477,24 @@ class _DimensionLinesPainter extends CustomPainter {
         note,
         isSelected: isSelected,
         stylePreset: MarkupStylePresets.byId(note.stylePresetId),
+      );
+    }
+
+    final ScaleCalibration? currentCalibrationForHandles = scaleCalibration;
+    if (selectedScaleCalibrationId != null &&
+        currentCalibrationForHandles != null &&
+        currentCalibrationForHandles.id == selectedScaleCalibrationId) {
+      _drawHandle(
+        canvas,
+        currentCalibrationForHandles.startInRect(imageRect),
+        handleFillPaint,
+        handleBorderPaint,
+      );
+      _drawHandle(
+        canvas,
+        currentCalibrationForHandles.endInRect(imageRect),
+        handleFillPaint,
+        handleBorderPaint,
       );
     }
 
@@ -453,6 +628,44 @@ class _DimensionLinesPainter extends CustomPainter {
           endpointFillPaint,
           _dimensionEndpointStrokePaint(activePreset, isSelected: false),
         );
+      } else if (activeTool == MarkupTool.scaleCalibration) {
+        _drawLine(
+          canvas,
+          activeStart!,
+          activeEnd!,
+          _measurementLinePaint(activePreset, isSelected: false),
+          endpointFillPaint,
+          _measurementEndpointStrokePaint(activePreset, isSelected: false),
+        );
+      }
+    }
+    if (activeMeasurementPoints.isNotEmpty &&
+        (activeTool == MarkupTool.multiSegmentMeasurement ||
+            activeTool == MarkupTool.areaMeasurement)) {
+      final List<Offset> previewPoints = <Offset>[
+        ...activeMeasurementPoints,
+        if (activeMeasurementPreviewPoint case final Offset previewPoint)
+          previewPoint,
+      ];
+      final MarkupStylePreset previewPreset = MarkupStylePresets.byId(
+        activeStylePresetId,
+      );
+      if (activeTool == MarkupTool.areaMeasurement) {
+        _drawPolygon(
+          canvas,
+          previewPoints,
+          _measurementAreaFillPaint(previewPreset, isPreview: true),
+          _measurementLinePaint(previewPreset, isSelected: false),
+        );
+      } else {
+        _drawPolyline(
+          canvas,
+          previewPoints,
+          _measurementLinePaint(previewPreset, isSelected: false),
+        );
+      }
+      for (final Offset point in activeMeasurementPoints) {
+        _drawMeasurementVertex(canvas, point, previewPreset.dimensionLineColor);
       }
     }
     if (activeTool == MarkupTool.freehand) {
@@ -514,6 +727,67 @@ class _DimensionLinesPainter extends CustomPainter {
       ..strokeWidth = DimensionLineConstants.labelLeaderStrokeWidth
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
+  }
+
+  Paint _measurementLinePaint(
+    MarkupStylePreset preset, {
+    required bool isSelected,
+  }) {
+    return Paint()
+      ..color = isSelected
+          ? preset.dimensionSelectedLineColor
+          : preset.dimensionLineColor
+      ..strokeWidth =
+          MeasurementToolConstants.lineStrokeWidth *
+          (isSelected ? MeasurementToolConstants.selectedStrokeMultiplier : 1.0)
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _measurementEndpointStrokePaint(
+    MarkupStylePreset preset, {
+    required bool isSelected,
+  }) {
+    return Paint()
+      ..color = isSelected
+          ? preset.dimensionSelectedLineColor
+          : preset.dimensionLineColor
+      ..strokeWidth = DimensionLineConstants.endpointStrokeWidth
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _measurementLabelBorderPaint(MarkupStylePreset preset) {
+    return Paint()
+      ..color = preset.dimensionLineColor
+      ..strokeWidth = DimensionLineConstants.labelBorderWidth
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _measurementLeaderPaint(
+    MarkupStylePreset preset, {
+    required bool isSelected,
+  }) {
+    return Paint()
+      ..color = isSelected
+          ? preset.dimensionSelectedLineColor
+          : preset.dimensionLineColor
+      ..strokeWidth = DimensionLineConstants.labelLeaderStrokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _measurementAreaFillPaint(
+    MarkupStylePreset preset, {
+    bool isPreview = false,
+  }) {
+    return Paint()
+      ..color = preset.dimensionLineColor.withValues(
+        alpha: isPreview
+            ? MeasurementToolConstants.fillOpacity / 2
+            : MeasurementToolConstants.fillOpacity,
+      )
+      ..style = PaintingStyle.fill;
   }
 
   Paint _arrowPaint(MarkupStylePreset preset, {required bool isSelected}) {
@@ -597,6 +871,48 @@ class _DimensionLinesPainter extends CustomPainter {
     canvas.drawPath(path, paint);
   }
 
+  void _drawPolyline(Canvas canvas, List<Offset> points, Paint paint) {
+    if (points.length < 2) {
+      return;
+    }
+    final Path path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawPolygon(
+    Canvas canvas,
+    List<Offset> points,
+    Paint fillPaint,
+    Paint outlinePaint,
+  ) {
+    if (points.length < 2) {
+      return;
+    }
+    final Path path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
+    }
+    if (points.length >= 3) {
+      path.close();
+      canvas.drawPath(path, fillPaint);
+    }
+    canvas.drawPath(path, outlinePaint);
+  }
+
+  void _drawMeasurementVertex(Canvas canvas, Offset point, Color color) {
+    final Paint fillPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(
+      point,
+      MeasurementToolConstants.pointPreviewRadius,
+      fillPaint,
+    );
+  }
+
   void _drawHandle(
     Canvas canvas,
     Offset point,
@@ -644,6 +960,76 @@ class _DimensionLinesPainter extends CustomPainter {
     canvas.drawRRect(chip, fillPaint);
     canvas.drawRRect(chip, borderPaint);
     layout.textPainter.paint(canvas, layout.textOffset);
+  }
+
+  void _drawMeasurementLabel({
+    required Canvas canvas,
+    required String label,
+    required Offset anchor,
+    required String fontFamily,
+    required double fontSize,
+    required Paint borderPaint,
+    required Paint backgroundPaint,
+  }) {
+    final String trimmed = label.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    final TextPainter textPainter =
+        TextPainter(
+          text: TextSpan(
+            text: trimmed,
+            style: MarkupTypographyUtils.baseTextStyle(
+              color: DimensionLineConstants.labelTextColor,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w700,
+              fontFamily: fontFamily,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          ellipsis: '...',
+        )..layout(
+          maxWidth:
+              imageRect.width * MeasurementToolConstants.labelMaxWidthFactor,
+        );
+
+    final double width =
+        textPainter.width +
+        (MeasurementToolConstants.labelPaddingHorizontal * 2);
+    final double height =
+        textPainter.height +
+        (MeasurementToolConstants.labelPaddingVertical * 2);
+
+    double left = anchor.dx - (width / 2);
+    double top = anchor.dy - (height / 2);
+
+    final double minLeft =
+        imageRect.left + MeasurementToolConstants.labelClampPadding;
+    final double maxLeft =
+        imageRect.right - width - MeasurementToolConstants.labelClampPadding;
+    final double minTop =
+        imageRect.top + MeasurementToolConstants.labelClampPadding;
+    final double maxTop =
+        imageRect.bottom - height - MeasurementToolConstants.labelClampPadding;
+    left = left.clamp(minLeft, maxLeft >= minLeft ? maxLeft : minLeft);
+    top = top.clamp(minTop, maxTop >= minTop ? maxTop : minTop);
+
+    final Rect rect = Rect.fromLTWH(left, top, width, height);
+    final RRect chip = RRect.fromRectAndRadius(
+      rect,
+      const Radius.circular(MeasurementToolConstants.labelRadius),
+    );
+    canvas.drawRRect(chip, backgroundPaint);
+    canvas.drawRRect(chip, borderPaint);
+    textPainter.paint(
+      canvas,
+      Offset(
+        rect.left + MeasurementToolConstants.labelPaddingHorizontal,
+        rect.top + MeasurementToolConstants.labelPaddingVertical,
+      ),
+    );
   }
 
   void _drawOval(
@@ -793,13 +1179,24 @@ class _DimensionLinesPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DimensionLinesPainter oldDelegate) {
-    return !listEquals(oldDelegate.lines, lines) ||
+    return oldDelegate.scaleCalibration != scaleCalibration ||
+        !listEquals(
+          oldDelegate.multiSegmentMeasurements,
+          multiSegmentMeasurements,
+        ) ||
+        !listEquals(oldDelegate.areaMeasurements, areaMeasurements) ||
+        !listEquals(oldDelegate.lines, lines) ||
         !listEquals(oldDelegate.arrows, arrows) ||
         !listEquals(oldDelegate.rectangles, rectangles) ||
         !listEquals(oldDelegate.ovals, ovals) ||
         !listEquals(oldDelegate.freehands, freehands) ||
         !listEquals(oldDelegate.textNotes, textNotes) ||
         oldDelegate.imageRect != imageRect ||
+        oldDelegate.imagePixelSize != imagePixelSize ||
+        oldDelegate.selectedScaleCalibrationId != selectedScaleCalibrationId ||
+        oldDelegate.selectedMultiSegmentMeasurementId !=
+            selectedMultiSegmentMeasurementId ||
+        oldDelegate.selectedAreaMeasurementId != selectedAreaMeasurementId ||
         oldDelegate.selectedDimensionId != selectedDimensionId ||
         oldDelegate.selectedArrowId != selectedArrowId ||
         oldDelegate.selectedRectangleId != selectedRectangleId ||
@@ -810,6 +1207,12 @@ class _DimensionLinesPainter extends CustomPainter {
         oldDelegate.activeStylePresetId != activeStylePresetId ||
         oldDelegate.activeStart != activeStart ||
         oldDelegate.activeEnd != activeEnd ||
+        !listEquals(
+          oldDelegate.activeMeasurementPoints,
+          activeMeasurementPoints,
+        ) ||
+        oldDelegate.activeMeasurementPreviewPoint !=
+            activeMeasurementPreviewPoint ||
         !listEquals(oldDelegate.activeFreehandPoints, activeFreehandPoints);
   }
 }

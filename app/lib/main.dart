@@ -16,14 +16,17 @@ import 'package:ncd_photo_markup/features/integration/services/launch_context_se
 import 'package:ncd_photo_markup/features/import/services/dwg_preview_conversion_service.dart';
 import 'package:ncd_photo_markup/features/import/services/image_import_service.dart';
 import 'package:ncd_photo_markup/features/import/utils/load_error_visibility_policy.dart';
+import 'package:ncd_photo_markup/features/markup/models/area_measurement.dart';
 import 'package:ncd_photo_markup/features/markup/models/arrow_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/dimension_line.dart';
 import 'package:ncd_photo_markup/features/markup/models/editable_markup_document.dart';
 import 'package:ncd_photo_markup/features/markup/models/freehand_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
+import 'package:ncd_photo_markup/features/markup/models/multi_segment_measurement.dart';
 import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
+import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
@@ -256,12 +259,19 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       MarkupStylePresets.defaultPresetId;
   String _selectedFontFamily = MarkupTypographyConstants.defaultFontFamily;
   double _selectedFontSize = MarkupTypographyConstants.defaultFontSize;
+  ScaleCalibration? _scaleCalibration;
+  final List<MultiSegmentMeasurement> _multiSegmentMeasurements =
+      <MultiSegmentMeasurement>[];
+  final List<AreaMeasurement> _areaMeasurements = <AreaMeasurement>[];
   final List<DimensionLine> _dimensionLines = <DimensionLine>[];
   final List<ArrowMarkup> _arrows = <ArrowMarkup>[];
   final List<RectangleMarkup> _rectangles = <RectangleMarkup>[];
   final List<OvalMarkup> _ovals = <OvalMarkup>[];
   final List<FreehandMarkup> _freehands = <FreehandMarkup>[];
   final List<TextNoteMarkup> _textNotes = <TextNoteMarkup>[];
+  int? _selectedScaleCalibrationId;
+  int? _selectedMultiSegmentMeasurementId;
+  int? _selectedAreaMeasurementId;
   int? _selectedDimensionId;
   int? _selectedArrowId;
   int? _selectedRectangleId;
@@ -271,6 +281,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   int _nextMarkupId = 1;
   Offset? _activeDimensionStart;
   Offset? _activeDimensionCurrent;
+  final List<Offset> _activeMeasurementPoints = <Offset>[];
+  Offset? _activeMeasurementPreviewPoint;
+  DateTime? _lastMeasurementTapAt;
+  Offset? _lastMeasurementTapPoint;
   final List<Offset> _activeFreehandPoints = <Offset>[];
   _MoveSession? _activeMoveSession;
   _HandleDragSession? _activeHandleDragSession;
@@ -453,6 +467,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _clearMarkupSelection();
       _activeDimensionStart = null;
       _activeDimensionCurrent = null;
+      _activeMeasurementPoints.clear();
+      _activeMeasurementPreviewPoint = null;
+      _lastMeasurementTapAt = null;
+      _lastMeasurementTapPoint = null;
+      _scaleCalibration = null;
+      _multiSegmentMeasurements.clear();
+      _areaMeasurements.clear();
       _dimensionLines.clear();
       _arrows.clear();
       _rectangles.clear();
@@ -802,6 +823,21 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
+    if (label == ToolbarConstants.scaleCalibration) {
+      _selectMarkupTool(MarkupTool.scaleCalibration);
+      return;
+    }
+
+    if (label == ToolbarConstants.multiSegmentMeasurement) {
+      _selectMarkupTool(MarkupTool.multiSegmentMeasurement);
+      return;
+    }
+
+    if (label == ToolbarConstants.areaMeasurement) {
+      _selectMarkupTool(MarkupTool.areaMeasurement);
+      return;
+    }
+
     if (label == ToolbarConstants.dimension) {
       _selectMarkupTool(MarkupTool.dimension);
       return;
@@ -854,6 +890,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   void _selectMarkupTool(MarkupTool tool) {
+    final bool shouldShowGuide =
+        tool == MarkupTool.multiSegmentMeasurement ||
+        tool == MarkupTool.areaMeasurement;
     setState(() {
       _selectedTool = _isPanModeEnabled && _selectedTool == tool
           ? tool
@@ -864,7 +903,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       if (_isPanModeEnabled) {
         _isPanModeEnabled = false;
       }
+      _clearActiveMeasurementDraft();
     });
+    if (shouldShowGuide && _selectedTool == tool) {
+      _showSnack(
+        tool == MarkupTool.areaMeasurement
+            ? UiCopyConstants.areaGuideMessage
+            : UiCopyConstants.multiSegmentGuideMessage,
+      );
+    }
   }
 
   Future<bool> _exportMarkedUpImage() async {
@@ -1097,6 +1144,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       activeFontFamily: _selectedFontFamily,
       activeFontSize: _selectedFontSize,
       nextMarkupId: _nextMarkupId,
+      scaleCalibration: _scaleCalibration,
+      multiSegmentMeasurements: List<MultiSegmentMeasurement>.unmodifiable(
+        _multiSegmentMeasurements,
+      ),
+      areaMeasurements: List<AreaMeasurement>.unmodifiable(_areaMeasurements),
       dimensionLines: List<DimensionLine>.unmodifiable(_dimensionLines),
       arrows: List<ArrowMarkup>.unmodifiable(_arrows),
       rectangles: List<RectangleMarkup>.unmodifiable(_rectangles),
@@ -1114,6 +1166,14 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     _selectedTool = MarkupTool.none;
     _activeDimensionStart = null;
     _activeDimensionCurrent = null;
+    _clearActiveMeasurementDraft();
+    _scaleCalibration = document.scaleCalibration;
+    _multiSegmentMeasurements
+      ..clear()
+      ..addAll(document.multiSegmentMeasurements);
+    _areaMeasurements
+      ..clear()
+      ..addAll(document.areaMeasurements);
     _activeFreehandPoints.clear();
     _activeMoveSession = null;
     _activeHandleDragSession = null;
@@ -1138,6 +1198,21 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       ..addAll(document.textNotes);
 
     int maxId = 0;
+    final ScaleCalibration? scaleCalibration = _scaleCalibration;
+    if (scaleCalibration != null && scaleCalibration.id > maxId) {
+      maxId = scaleCalibration.id;
+    }
+    for (final MultiSegmentMeasurement measurement
+        in _multiSegmentMeasurements) {
+      if (measurement.id > maxId) {
+        maxId = measurement.id;
+      }
+    }
+    for (final AreaMeasurement measurement in _areaMeasurements) {
+      if (measurement.id > maxId) {
+        maxId = measurement.id;
+      }
+    }
     for (final DimensionLine line in _dimensionLines) {
       if (line.id > maxId) {
         maxId = line.id;
@@ -1459,6 +1534,18 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     return null;
   }
 
+  ScaleCalibration? get _selectedScaleCalibration {
+    final int? selectedScaleCalibrationId = _selectedScaleCalibrationId;
+    final ScaleCalibration? scaleCalibration = _scaleCalibration;
+    if (selectedScaleCalibrationId == null || scaleCalibration == null) {
+      return null;
+    }
+    if (scaleCalibration.id != selectedScaleCalibrationId) {
+      return null;
+    }
+    return scaleCalibration;
+  }
+
   String _buildToolbarStyleLabel() =>
       '${ToolbarConstants.style}: ${_selectedStylePreset.shortLabel}';
 
@@ -1516,6 +1603,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   String _activeToolLabel() {
     switch (_selectedTool) {
+      case MarkupTool.scaleCalibration:
+        return ToolbarConstants.scaleCalibration;
+      case MarkupTool.multiSegmentMeasurement:
+        return ToolbarConstants.multiSegmentMeasurement;
+      case MarkupTool.areaMeasurement:
+        return ToolbarConstants.areaMeasurement;
       case MarkupTool.dimension:
         return ToolbarConstants.dimension;
       case MarkupTool.textNote:
@@ -1534,6 +1627,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   bool _isToolbarActionSelected(String label) =>
+      (label == ToolbarConstants.scaleCalibration &&
+          _selectedTool == MarkupTool.scaleCalibration) ||
+      (label == ToolbarConstants.multiSegmentMeasurement &&
+          _selectedTool == MarkupTool.multiSegmentMeasurement) ||
+      (label == ToolbarConstants.areaMeasurement &&
+          _selectedTool == MarkupTool.areaMeasurement) ||
       (label == ToolbarConstants.dimension &&
           _selectedTool == MarkupTool.dimension) ||
       (label == ToolbarConstants.arrow && _selectedTool == MarkupTool.arrow) ||
@@ -2149,6 +2248,51 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     required double fontSize,
   }) {
     bool applied = false;
+    final int? selectedScaleCalibrationId = _selectedScaleCalibrationId;
+    if (selectedScaleCalibrationId != null &&
+        _scaleCalibration?.id == selectedScaleCalibrationId) {
+      _scaleCalibration = _scaleCalibration!.copyWith(
+        stylePresetId: presetId,
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+      );
+      return true;
+    }
+
+    final int? selectedMultiSegmentMeasurementId =
+        _selectedMultiSegmentMeasurementId;
+    if (selectedMultiSegmentMeasurementId != null) {
+      final int index = _multiSegmentMeasurements.indexWhere(
+        (MultiSegmentMeasurement measurement) =>
+            measurement.id == selectedMultiSegmentMeasurementId,
+      );
+      if (index != -1) {
+        _multiSegmentMeasurements[index] = _multiSegmentMeasurements[index]
+            .copyWith(
+              stylePresetId: presetId,
+              fontFamily: fontFamily,
+              fontSize: fontSize,
+            );
+        return true;
+      }
+    }
+
+    final int? selectedAreaMeasurementId = _selectedAreaMeasurementId;
+    if (selectedAreaMeasurementId != null) {
+      final int index = _areaMeasurements.indexWhere(
+        (AreaMeasurement measurement) =>
+            measurement.id == selectedAreaMeasurementId,
+      );
+      if (index != -1) {
+        _areaMeasurements[index] = _areaMeasurements[index].copyWith(
+          stylePresetId: presetId,
+          fontFamily: fontFamily,
+          fontSize: fontSize,
+        );
+        return true;
+      }
+    }
+
     final int? selectedDimensionId = _selectedDimensionId;
     if (selectedDimensionId != null) {
       final int index = _dimensionLines.indexWhere(
@@ -2238,7 +2382,17 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     return id;
   }
 
+  void _clearActiveMeasurementDraft() {
+    _activeMeasurementPoints.clear();
+    _activeMeasurementPreviewPoint = null;
+    _lastMeasurementTapAt = null;
+    _lastMeasurementTapPoint = null;
+  }
+
   void _clearMarkupSelection() {
+    _selectedScaleCalibrationId = null;
+    _selectedMultiSegmentMeasurementId = null;
+    _selectedAreaMeasurementId = null;
     _selectedDimensionId = null;
     _selectedArrowId = null;
     _selectedRectangleId = null;
@@ -2249,8 +2403,47 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     _suppressTapActionAfterPointerDownSelection = false;
   }
 
+  void _selectScaleCalibrationById(int id) {
+    _selectedScaleCalibrationId = id;
+    _selectedMultiSegmentMeasurementId = null;
+    _selectedAreaMeasurementId = null;
+    _selectedDimensionId = null;
+    _selectedArrowId = null;
+    _selectedRectangleId = null;
+    _selectedOvalId = null;
+    _selectedFreehandId = null;
+    _selectedTextNoteId = null;
+  }
+
+  void _selectMultiSegmentMeasurementById(int id) {
+    _selectedMultiSegmentMeasurementId = id;
+    _selectedScaleCalibrationId = null;
+    _selectedAreaMeasurementId = null;
+    _selectedDimensionId = null;
+    _selectedArrowId = null;
+    _selectedRectangleId = null;
+    _selectedOvalId = null;
+    _selectedFreehandId = null;
+    _selectedTextNoteId = null;
+  }
+
+  void _selectAreaMeasurementById(int id) {
+    _selectedAreaMeasurementId = id;
+    _selectedScaleCalibrationId = null;
+    _selectedMultiSegmentMeasurementId = null;
+    _selectedDimensionId = null;
+    _selectedArrowId = null;
+    _selectedRectangleId = null;
+    _selectedOvalId = null;
+    _selectedFreehandId = null;
+    _selectedTextNoteId = null;
+  }
+
   void _selectDimensionById(int id) {
     _selectedDimensionId = id;
+    _selectedScaleCalibrationId = null;
+    _selectedMultiSegmentMeasurementId = null;
+    _selectedAreaMeasurementId = null;
     _selectedArrowId = null;
     _selectedRectangleId = null;
     _selectedOvalId = null;
@@ -2260,6 +2453,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   void _selectArrowById(int id) {
     _selectedArrowId = id;
+    _selectedScaleCalibrationId = null;
+    _selectedMultiSegmentMeasurementId = null;
+    _selectedAreaMeasurementId = null;
     _selectedDimensionId = null;
     _selectedRectangleId = null;
     _selectedOvalId = null;
@@ -2269,6 +2465,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   void _selectRectangleById(int id) {
     _selectedRectangleId = id;
+    _selectedScaleCalibrationId = null;
+    _selectedMultiSegmentMeasurementId = null;
+    _selectedAreaMeasurementId = null;
     _selectedDimensionId = null;
     _selectedArrowId = null;
     _selectedOvalId = null;
@@ -2278,6 +2477,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   void _selectOvalById(int id) {
     _selectedOvalId = id;
+    _selectedScaleCalibrationId = null;
+    _selectedMultiSegmentMeasurementId = null;
+    _selectedAreaMeasurementId = null;
     _selectedDimensionId = null;
     _selectedArrowId = null;
     _selectedRectangleId = null;
@@ -2287,6 +2489,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   void _selectFreehandById(int id) {
     _selectedFreehandId = id;
+    _selectedScaleCalibrationId = null;
+    _selectedMultiSegmentMeasurementId = null;
+    _selectedAreaMeasurementId = null;
     _selectedDimensionId = null;
     _selectedArrowId = null;
     _selectedRectangleId = null;
@@ -2296,6 +2501,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   void _selectTextNoteById(int id) {
     _selectedTextNoteId = id;
+    _selectedScaleCalibrationId = null;
+    _selectedMultiSegmentMeasurementId = null;
+    _selectedAreaMeasurementId = null;
     _selectedDimensionId = null;
     _selectedArrowId = null;
     _selectedRectangleId = null;
@@ -2304,6 +2512,23 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   void _undoMostRecentMarkup() {
+    final int latestScaleCalibrationId = _scaleCalibration?.id ?? -1;
+
+    int latestMultiSegmentMeasurementId = -1;
+    for (final MultiSegmentMeasurement measurement
+        in _multiSegmentMeasurements) {
+      if (measurement.id > latestMultiSegmentMeasurementId) {
+        latestMultiSegmentMeasurementId = measurement.id;
+      }
+    }
+
+    int latestAreaMeasurementId = -1;
+    for (final AreaMeasurement measurement in _areaMeasurements) {
+      if (measurement.id > latestAreaMeasurementId) {
+        latestAreaMeasurementId = measurement.id;
+      }
+    }
+
     int latestDimensionId = -1;
     for (final DimensionLine line in _dimensionLines) {
       if (line.id > latestDimensionId) {
@@ -2346,7 +2571,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       }
     }
 
-    if (latestDimensionId == -1 &&
+    if (latestScaleCalibrationId == -1 &&
+        latestMultiSegmentMeasurementId == -1 &&
+        latestAreaMeasurementId == -1 &&
+        latestDimensionId == -1 &&
         latestArrowId == -1 &&
         latestRectangleId == -1 &&
         latestOvalId == -1 &&
@@ -2356,7 +2584,47 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
 
     setState(() {
-      if (latestDimensionId >= latestArrowId &&
+      if (latestScaleCalibrationId >= latestMultiSegmentMeasurementId &&
+          latestScaleCalibrationId >= latestAreaMeasurementId &&
+          latestScaleCalibrationId >= latestDimensionId &&
+          latestScaleCalibrationId >= latestArrowId &&
+          latestScaleCalibrationId >= latestRectangleId &&
+          latestScaleCalibrationId >= latestOvalId &&
+          latestScaleCalibrationId >= latestFreehandId &&
+          latestScaleCalibrationId >= latestTextNoteId) {
+        _scaleCalibration = null;
+        if (_selectedScaleCalibrationId == latestScaleCalibrationId) {
+          _clearMarkupSelection();
+        }
+      } else if (latestMultiSegmentMeasurementId >= latestAreaMeasurementId &&
+          latestMultiSegmentMeasurementId >= latestDimensionId &&
+          latestMultiSegmentMeasurementId >= latestArrowId &&
+          latestMultiSegmentMeasurementId >= latestRectangleId &&
+          latestMultiSegmentMeasurementId >= latestOvalId &&
+          latestMultiSegmentMeasurementId >= latestFreehandId &&
+          latestMultiSegmentMeasurementId >= latestTextNoteId) {
+        _multiSegmentMeasurements.removeWhere(
+          (MultiSegmentMeasurement measurement) =>
+              measurement.id == latestMultiSegmentMeasurementId,
+        );
+        if (_selectedMultiSegmentMeasurementId ==
+            latestMultiSegmentMeasurementId) {
+          _clearMarkupSelection();
+        }
+      } else if (latestAreaMeasurementId >= latestDimensionId &&
+          latestAreaMeasurementId >= latestArrowId &&
+          latestAreaMeasurementId >= latestRectangleId &&
+          latestAreaMeasurementId >= latestOvalId &&
+          latestAreaMeasurementId >= latestFreehandId &&
+          latestAreaMeasurementId >= latestTextNoteId) {
+        _areaMeasurements.removeWhere(
+          (AreaMeasurement measurement) =>
+              measurement.id == latestAreaMeasurementId,
+        );
+        if (_selectedAreaMeasurementId == latestAreaMeasurementId) {
+          _clearMarkupSelection();
+        }
+      } else if (latestDimensionId >= latestArrowId &&
           latestDimensionId >= latestRectangleId &&
           latestDimensionId >= latestOvalId &&
           latestDimensionId >= latestFreehandId &&
@@ -2410,6 +2678,44 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   void _eraseSelectedMarkup() {
+    final int? selectedScaleCalibrationId = _selectedScaleCalibrationId;
+    if (selectedScaleCalibrationId != null &&
+        _scaleCalibration?.id == selectedScaleCalibrationId) {
+      setState(() {
+        _scaleCalibration = null;
+        _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
+      });
+      return;
+    }
+
+    final int? selectedMultiSegmentMeasurementId =
+        _selectedMultiSegmentMeasurementId;
+    if (selectedMultiSegmentMeasurementId != null) {
+      setState(() {
+        _multiSegmentMeasurements.removeWhere(
+          (MultiSegmentMeasurement measurement) =>
+              measurement.id == selectedMultiSegmentMeasurementId,
+        );
+        _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
+      });
+      return;
+    }
+
+    final int? selectedAreaMeasurementId = _selectedAreaMeasurementId;
+    if (selectedAreaMeasurementId != null) {
+      setState(() {
+        _areaMeasurements.removeWhere(
+          (AreaMeasurement measurement) =>
+              measurement.id == selectedAreaMeasurementId,
+        );
+        _clearMarkupSelection();
+        _unsavedChangesTracker.markDirty();
+      });
+      return;
+    }
+
     final int? selectedDimensionId = _selectedDimensionId;
     if (selectedDimensionId != null) {
       setState(() {
@@ -2486,6 +2792,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
     _didMoveSelectedMarkup = false;
+    if (MarkupInteractionPolicy.usesTapSequenceDrawing(_selectedTool)) {
+      return;
+    }
     if (MarkupInteractionPolicy.allowsTapSelection(_selectedTool)) {
       if (_tryStartHandleDrag(startPoint, imageRect)) {
         return;
@@ -2529,6 +2838,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _updateMoveSelectedMarkup(currentPoint, imageRect);
       return;
     }
+    if (MarkupInteractionPolicy.usesTapSequenceDrawing(_selectedTool)) {
+      if (_activeMeasurementPoints.isEmpty) {
+        return;
+      }
+      final Offset clamped = DimensionLine.clampToRect(currentPoint, imageRect);
+      setState(() {
+        _activeMeasurementPreviewPoint = clamped;
+      });
+      return;
+    }
     if (_activeDimensionStart == null || !_canDrawMarkup(imageRect)) {
       return;
     }
@@ -2559,6 +2878,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _suppressTapActionAfterPointerDownSelection = false;
       return;
     }
+    if (MarkupInteractionPolicy.usesTapSequenceDrawing(_selectedTool)) {
+      return;
+    }
 
     final Offset? start = _activeDimensionStart;
     final Offset? end = _activeDimensionCurrent;
@@ -2570,6 +2892,40 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (start == null || end == null || !_canDrawMarkup(imageRect)) {
       if (mounted) {
         setState(() {});
+      }
+      return;
+    }
+
+    if (_selectedTool == MarkupTool.scaleCalibration) {
+      if ((end - start).distance <
+          MeasurementToolConstants.minimumCalibrationScreenLength) {
+        if (mounted) {
+          setState(() {});
+        }
+        return;
+      }
+      final _ScaleCalibrationDialogResult? calibrationResult =
+          await _showScaleCalibrationDialog();
+      if (!mounted || calibrationResult == null) {
+        return;
+      }
+      final ScaleCalibration calibration = ScaleCalibration.fromCanvasPoints(
+        id: _allocateMarkupId(),
+        startPoint: start,
+        endPoint: end,
+        imageRect: imageRect,
+        realDistance: calibrationResult.realDistance,
+        unitLabel: calibrationResult.unitLabel,
+        fontFamily: _selectedFontFamily,
+        fontSize: _selectedFontSize,
+        stylePresetId: _selectedStylePresetId,
+      );
+      if (mounted) {
+        setState(() {
+          _scaleCalibration = calibration;
+          _selectScaleCalibrationById(calibration.id);
+          _unsavedChangesTracker.markDirty();
+        });
       }
       return;
     }
@@ -2700,6 +3056,107 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
   }
 
+  bool _canUseMeasurementCanvas(Rect imageRect) {
+    return _imagePath != null && imageRect.width > 0 && imageRect.height > 0;
+  }
+
+  bool _isMeasurementDoubleTap(Offset point) {
+    final DateTime? lastTapAt = _lastMeasurementTapAt;
+    final Offset? lastTapPoint = _lastMeasurementTapPoint;
+    if (lastTapAt == null || lastTapPoint == null) {
+      return false;
+    }
+    final Duration elapsed = DateTime.now().difference(lastTapAt);
+    return elapsed <= MeasurementToolConstants.completionTapWindow &&
+        (point - lastTapPoint).distance <=
+            MeasurementToolConstants.activeCloseHitDistance;
+  }
+
+  void _registerMeasurementTap(Offset point) {
+    _lastMeasurementTapAt = DateTime.now();
+    _lastMeasurementTapPoint = point;
+  }
+
+  Future<void> _handleTapSequenceToolTap(Offset point, Rect imageRect) async {
+    if (!_canUseMeasurementCanvas(imageRect)) {
+      return;
+    }
+    final Offset clamped = DimensionLine.clampToRect(point, imageRect);
+    if (_selectedTool == MarkupTool.multiSegmentMeasurement) {
+      if (_activeMeasurementPoints.length >= 2 &&
+          _isMeasurementDoubleTap(clamped)) {
+        await _finalizeMultiSegmentMeasurement(imageRect);
+        return;
+      }
+      setState(() {
+        _activeMeasurementPoints.add(clamped);
+        _activeMeasurementPreviewPoint = clamped;
+      });
+      _registerMeasurementTap(clamped);
+      return;
+    }
+    if (_selectedTool == MarkupTool.areaMeasurement) {
+      final bool tappedFirstPoint =
+          _activeMeasurementPoints.length >= 3 &&
+          (clamped - _activeMeasurementPoints.first).distance <=
+              MeasurementToolConstants.activeCloseHitDistance;
+      if (tappedFirstPoint ||
+          (_activeMeasurementPoints.length >= 3 &&
+              _isMeasurementDoubleTap(clamped))) {
+        await _finalizeAreaMeasurement(imageRect);
+        return;
+      }
+      setState(() {
+        _activeMeasurementPoints.add(clamped);
+        _activeMeasurementPreviewPoint = clamped;
+      });
+      _registerMeasurementTap(clamped);
+    }
+  }
+
+  Future<void> _finalizeMultiSegmentMeasurement(Rect imageRect) async {
+    if (_activeMeasurementPoints.length < 2) {
+      _showSnack(UiCopyConstants.measurementRequiresPointsMessage);
+      return;
+    }
+    final MultiSegmentMeasurement measurement =
+        MultiSegmentMeasurement.fromCanvasPoints(
+          id: _allocateMarkupId(),
+          points: _activeMeasurementPoints,
+          imageRect: imageRect,
+          fontFamily: _selectedFontFamily,
+          fontSize: _selectedFontSize,
+          stylePresetId: _selectedStylePresetId,
+        );
+    setState(() {
+      _multiSegmentMeasurements.add(measurement);
+      _selectMultiSegmentMeasurementById(measurement.id);
+      _clearActiveMeasurementDraft();
+      _unsavedChangesTracker.markDirty();
+    });
+  }
+
+  Future<void> _finalizeAreaMeasurement(Rect imageRect) async {
+    if (_activeMeasurementPoints.length < 3) {
+      _showSnack(UiCopyConstants.measurementRequiresPointsMessage);
+      return;
+    }
+    final AreaMeasurement measurement = AreaMeasurement.fromCanvasPoints(
+      id: _allocateMarkupId(),
+      points: _activeMeasurementPoints,
+      imageRect: imageRect,
+      fontFamily: _selectedFontFamily,
+      fontSize: _selectedFontSize,
+      stylePresetId: _selectedStylePresetId,
+    );
+    setState(() {
+      _areaMeasurements.add(measurement);
+      _selectAreaMeasurementById(measurement.id);
+      _clearActiveMeasurementDraft();
+      _unsavedChangesTracker.markDirty();
+    });
+  }
+
   Future<void> _promptForDimensionLabelById(int dimensionId) async {
     final int lineIndex = _dimensionLines.indexWhere(
       (DimensionLine line) => line.id == dimensionId,
@@ -2744,6 +3201,44 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       context: context,
       builder: (BuildContext dialogContext) {
         return _DimensionLabelDialog(initialValue: initialValue);
+      },
+    );
+  }
+
+  Future<void> _promptForScaleCalibrationEdit() async {
+    final ScaleCalibration? calibration = _selectedScaleCalibration;
+    if (calibration == null) {
+      return;
+    }
+    final _ScaleCalibrationDialogResult? updated =
+        await _showScaleCalibrationDialog(
+          initialDistance: calibration.realDistance,
+          initialUnitLabel: calibration.unitLabel,
+        );
+    if (!mounted || updated == null || _scaleCalibration == null) {
+      return;
+    }
+    setState(() {
+      _scaleCalibration = _scaleCalibration!.copyWith(
+        realDistance: updated.realDistance,
+        unitLabel: updated.unitLabel,
+      );
+      _selectScaleCalibrationById(_scaleCalibration!.id);
+      _unsavedChangesTracker.markDirty();
+    });
+  }
+
+  Future<_ScaleCalibrationDialogResult?> _showScaleCalibrationDialog({
+    double? initialDistance,
+    String? initialUnitLabel,
+  }) async {
+    return showDialog<_ScaleCalibrationDialogResult>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return _ScaleCalibrationDialog(
+          initialDistance: initialDistance,
+          initialUnitLabel: initialUnitLabel,
+        );
       },
     );
   }
@@ -2824,6 +3319,29 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   bool _tryStartHandleDrag(Offset point, Rect imageRect) {
+    final ScaleCalibration? selectedScaleCalibration =
+        _selectedScaleCalibration;
+    if (selectedScaleCalibration != null) {
+      final Offset start = selectedScaleCalibration.startInRect(imageRect);
+      final Offset end = selectedScaleCalibration.endInRect(imageRect);
+      if ((point - start).distance <= MarkupHandleConstants.hitDistance) {
+        _activeHandleDragSession = _HandleDragSession(
+          markupId: selectedScaleCalibration.id,
+          handleKind: _HandleKind.scaleCalibrationStart,
+          startPoint: point,
+        );
+        return true;
+      }
+      if ((point - end).distance <= MarkupHandleConstants.hitDistance) {
+        _activeHandleDragSession = _HandleDragSession(
+          markupId: selectedScaleCalibration.id,
+          handleKind: _HandleKind.scaleCalibrationEnd,
+          startPoint: point,
+        );
+        return true;
+      }
+    }
+
     final int? selectedDimensionId = _selectedDimensionId;
     if (selectedDimensionId != null) {
       final int index = _dimensionLines.indexWhere(
@@ -2971,6 +3489,20 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
     bool changed = false;
     switch (handleSession.handleKind) {
+      case _HandleKind.scaleCalibrationStart:
+        changed = _adjustScaleCalibrationEndpoint(
+          imageRect: imageRect,
+          moveStart: true,
+          point: clampedPoint,
+        );
+        break;
+      case _HandleKind.scaleCalibrationEnd:
+        changed = _adjustScaleCalibrationEndpoint(
+          imageRect: imageRect,
+          moveStart: false,
+          point: clampedPoint,
+        );
+        break;
       case _HandleKind.dimensionStart:
         changed = _adjustDimensionEndpoint(
           markupId: handleSession.markupId,
@@ -3031,6 +3563,38 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (changed) {
       _didMoveSelectedMarkup = true;
     }
+  }
+
+  bool _adjustScaleCalibrationEndpoint({
+    required Rect imageRect,
+    required bool moveStart,
+    required Offset point,
+  }) {
+    final ScaleCalibration? calibration = _scaleCalibration;
+    if (calibration == null) {
+      return false;
+    }
+    final Offset start = moveStart ? point : calibration.startInRect(imageRect);
+    final Offset end = moveStart ? calibration.endInRect(imageRect) : point;
+    final ScaleCalibration updated = ScaleCalibration.fromCanvasPoints(
+      id: calibration.id,
+      startPoint: start,
+      endPoint: end,
+      imageRect: imageRect,
+      realDistance: calibration.realDistance,
+      unitLabel: calibration.unitLabel,
+      fontFamily: calibration.fontFamily,
+      fontSize: calibration.fontSize,
+      stylePresetId: calibration.stylePresetId,
+    );
+    if (updated == calibration) {
+      return false;
+    }
+    setState(() {
+      _scaleCalibration = updated;
+      _unsavedChangesTracker.markDirty();
+    });
+    return true;
   }
 
   bool _adjustDimensionEndpoint({
@@ -3265,6 +3829,12 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
 
     final bool alreadySelected =
+        (nearestHit.markupTool == MarkupTool.scaleCalibration &&
+            _selectedScaleCalibrationId == nearestHit.markupId) ||
+        (nearestHit.markupTool == MarkupTool.multiSegmentMeasurement &&
+            _selectedMultiSegmentMeasurementId == nearestHit.markupId) ||
+        (nearestHit.markupTool == MarkupTool.areaMeasurement &&
+            _selectedAreaMeasurementId == nearestHit.markupId) ||
         (nearestHit.markupTool == MarkupTool.dimension &&
             _selectedDimensionId == nearestHit.markupId) ||
         (nearestHit.markupTool == MarkupTool.arrow &&
@@ -3284,6 +3854,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
     setState(() {
       switch (nearestHit.markupTool) {
+        case MarkupTool.scaleCalibration:
+          _selectScaleCalibrationById(nearestHit.markupId);
+          break;
+        case MarkupTool.multiSegmentMeasurement:
+          _selectMultiSegmentMeasurementById(nearestHit.markupId);
+          break;
+        case MarkupTool.areaMeasurement:
+          _selectAreaMeasurementById(nearestHit.markupId);
+          break;
         case MarkupTool.dimension:
           _selectDimensionById(nearestHit.markupId);
           break;
@@ -3311,6 +3890,24 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   _SelectedMarkup? _selectedMarkup() {
+    if (_selectedScaleCalibrationId != null) {
+      return _SelectedMarkup(
+        markupId: _selectedScaleCalibrationId!,
+        tool: MarkupTool.scaleCalibration,
+      );
+    }
+    if (_selectedMultiSegmentMeasurementId != null) {
+      return _SelectedMarkup(
+        markupId: _selectedMultiSegmentMeasurementId!,
+        tool: MarkupTool.multiSegmentMeasurement,
+      );
+    }
+    if (_selectedAreaMeasurementId != null) {
+      return _SelectedMarkup(
+        markupId: _selectedAreaMeasurementId!,
+        tool: MarkupTool.areaMeasurement,
+      );
+    }
     if (_selectedDimensionId != null) {
       return _SelectedMarkup(
         markupId: _selectedDimensionId!,
@@ -3351,10 +3948,21 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     final double minimumHitDistance =
         MarkupMoveConstants.selectionStartHitDistance;
     switch (tool) {
+      case MarkupTool.scaleCalibration:
       case MarkupTool.dimension:
       case MarkupTool.arrow:
         return math.max(
           DimensionLineConstants.selectionTapDistance,
+          minimumHitDistance,
+        );
+      case MarkupTool.multiSegmentMeasurement:
+        return math.max(
+          MeasurementToolConstants.polylineSelectionHitDistance,
+          minimumHitDistance,
+        );
+      case MarkupTool.areaMeasurement:
+        return math.max(
+          MeasurementToolConstants.polygonSelectionHitDistance,
           minimumHitDistance,
         );
       case MarkupTool.rectangle:
@@ -3391,6 +3999,37 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     Rect imageRect,
   ) {
     switch (selectedMarkup.tool) {
+      case MarkupTool.scaleCalibration:
+        final ScaleCalibration? scaleCalibration = _scaleCalibration;
+        if (scaleCalibration == null ||
+            scaleCalibration.id != selectedMarkup.markupId) {
+          return double.infinity;
+        }
+        return scaleCalibration.distanceToPointInRect(point, imageRect);
+      case MarkupTool.multiSegmentMeasurement:
+        final int multiIndex = _multiSegmentMeasurements.indexWhere(
+          (MultiSegmentMeasurement measurement) =>
+              measurement.id == selectedMarkup.markupId,
+        );
+        if (multiIndex == -1) {
+          return double.infinity;
+        }
+        return _multiSegmentMeasurements[multiIndex].distanceToPointInRect(
+          point,
+          imageRect,
+        );
+      case MarkupTool.areaMeasurement:
+        final int areaIndex = _areaMeasurements.indexWhere(
+          (AreaMeasurement measurement) =>
+              measurement.id == selectedMarkup.markupId,
+        );
+        if (areaIndex == -1) {
+          return double.infinity;
+        }
+        return _areaMeasurements[areaIndex].distanceToPointInRect(
+          point,
+          imageRect,
+        );
       case MarkupTool.dimension:
         final int index = _dimensionLines.indexWhere(
           (DimensionLine line) => line.id == selectedMarkup.markupId,
@@ -3492,6 +4131,20 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     required Rect imageRect,
   }) {
     switch (markupTool) {
+      case MarkupTool.scaleCalibration:
+        return _moveScaleCalibrationByDelta(
+          markupId,
+          requestedDelta,
+          imageRect,
+        );
+      case MarkupTool.multiSegmentMeasurement:
+        return _moveMultiSegmentMeasurementByDelta(
+          markupId,
+          requestedDelta,
+          imageRect,
+        );
+      case MarkupTool.areaMeasurement:
+        return _moveAreaMeasurementByDelta(markupId, requestedDelta, imageRect);
       case MarkupTool.dimension:
         return _moveDimensionByDelta(markupId, requestedDelta, imageRect);
       case MarkupTool.arrow:
@@ -3507,6 +4160,134 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       case MarkupTool.none:
         return Offset.zero;
     }
+  }
+
+  Offset _moveScaleCalibrationByDelta(
+    int markupId,
+    Offset delta,
+    Rect imageRect,
+  ) {
+    final ScaleCalibration? calibration = _scaleCalibration;
+    if (calibration == null || calibration.id != markupId) {
+      return Offset.zero;
+    }
+    final List<Offset> points = <Offset>[
+      calibration.startInRect(imageRect),
+      calibration.endInRect(imageRect),
+    ];
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: points,
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    final List<Offset> moved = MarkupMoveUtils.translatePoints(
+      points,
+      appliedDelta,
+    );
+    final ScaleCalibration movedCalibration = ScaleCalibration.fromCanvasPoints(
+      id: calibration.id,
+      startPoint: moved.first,
+      endPoint: moved.last,
+      imageRect: imageRect,
+      realDistance: calibration.realDistance,
+      unitLabel: calibration.unitLabel,
+      fontFamily: calibration.fontFamily,
+      fontSize: calibration.fontSize,
+      stylePresetId: calibration.stylePresetId,
+    );
+    setState(() {
+      _scaleCalibration = movedCalibration;
+      _unsavedChangesTracker.markDirty();
+    });
+    return appliedDelta;
+  }
+
+  Offset _moveMultiSegmentMeasurementByDelta(
+    int markupId,
+    Offset delta,
+    Rect imageRect,
+  ) {
+    final int index = _multiSegmentMeasurements.indexWhere(
+      (MultiSegmentMeasurement measurement) => measurement.id == markupId,
+    );
+    if (index == -1) {
+      return Offset.zero;
+    }
+    final MultiSegmentMeasurement measurement =
+        _multiSegmentMeasurements[index];
+    final List<Offset> points = measurement.pointsInRect(imageRect);
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: points,
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    final List<Offset> moved = MarkupMoveUtils.translatePoints(
+      points,
+      appliedDelta,
+    );
+    final MultiSegmentMeasurement movedMeasurement =
+        MultiSegmentMeasurement.fromCanvasPoints(
+          id: measurement.id,
+          points: moved,
+          imageRect: imageRect,
+          fontFamily: measurement.fontFamily,
+          fontSize: measurement.fontSize,
+          stylePresetId: measurement.stylePresetId,
+        );
+    setState(() {
+      _multiSegmentMeasurements[index] = movedMeasurement;
+      _unsavedChangesTracker.markDirty();
+    });
+    return appliedDelta;
+  }
+
+  Offset _moveAreaMeasurementByDelta(
+    int markupId,
+    Offset delta,
+    Rect imageRect,
+  ) {
+    final int index = _areaMeasurements.indexWhere(
+      (AreaMeasurement measurement) => measurement.id == markupId,
+    );
+    if (index == -1) {
+      return Offset.zero;
+    }
+    final AreaMeasurement measurement = _areaMeasurements[index];
+    final List<Offset> points = measurement.pointsInRect(imageRect);
+    final Offset appliedDelta = MarkupMoveUtils.clampTranslationForPoints(
+      points: points,
+      requestedDelta: delta,
+      bounds: imageRect,
+      padding: MarkupMoveConstants.boundsPadding,
+    );
+    if (appliedDelta == Offset.zero) {
+      return Offset.zero;
+    }
+    final List<Offset> moved = MarkupMoveUtils.translatePoints(
+      points,
+      appliedDelta,
+    );
+    final AreaMeasurement movedMeasurement = AreaMeasurement.fromCanvasPoints(
+      id: measurement.id,
+      points: moved,
+      imageRect: imageRect,
+      fontFamily: measurement.fontFamily,
+      fontSize: measurement.fontSize,
+      stylePresetId: measurement.stylePresetId,
+    );
+    setState(() {
+      _areaMeasurements[index] = movedMeasurement;
+      _unsavedChangesTracker.markDirty();
+    });
+    return appliedDelta;
   }
 
   Offset _moveDimensionByDelta(int markupId, Offset delta, Rect imageRect) {
@@ -3747,6 +4528,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       await _createTextNoteAt(point, imageRect);
       return;
     }
+    if (MarkupInteractionPolicy.usesTapSequenceDrawing(_selectedTool)) {
+      await _handleTapSequenceToolTap(point, imageRect);
+      return;
+    }
     if (!MarkupInteractionPolicy.allowsTapSelection(_selectedTool)) {
       return;
     }
@@ -3754,7 +4539,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _suppressTapActionAfterPointerDownSelection = false;
       return;
     }
-    if (_dimensionLines.isEmpty &&
+    if (_scaleCalibration == null &&
+        _multiSegmentMeasurements.isEmpty &&
+        _areaMeasurements.isEmpty &&
+        _dimensionLines.isEmpty &&
         _arrows.isEmpty &&
         _rectangles.isEmpty &&
         _ovals.isEmpty &&
@@ -3781,8 +4569,62 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
+    if (nearestHit.markupTool == MarkupTool.scaleCalibration) {
+      if (_selectedScaleCalibrationId != nearestHit.markupId ||
+          _selectedMultiSegmentMeasurementId != null ||
+          _selectedAreaMeasurementId != null ||
+          _selectedDimensionId != null ||
+          _selectedArrowId != null ||
+          _selectedRectangleId != null ||
+          _selectedOvalId != null ||
+          _selectedFreehandId != null ||
+          _selectedTextNoteId != null) {
+        setState(() {
+          _selectScaleCalibrationById(nearestHit.markupId);
+        });
+        return;
+      }
+      await _promptForScaleCalibrationEdit();
+      return;
+    }
+
+    if (nearestHit.markupTool == MarkupTool.multiSegmentMeasurement &&
+        (_selectedMultiSegmentMeasurementId != nearestHit.markupId ||
+            _selectedScaleCalibrationId != null ||
+            _selectedAreaMeasurementId != null ||
+            _selectedDimensionId != null ||
+            _selectedArrowId != null ||
+            _selectedRectangleId != null ||
+            _selectedOvalId != null ||
+            _selectedFreehandId != null ||
+            _selectedTextNoteId != null)) {
+      setState(() {
+        _selectMultiSegmentMeasurementById(nearestHit.markupId);
+      });
+      return;
+    }
+
+    if (nearestHit.markupTool == MarkupTool.areaMeasurement &&
+        (_selectedAreaMeasurementId != nearestHit.markupId ||
+            _selectedScaleCalibrationId != null ||
+            _selectedMultiSegmentMeasurementId != null ||
+            _selectedDimensionId != null ||
+            _selectedArrowId != null ||
+            _selectedRectangleId != null ||
+            _selectedOvalId != null ||
+            _selectedFreehandId != null ||
+            _selectedTextNoteId != null)) {
+      setState(() {
+        _selectAreaMeasurementById(nearestHit.markupId);
+      });
+      return;
+    }
+
     if (nearestHit.markupTool == MarkupTool.dimension) {
       if (_selectedDimensionId != nearestHit.markupId ||
+          _selectedScaleCalibrationId != null ||
+          _selectedMultiSegmentMeasurementId != null ||
+          _selectedAreaMeasurementId != null ||
           _selectedArrowId != null ||
           _selectedRectangleId != null ||
           _selectedOvalId != null ||
@@ -3808,6 +4650,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
     if (nearestHit.markupTool == MarkupTool.arrow &&
         (_selectedArrowId != nearestHit.markupId ||
+            _selectedScaleCalibrationId != null ||
+            _selectedMultiSegmentMeasurementId != null ||
+            _selectedAreaMeasurementId != null ||
             _selectedDimensionId != null ||
             _selectedRectangleId != null ||
             _selectedOvalId != null ||
@@ -3821,6 +4666,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
     if (nearestHit.markupTool == MarkupTool.rectangle &&
         (_selectedRectangleId != nearestHit.markupId ||
+            _selectedScaleCalibrationId != null ||
+            _selectedMultiSegmentMeasurementId != null ||
+            _selectedAreaMeasurementId != null ||
             _selectedDimensionId != null ||
             _selectedArrowId != null ||
             _selectedOvalId != null ||
@@ -3834,6 +4682,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
     if (nearestHit.markupTool == MarkupTool.oval &&
         (_selectedOvalId != nearestHit.markupId ||
+            _selectedScaleCalibrationId != null ||
+            _selectedMultiSegmentMeasurementId != null ||
+            _selectedAreaMeasurementId != null ||
             _selectedDimensionId != null ||
             _selectedArrowId != null ||
             _selectedRectangleId != null ||
@@ -3847,6 +4698,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
     if (nearestHit.markupTool == MarkupTool.freehand &&
         (_selectedFreehandId != nearestHit.markupId ||
+            _selectedScaleCalibrationId != null ||
+            _selectedMultiSegmentMeasurementId != null ||
+            _selectedAreaMeasurementId != null ||
             _selectedDimensionId != null ||
             _selectedArrowId != null ||
             _selectedRectangleId != null ||
@@ -3860,6 +4714,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
     if (nearestHit.markupTool == MarkupTool.textNote) {
       if (_selectedTextNoteId != nearestHit.markupId ||
+          _selectedScaleCalibrationId != null ||
+          _selectedMultiSegmentMeasurementId != null ||
+          _selectedAreaMeasurementId != null ||
           _selectedDimensionId != null ||
           _selectedArrowId != null ||
           _selectedRectangleId != null ||
@@ -3878,6 +4735,44 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     int bestMarkupId = -1;
     MarkupTool bestTool = MarkupTool.none;
     double bestDistance = double.infinity;
+
+    final ScaleCalibration? scaleCalibration = _scaleCalibration;
+    if (scaleCalibration != null) {
+      final double distance = scaleCalibration.distanceToPointInRect(
+        point,
+        imageRect,
+      );
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMarkupId = scaleCalibration.id;
+        bestTool = MarkupTool.scaleCalibration;
+      }
+    }
+
+    for (final MultiSegmentMeasurement measurement
+        in _multiSegmentMeasurements) {
+      final double distance = measurement.distanceToPointInRect(
+        point,
+        imageRect,
+      );
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMarkupId = measurement.id;
+        bestTool = MarkupTool.multiSegmentMeasurement;
+      }
+    }
+
+    for (final AreaMeasurement measurement in _areaMeasurements) {
+      final double distance = measurement.distanceToPointInRect(
+        point,
+        imageRect,
+      );
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMarkupId = measurement.id;
+        bestTool = MarkupTool.areaMeasurement;
+      }
+    }
 
     for (final DimensionLine line in _dimensionLines) {
       final double distance = math.min(
@@ -3953,6 +4848,16 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (TextNoteMarkupConstants.selectionHitDistance > maxSelectionDistance) {
       maxSelectionDistance = TextNoteMarkupConstants.selectionHitDistance;
     }
+    if (MeasurementToolConstants.polylineSelectionHitDistance >
+        maxSelectionDistance) {
+      maxSelectionDistance =
+          MeasurementToolConstants.polylineSelectionHitDistance;
+    }
+    if (MeasurementToolConstants.polygonSelectionHitDistance >
+        maxSelectionDistance) {
+      maxSelectionDistance =
+          MeasurementToolConstants.polygonSelectionHitDistance;
+    }
 
     if (bestDistance > maxSelectionDistance) {
       return const _NearestMarkupHit.notFound();
@@ -3998,9 +4903,30 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         return KeyEventResult.handled;
       }
     }
+    if (event.logicalKey == LogicalKeyboardKey.escape &&
+        _activeMeasurementPoints.isNotEmpty) {
+      setState(() {
+        _clearActiveMeasurementDraft();
+      });
+      _showSnack(UiCopyConstants.measurementCancelledMessage);
+      return KeyEventResult.handled;
+    }
     if (event.logicalKey == LogicalKeyboardKey.delete ||
         event.logicalKey == LogicalKeyboardKey.backspace) {
       _eraseSelectedMarkup();
+      return KeyEventResult.handled;
+    }
+    if ((event.logicalKey == LogicalKeyboardKey.enter ||
+            event.logicalKey == LogicalKeyboardKey.numpadEnter) &&
+        _activeMeasurementPoints.isNotEmpty) {
+      final Rect? imageRect = _computeExportCropRect();
+      if (imageRect != null) {
+        if (_selectedTool == MarkupTool.multiSegmentMeasurement) {
+          unawaited(_finalizeMultiSegmentMeasurement(imageRect));
+        } else if (_selectedTool == MarkupTool.areaMeasurement) {
+          unawaited(_finalizeAreaMeasurement(imageRect));
+        }
+      }
       return KeyEventResult.handled;
     }
     if ((event.logicalKey == LogicalKeyboardKey.enter ||
@@ -4014,11 +4940,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   bool _canDrawMarkup(Rect imageRect) {
-    return (_selectedTool == MarkupTool.dimension ||
+    return (_selectedTool == MarkupTool.scaleCalibration ||
+            _selectedTool == MarkupTool.dimension ||
             _selectedTool == MarkupTool.arrow ||
             _selectedTool == MarkupTool.rectangle ||
             _selectedTool == MarkupTool.oval ||
-            _selectedTool == MarkupTool.freehand) &&
+            _selectedTool == MarkupTool.freehand ||
+            MarkupInteractionPolicy.usesTapSequenceDrawing(_selectedTool)) &&
         _imagePath != null &&
         imageRect.width > 0 &&
         imageRect.height > 0;
@@ -4032,7 +4960,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   bool _isUndoEnabled() {
-    return _dimensionLines.isNotEmpty ||
+    return _scaleCalibration != null ||
+        _multiSegmentMeasurements.isNotEmpty ||
+        _areaMeasurements.isNotEmpty ||
+        _dimensionLines.isNotEmpty ||
         _arrows.isNotEmpty ||
         _rectangles.isNotEmpty ||
         _ovals.isNotEmpty ||
@@ -4362,6 +5293,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                 ),
                               ),
                               DimensionLinesOverlay(
+                                scaleCalibration: _scaleCalibration,
+                                multiSegmentMeasurements:
+                                    _multiSegmentMeasurements,
+                                areaMeasurements: _areaMeasurements,
                                 lines: _dimensionLines,
                                 arrows: _arrows,
                                 rectangles: _rectangles,
@@ -4369,6 +5304,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                 freehands: _freehands,
                                 textNotes: _textNotes,
                                 imageRect: imageRect,
+                                imagePixelSize: _loadedImagePixelSize,
+                                selectedScaleCalibrationId:
+                                    _selectedScaleCalibrationId,
+                                selectedMultiSegmentMeasurementId:
+                                    _selectedMultiSegmentMeasurementId,
+                                selectedAreaMeasurementId:
+                                    _selectedAreaMeasurementId,
                                 selectedDimensionId: _selectedDimensionId,
                                 selectedArrowId: _selectedArrowId,
                                 selectedRectangleId: _selectedRectangleId,
@@ -4379,6 +5321,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                                 activeTool: _selectedTool,
                                 activeStart: _activeDimensionStart,
                                 activeEnd: _activeDimensionCurrent,
+                                activeMeasurementPoints:
+                                    _activeMeasurementPoints,
+                                activeMeasurementPreviewPoint:
+                                    _activeMeasurementPreviewPoint,
                                 activeFreehandPoints: _activeFreehandPoints,
                                 isEnabled: _isOverlayInteractionEnabled(
                                   imageRect,
@@ -4490,6 +5436,8 @@ class _MoveSession {
 }
 
 enum _HandleKind {
+  scaleCalibrationStart,
+  scaleCalibrationEnd,
   dimensionStart,
   dimensionEnd,
   dimensionLabel,
@@ -4526,6 +5474,16 @@ class _StyleDialogResult {
   final MarkupStylePresetId presetId;
   final String fontFamily;
   final double fontSize;
+}
+
+class _ScaleCalibrationDialogResult {
+  const _ScaleCalibrationDialogResult({
+    required this.realDistance,
+    required this.unitLabel,
+  });
+
+  final double realDistance;
+  final String unitLabel;
 }
 
 class _SidebarActionSection extends StatelessWidget {
@@ -4819,6 +5777,124 @@ class _DimensionLabelDialogState extends State<_DimensionLabelDialog> {
         FilledButton(
           onPressed: _submitLabel,
           child: const Text(UiCopyConstants.dimensionLabelSaveButton),
+        ),
+      ],
+    );
+  }
+}
+
+class _ScaleCalibrationDialog extends StatefulWidget {
+  const _ScaleCalibrationDialog({this.initialDistance, this.initialUnitLabel});
+
+  final double? initialDistance;
+  final String? initialUnitLabel;
+
+  @override
+  State<_ScaleCalibrationDialog> createState() =>
+      _ScaleCalibrationDialogState();
+}
+
+class _ScaleCalibrationDialogState extends State<_ScaleCalibrationDialog> {
+  late final TextEditingController _distanceController;
+  late final TextEditingController _unitController;
+  String? _validationMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _distanceController = TextEditingController(
+      text: widget.initialDistance == null
+          ? ''
+          : widget.initialDistance!
+                .toStringAsFixed(MeasurementToolConstants.displayPrecision)
+                .replaceFirst(RegExp(r'\.0+$'), ''),
+    );
+    _unitController = TextEditingController(
+      text: widget.initialUnitLabel?.trim().isNotEmpty == true
+          ? widget.initialUnitLabel!.trim()
+          : MeasurementToolConstants.defaultUnitLabel,
+    );
+  }
+
+  @override
+  void dispose() {
+    _distanceController.dispose();
+    _unitController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final double? parsedDistance = double.tryParse(
+      _distanceController.text.trim(),
+    );
+    final String unitLabel = _unitController.text.trim();
+    if (parsedDistance == null || parsedDistance <= 0 || unitLabel.isEmpty) {
+      setState(() {
+        _validationMessage = UiCopyConstants.scaleCalibrationInvalidMessage;
+      });
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).pop(
+      _ScaleCalibrationDialogResult(
+        realDistance: parsedDistance,
+        unitLabel: unitLabel,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(UiCopyConstants.scaleCalibrationDialogTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TextField(
+            controller: _distanceController,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              labelText: UiCopyConstants.scaleCalibrationDistanceLabel,
+              hintText: UiCopyConstants.scaleCalibrationDistanceHint,
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: UiLayoutConstants.messageTopGap),
+          TextField(
+            controller: _unitController,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+            decoration: const InputDecoration(
+              labelText: UiCopyConstants.scaleCalibrationUnitLabel,
+              hintText: UiCopyConstants.scaleCalibrationUnitHint,
+              border: OutlineInputBorder(),
+            ),
+          ),
+          if (_validationMessage != null) ...<Widget>[
+            const SizedBox(height: UiLayoutConstants.messageTopGap),
+            Text(
+              _validationMessage!,
+              style: const TextStyle(
+                color: AppThemeConstants.errorAccent,
+                fontSize: UiLayoutConstants.messageFontSize,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text(UiCopyConstants.scaleCalibrationCancelButton),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text(UiCopyConstants.scaleCalibrationSaveButton),
         ),
       ],
     );

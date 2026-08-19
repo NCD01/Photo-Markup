@@ -231,6 +231,26 @@ class UiCopyConstants {
   static const String dimensionLabelHint = 'Example: 72" or 6\'-0"';
   static const String dimensionLabelSaveButton = 'Save';
   static const String dimensionLabelSkipButton = 'Skip';
+  static const String scaleCalibrationDialogTitle = 'Scale Calibration';
+  static const String scaleCalibrationDistanceLabel = 'Actual Distance';
+  static const String scaleCalibrationDistanceHint = 'Example: 12';
+  static const String scaleCalibrationUnitLabel = 'Unit';
+  static const String scaleCalibrationUnitHint = 'Example: ft, in, mm';
+  static const String scaleCalibrationSaveButton = 'Save Scale';
+  static const String scaleCalibrationCancelButton = 'Cancel';
+  static const String scaleCalibrationInvalidMessage =
+      'Enter a valid distance and unit to save the scale.';
+  static const String measurementNeedsScaleLabel = 'Set scale';
+  static const String multiSegmentGuideMessage =
+      'Tap points, then double-tap the last point or press Enter to finish.';
+  static const String areaGuideMessage =
+      'Tap points, then tap the first point again or double-tap the last point to close.';
+  static const String measurementCancelledMessage = 'Measurement canceled.';
+  static const String measurementRequiresPointsMessage =
+      'Add more points to finish this measurement.';
+  static const String multiSegmentLabelPrefix = 'Length';
+  static const String areaLabelPrefix = 'Area';
+  static const String perimeterLabelPrefix = 'Perimeter';
   static const String textNoteDialogTitle = 'Text Note';
   static const String textNoteHint = 'Example: Replace drywall here';
   static const String textNoteSaveButton = 'Save';
@@ -344,6 +364,9 @@ class ToolbarConstants {
   static const String openPhoto = 'Open Photo';
   static const String openMarkup = 'Open Markup';
   static const String saveMarkup = 'Save Markup';
+  static const String scaleCalibration = 'Scale Calibration';
+  static const String multiSegmentMeasurement = 'Multi-Segment';
+  static const String areaMeasurement = 'Area / Perimeter';
   static const String dimension = 'Dimension';
   static const String arrow = 'Arrow';
   static const String circle = 'Circle';
@@ -365,6 +388,9 @@ class ToolbarConstants {
     export,
   ];
   static const List<String> markupActionOrder = <String>[
+    scaleCalibration,
+    multiSegmentMeasurement,
+    areaMeasurement,
     dimension,
     textNote,
     arrow,
@@ -393,6 +419,28 @@ class ToolbarConstants {
 
 class SidebarConstants {
   const SidebarConstants._();
+}
+
+class MeasurementToolConstants {
+  const MeasurementToolConstants._();
+
+  static const double minimumPixelDistance = 0.5;
+  static const double minimumCalibrationScreenLength = 12;
+  static const int displayPrecision = 2;
+  static const String defaultUnitLabel = 'units';
+  static const double polylineSelectionHitDistance = 26;
+  static const double polygonSelectionHitDistance = 26;
+  static const double lineStrokeWidth = 3.2;
+  static const double selectedStrokeMultiplier = 1.35;
+  static const double fillOpacity = 0.16;
+  static const double pointPreviewRadius = 4.5;
+  static const double labelPaddingHorizontal = 10;
+  static const double labelPaddingVertical = 6;
+  static const double labelRadius = 8;
+  static const double labelMaxWidthFactor = 0.7;
+  static const double labelClampPadding = 4;
+  static const double activeCloseHitDistance = 22;
+  static const Duration completionTapWindow = Duration(milliseconds: 550);
 }
 
 class SidebarAssetConstants {

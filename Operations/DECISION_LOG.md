@@ -390,3 +390,19 @@ Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decisio
 - Rollback or Reversal: Reopen renderer evaluation only after a specific governed tool is approved for workstation deployment and real Polito DWG validation is scheduled.
 - Related Changes: Phase 1Y-D DWG GitHub/tool research note; TODO-040 follow-up remains active.
 - Review Date: N/A
+
+## DECISION-026
+- Date: 2026-06-19
+- Status: Accepted
+- Owner: NCD / M
+- Area: Measurement Tool Coordinate Model
+- Decision: Keep new measurement tools image-relative and calibration-driven: store scale calibration, multi-segment paths, and area polygons in normalized image coordinates; derive displayed measurement values from scale calibration plus source image pixel size; and transform image + overlay together through the existing canvas view layer without rewriting stored geometry.
+- Alternatives Considered:
+- Store measurements in viewport/screen coordinates after zoom/pan.
+- Embed calculated measurement text as fixed saved strings rather than recomputing from calibration + image size.
+- Introduce a separate export-only geometry model for measurement tools.
+- Rationale: Preserves compatibility with the current export crop, save/reopen behavior, and transform-layer architecture from Phase 1V while allowing future measurement values to stay consistent across fit/zoom/pan and window-size changes.
+- Impact: Phase 1Z measurement tools can share the same normalized-geometry persistence model as existing markups, and future manual validation can focus on tool behavior instead of schema migration risk.
+- Rollback or Reversal: Remove the Phase 1Z measurement models/helpers and return to dimension/text-only measurement behavior.
+- Related Changes: Phase 1Z New Measurement Tools MVP (working tree)
+- Review Date: N/A
