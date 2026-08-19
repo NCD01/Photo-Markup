@@ -327,7 +327,7 @@ git tag pass-3-flow claude/photo-markup-overnight-enjgup
 | `4dfc212` | | Pass 1 decisions and questions written. No code change. |
 | `c490148` | `pass-2-design` | **End of Pass 2: dark interface, new toolbar, status bar.** Roll back to `pass-1-features` if you want the features without the redesign. |
 | `f7a4cd9` | | Shortcuts, autosave, recovery, one-tap export, gestures. |
-| `0fbc0d4` | | Field Scale, Marker Mode, the hidden extra. |
+| `0fbc0d4` | | Field Scale and Marker Mode. |
 | `ec09d3f` | | End-to-end verification tests. No behaviour change. |
 | `78b9622` | | README rewritten, logs finished. No code change. |
 | branch tip | `pass-3-flow` | **End of the run.** The morning report and this verification. |
