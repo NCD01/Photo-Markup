@@ -1655,3 +1655,15 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.33 - 2026-08-19
+- Owner: NCD / M
+- Author: Claude
+- Type: Feature
+- Reason: Version the measurement tools MVP, the Scale Calibration and Dimension separation, and the README rewrites.
+- Changes:
+  - Scale Calibration, Multi-Segment, and Area / Perimeter measurement tools.,Scale Calibration draws dashed in its own colour and labels itself with a SCALE prefix.,A new dimension on a calibrated photo is pre-filled with the measured value.,Root README rewritten and app README replaced.
+- Validation Evidence:
+  - flutter analyze: PASS,flutter test: PASS (106 tests),verify-version-sync.ps1: PASS,flutter build windows --debug: NOT RUN from the H: network checkout
+- Rollback Notes:
+  - git checkout 66e7a68 to return to the state before this work.

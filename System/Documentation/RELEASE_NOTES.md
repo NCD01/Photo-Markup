@@ -485,3 +485,20 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.33 - 2026-08-19
+
+Linked changelog entries:
+- $newVersion - 2026-08-19
+
+Scope:
+  - Scale Calibration, Multi-Segment, and Area / Perimeter measurement tools.,Scale Calibration draws dashed in its own colour and labels itself with a SCALE prefix.,A new dimension on a calibrated photo is pre-filled with the measured value.,Root README rewritten and app README replaced.
+
+Validation:
+  - flutter analyze: PASS,flutter test: PASS (106 tests),verify-version-sync.ps1: PASS,flutter build windows --debug: NOT RUN from the H: network checkout
+
+Rollback:
+  - git checkout 66e7a68 to return to the state before this work.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.
