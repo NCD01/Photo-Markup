@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Claude`
 Last Updated: `2026-08-19`
 Purpose: Record material architecture/process decisions.
-Changes: Added the owner bump-and-push versioning directive.
+Changes: Added DECISION-029, the assumed measured-value display rule.
 
 ## DECISION-001
 - Date: 2026-05-22
@@ -436,4 +436,20 @@ Changes: Added the owner bump-and-push versioning directive.
 - Rollback or Reversal: Restore the previous Quick Rules and README version rules, and reinstate the do-not-bump-before-validation line.
 - Related Changes: v0.34
 - Review Date: N/A
+
+## DECISION-029
+- Date: 2026-08-20
+- Status: Accepted, PENDING OWNER CONFIRMATION
+- Owner: NCD / M
+- Area: Measurement Display
+- Decision: Measured lengths are reformatted for display into units a person reads on site. Imperial: below one foot shows whole inches (`0.42 ft` shows `5 in`); one foot and above shows feet and inches (`8.5 ft` shows `8 ft 6 in`); whole feet show feet alone (`8 ft`); inches that round up to twelve promote to the next foot (`0.98 ft` shows `1 ft`, never `12 in`). Metric: at or above one metre shows metres to two decimals, below one metre shows centimetres, below one centimetre shows millimetres. No conversion between imperial and metric ever happens; the unit family follows whatever the scale was calibrated in. An unrecognised unit is passed through untouched rather than guessed at.
+- Alternatives Considered:
+- Leave raw decimal values as they were, and let the reader convert in their head.
+- Always show decimal feet with more precision.
+- Ask the user to pick a display format per photo.
+- Rationale: THIS RULE WAS ASSUMED DURING AN UNATTENDED RUN AND HAS NOT BEEN CONFIRMED BY THE OWNER. `0.42 ft` is a spreadsheet number, not a tape reading, and a contractor reading a marked-up photo on a ladder should not have to convert anything. The exact rounding rule is a judgement call, so it lives behind one named function, `MeasurementDisplayFormatter.format`, plus one constants block, `MeasurementDisplayConstants`, so it can be changed in a single edit if the owner wants it different.
+- Impact: Display only. Stored geometry is untouched, which keeps the measured-value-stored-verbatim invariant intact. Typed labels are unaffected and still run through `DimensionLabelFormatter`. Applied to the dimension prefill, the multi-segment running length, and the area tool's perimeter line. Area itself is left alone because it is in squared units and the feet-and-inches rule does not apply to it. Known consequence of rounding to whole inches: a measurement under half an inch displays as `0 in`.
+- Rollback or Reversal: Revert the three call sites in `measurement_value_utils.dart` back to `_formatValue`, and delete `measurement_display_formatter.dart`.
+- Related Changes: v0.35
+- Review Date: First morning Marcelo reads this
 

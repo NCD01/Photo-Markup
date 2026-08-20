@@ -1679,3 +1679,15 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
   - Documentation-only change; no app code touched.,flutter analyze: PASS,flutter test: PASS (106 tests)
 - Rollback Notes:
   - Revert this commit to restore the previous versioning policy wording.
+
+## v0.35 - 2026-08-20
+- Owner: NCD / M
+- Author: Claude
+- Type: Feature
+- Reason: Measured lengths display as feet and inches instead of decimal feet.
+- Changes:
+  - Added MeasurementDisplayFormatter: below 1 ft shows whole inches, 1 ft and above shows feet and inches, whole feet show feet alone, and inches rounding up to 12 promote to the next foot.,Metric measured values show m, cm or mm by magnitude. No imperial/metric conversion.,Applied to the dimension prefill, multi-segment length and area perimeter. Area itself is unchanged.,Fixed a pre-existing bug where trailing-zero trimming wrote a literal backreference, so 4.50 displayed as 4\.
+- Validation Evidence:
+  - flutter analyze: PASS,flutter test: PASS (126 tests, up from 106)
+- Rollback Notes:
+  - Revert the call sites in measurement_value_utils.dart and delete measurement_display_formatter.dart.

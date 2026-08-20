@@ -5,6 +5,7 @@ import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/area_measurement.dart';
 import 'package:ncd_photo_markup/features/markup/models/multi_segment_measurement.dart';
 import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
+import 'package:ncd_photo_markup/features/markup/utils/measurement_display_formatter.dart';
 
 class MeasurementValueUtils {
   const MeasurementValueUtils._();
@@ -136,7 +137,10 @@ class MeasurementValueUtils {
     if (length == null || calibration == null) {
       return null;
     }
-    return '${_formatValue(length)} ${normalizeUnitLabel(calibration.unitLabel)}';
+    return MeasurementDisplayFormatter.format(
+      value: length,
+      unitLabel: normalizeUnitLabel(calibration.unitLabel),
+    );
   }
 
   static String multiSegmentDisplayLabel({
@@ -153,7 +157,8 @@ class MeasurementValueUtils {
       return UiCopyConstants.measurementNeedsScaleLabel;
     }
     final String unitLabel = normalizeUnitLabel(calibration!.unitLabel);
-    return '${UiCopyConstants.multiSegmentLabelPrefix}: ${_formatValue(length)} $unitLabel';
+    return '${UiCopyConstants.multiSegmentLabelPrefix}: '
+        '${MeasurementDisplayFormatter.format(value: length, unitLabel: unitLabel)}';
   }
 
   static String areaDisplayLabel({
@@ -180,7 +185,8 @@ class MeasurementValueUtils {
     }
     final String unitLabel = normalizeUnitLabel(calibration.unitLabel);
     return '${UiCopyConstants.areaLabelPrefix}: ${_formatValue(area)} sq $unitLabel\n'
-        '${UiCopyConstants.perimeterLabelPrefix}: ${_formatValue(perimeter)} $unitLabel';
+        '${UiCopyConstants.perimeterLabelPrefix}: '
+        '${MeasurementDisplayFormatter.format(value: perimeter, unitLabel: unitLabel)}';
   }
 
   static String normalizeUnitLabel(String rawUnit) {
@@ -235,11 +241,15 @@ class MeasurementValueUtils {
   }
 
   static String _formatValue(double value) {
-    final String fixed = value.toStringAsFixed(
+    String fixed = value.toStringAsFixed(
       MeasurementToolConstants.displayPrecision,
     );
-    return fixed
-        .replaceFirst(RegExp(r'\.0+$'), '')
-        .replaceFirst(RegExp(r'(\.\d*?)0+$'), r'$1');
+    if (!fixed.contains('.')) {
+      return fixed;
+    }
+    // replaceFirst takes a literal replacement, so a `$1` backreference here
+    // would be written out verbatim: 4.50 became "4$1". Trim instead.
+    fixed = fixed.replaceFirst(RegExp(r'0+$'), '');
+    return fixed.replaceFirst(RegExp(r'\.$'), '');
   }
 }

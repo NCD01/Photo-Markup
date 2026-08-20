@@ -5,7 +5,7 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'NCD Photo Markup';
-  static const String appVersion = 'v0.34';
+  static const String appVersion = 'v0.35';
   static const String startupImageEnvKey = 'NCD_STARTUP_IMAGE_PATH';
 }
 
@@ -452,6 +452,64 @@ class MeasurementToolConstants {
   static const Color calibrationSelectedLineColor = Color(0xFFD500F9);
   static const double calibrationDashLength = 12;
   static const double calibrationDashGap = 7;
+}
+
+/// How a measured length is turned into text a person reads on site.
+///
+/// Display only. Changing anything here changes labels, never stored geometry.
+class MeasurementDisplayConstants {
+  const MeasurementDisplayConstants._();
+
+  static const int inchesPerFoot = 12;
+  static const double centimetresPerMetre = 100;
+  static const double millimetresPerCentimetre = 10;
+
+  static const int metreDecimals = 2;
+  static const int centimetreDecimals = 1;
+
+  static const String footShort = 'ft';
+  static const String inchShort = 'in';
+  static const String metreShort = 'm';
+  static const String centimetreShort = 'cm';
+  static const String millimetreShort = 'mm';
+
+  static const String invalidValueLabel = '--';
+
+  static const Set<String> footAliases = <String>{
+    'ft',
+    'ft.',
+    'foot',
+    'feet',
+    "'",
+  };
+  static const Set<String> inchAliases = <String>{
+    'in',
+    'in.',
+    'inch',
+    'inches',
+    '"',
+  };
+  static const Set<String> metreAliases = <String>{
+    'm',
+    'metre',
+    'metres',
+    'meter',
+    'meters',
+  };
+  static const Set<String> centimetreAliases = <String>{
+    'cm',
+    'centimetre',
+    'centimetres',
+    'centimeter',
+    'centimeters',
+  };
+  static const Set<String> millimetreAliases = <String>{
+    'mm',
+    'millimetre',
+    'millimetres',
+    'millimeter',
+    'millimeters',
+  };
 }
 
 class SidebarAssetConstants {
