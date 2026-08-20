@@ -553,3 +553,20 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.37 - 2026-08-20
+
+Linked changelog entries:
+- $newVersion - 2026-08-20
+
+Scope:
+  - Added AppSettings, SettingsService (dart:io JSON in APPDATA, no new dependency) and SettingsDialog.,Settings: measured value format, auto-label dimensions, default colour, default text size, export file name ending, default export folder, and an About section showing the live version.,Grouped sections with a plain-English line under every control and a per-section Reset, not one global reset.,Settings persist across restarts and an older settings file still loads after an update.,Applying a setting now updates the UI immediately and persists in the background instead of blocking on a disk write.
+
+Validation:
+  - flutter analyze: PASS,flutter test: PASS (144 tests, up from 127),10 persistence tests and 7 behaviour tests, each changing a setting and observing the effect
+
+Rollback:
+  - Delete lib/features/settings and revert the settings wiring in main.dart.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.

@@ -15,13 +15,21 @@ class MarkupExportPathService {
   final ExportFileExists _fileExists;
   final ExportDirectoryExists _directoryExists;
 
-  String buildDefaultMarkupExportName({required String sourcePathOrFileName}) {
+  String buildDefaultMarkupExportName({
+    required String sourcePathOrFileName,
+    String? suffixOverride,
+  }) {
     final String sourceName = _fileNameFromPath(sourcePathOrFileName);
     final int extensionIndex = sourceName.lastIndexOf('.');
     final String baseName = extensionIndex > 0
         ? sourceName.substring(0, extensionIndex)
         : sourceName;
-    return '$baseName${ExportConstants.defaultFileSuffix}.${ExportConstants.outputExtension}';
+    // An empty suffix would collide with the source photo, so it is refused.
+    final String suffix =
+        (suffixOverride != null && suffixOverride.trim().isNotEmpty)
+        ? suffixOverride
+        : ExportConstants.defaultFileSuffix;
+    return '$baseName$suffix.${ExportConstants.outputExtension}';
   }
 
   String ensurePngExtension(String path) {

@@ -1703,3 +1703,15 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
   - flutter analyze: PASS,flutter test: PASS (127 tests)
 - Rollback Notes:
   - Point the creation call site back at _promptForDimensionLabelById and delete _labelNewDimension.
+
+## v0.37 - 2026-08-20
+- Owner: NCD / M
+- Author: Claude
+- Type: Feature
+- Reason: A real Settings section, with every control wired to actual behaviour.
+- Changes:
+  - Added AppSettings, SettingsService (dart:io JSON in APPDATA, no new dependency) and SettingsDialog.,Settings: measured value format, auto-label dimensions, default colour, default text size, export file name ending, default export folder, and an About section showing the live version.,Grouped sections with a plain-English line under every control and a per-section Reset, not one global reset.,Settings persist across restarts and an older settings file still loads after an update.,Applying a setting now updates the UI immediately and persists in the background instead of blocking on a disk write.
+- Validation Evidence:
+  - flutter analyze: PASS,flutter test: PASS (144 tests, up from 127),10 persistence tests and 7 behaviour tests, each changing a setting and observing the effect
+- Rollback Notes:
+  - Delete lib/features/settings and revert the settings wiring in main.dart.

@@ -1,11 +1,13 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
+import 'package:ncd_photo_markup/features/settings/models/app_settings.dart';
 
 class AppConstants {
   const AppConstants._();
 
   static const String appName = 'NCD Photo Markup';
-  static const String appVersion = 'v0.36';
+  static const String appVersion = 'v0.37';
   static const String startupImageEnvKey = 'NCD_STARTUP_IMAGE_PATH';
 }
 
@@ -380,6 +382,7 @@ class ToolbarConstants {
   static const String erase = 'Erase';
   static const String undo = 'Undo';
   static const String export = 'Export';
+  static const String settings = 'Settings';
   static const String fileSectionTitle = 'File';
   static const String markupSectionTitle = 'Markup Tools';
   static const String editSectionTitle = 'Edit';
@@ -401,7 +404,12 @@ class ToolbarConstants {
     circle,
     freehand,
   ];
-  static const List<String> editActionOrder = <String>[style, undo, erase];
+  static const List<String> editActionOrder = <String>[
+    style,
+    undo,
+    erase,
+    settings,
+  ];
 
   static const List<ToolbarSectionDefinition>
   sections = <ToolbarSectionDefinition>[
@@ -457,6 +465,77 @@ class MeasurementToolConstants {
 /// How a measured length is turned into text a person reads on site.
 ///
 /// Display only. Changing anything here changes labels, never stored geometry.
+/// Where settings live and what they default to.
+class SettingsConstants {
+  const SettingsConstants._();
+
+  static const String schemaVersion = '1.0';
+  static const String directoryName = 'NCD Photo Markup';
+  static const String fileName = 'settings.json';
+  static const String partialSuffix = '.partial';
+
+  /// Checked in order. APPDATA is the Windows answer; the rest are fallbacks
+  /// so the app always has somewhere to write.
+  static const List<String> directoryEnvironmentKeys = <String>[
+    'APPDATA',
+    'XDG_CONFIG_HOME',
+    'HOME',
+  ];
+
+  static const MeasurementDisplayMode defaultMeasurementDisplayMode =
+      MeasurementDisplayMode.tape;
+  static const bool defaultAutoLabelDimensions = true;
+  static const MarkupStylePresetId defaultStylePresetId =
+      MarkupStylePresetId.ncdBlue;
+
+  // Dialog copy.
+  static const String dialogTitle = 'Settings';
+  static const String closeButton = 'Close';
+  static const String resetSectionButton = 'Reset section';
+
+  static const String measurementSectionTitle = 'Units and measurement';
+  static const String displayModeLabel = 'Measured value format';
+  static const String displayModeDescription =
+      'Tape shows 5 in and 8 ft 6 in, the way you read a tape measure. '
+      'Decimal shows the raw calibrated number, better for copying into a quote.';
+  static const String displayModeTapeOption = 'Tape (8 ft 6 in)';
+  static const String displayModeDecimalOption = 'Decimal (8.5 ft)';
+  static const String autoLabelLabel = 'Label dimensions automatically';
+  static const String autoLabelDescription =
+      'When the photo has a scale set, a new dimension takes the measurement '
+      'straight away. Turn this off if you would rather type every label.';
+
+  static const String defaultsSectionTitle = 'New mark defaults';
+  static const String defaultColourLabel = 'Colour';
+  static const String defaultColourDescription =
+      'The colour a new mark starts with each time the app opens.';
+  static const String defaultFontSizeLabel = 'Text size';
+  static const String defaultFontSizeDescription =
+      'The starting size for text notes and dimension labels.';
+
+  static const String exportSectionTitle = 'Export';
+  static const String exportSuffixLabel = 'Exported file name ending';
+  static const String exportSuffixDescription =
+      'Added to the photo name when exporting. A photo called front.jpg '
+      'becomes front - Markup.png.';
+  static const String exportFolderLabel = 'Default export folder';
+  static const String exportFolderDescription =
+      'Where exports are offered first. Leave empty to save next to the photo.';
+  static const String exportFolderEmptyValue = 'Next to the photo';
+  static const String exportFolderChooseButton = 'Choose';
+  static const String exportFolderClearButton = 'Clear';
+
+  static const String aboutSectionTitle = 'About';
+  static const String aboutVersionLabel = 'Version';
+  static const String aboutChangelogLabel = 'Changelog';
+  static const String aboutChangelogValue =
+      'System/Documentation/CHANGELOG.md in the repo';
+
+  static const String savedMessage = 'Settings saved.';
+  static const String saveFailedMessage =
+      'Could not save settings. They will apply until the app closes.';
+}
+
 class MeasurementDisplayConstants {
   const MeasurementDisplayConstants._();
 
@@ -655,6 +734,15 @@ class UiLayoutConstants {
   static const double dimensionLabelDialogFieldPadding = 12;
   static const double dimensionLabelDialogButtonTopGap = 8;
   static const int dimensionLabelHelperMaxLines = 2;
+
+  // Settings dialog.
+  static const double settingsDialogWidth = 460;
+  static const double settingsSectionGap = 20;
+  static const double settingsItemGap = 16;
+  static const double settingsLabelGap = 6;
+  static const double settingsChipSpacing = 8;
+  static const double settingsSectionTitleSize = 15;
+  static const double settingsDescriptionSize = 12;
 }
 
 class DimensionLineConstants {

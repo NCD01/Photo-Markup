@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
+import 'package:ncd_photo_markup/features/settings/models/app_settings.dart';
 
 /// Turns a raw measured length into something readable on a job site.
 ///
@@ -20,8 +21,16 @@ class MeasurementDisplayFormatter {
   /// reported in feet and inches; a value calibrated in metres is reported in
   /// metric. An unrecognised unit is passed through untouched rather than
   /// guessed at.
-  static String format({required double value, required String unitLabel}) {
+  static String format({
+    required double value,
+    required String unitLabel,
+    MeasurementDisplayMode mode = MeasurementDisplayMode.tape,
+  }) {
     final String unit = unitLabel.trim();
+    if (mode == MeasurementDisplayMode.decimal) {
+      // The raw calibrated number, for copying into a quote.
+      return _plain(value: value, unit: unit);
+    }
     if (!value.isFinite || value < 0) {
       // Nonsense in, nonsense out, but no crash and no invented number.
       return _plain(value: value, unit: unit);

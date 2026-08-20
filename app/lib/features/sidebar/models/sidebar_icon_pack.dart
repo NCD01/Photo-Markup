@@ -48,6 +48,9 @@ class SidebarIconRegistry {
         ToolbarConstants.dimension: SidebarIconDescriptor.asset(
           SidebarAssetConstants.ncdSidebarDimensionAssetPath,
         ),
+        ToolbarConstants.settings: SidebarIconDescriptor.icon(
+          Icons.tune,
+        ),
         ToolbarConstants.textNote: SidebarIconDescriptor.asset(
           SidebarAssetConstants.ncdSidebarTextNoteAssetPath,
         ),

@@ -6,6 +6,7 @@ import 'package:ncd_photo_markup/features/markup/models/area_measurement.dart';
 import 'package:ncd_photo_markup/features/markup/models/multi_segment_measurement.dart';
 import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
 import 'package:ncd_photo_markup/features/markup/utils/measurement_display_formatter.dart';
+import 'package:ncd_photo_markup/features/settings/models/app_settings.dart';
 
 class MeasurementValueUtils {
   const MeasurementValueUtils._();
@@ -128,6 +129,7 @@ class MeasurementValueUtils {
     required Offset endNormalized,
     required ScaleCalibration? calibration,
     required Size? imagePixelSize,
+    MeasurementDisplayMode mode = MeasurementDisplayMode.tape,
   }) {
     final double? length = calibratedPolylineLength(
       normalizedPoints: <Offset>[startNormalized, endNormalized],
@@ -140,6 +142,7 @@ class MeasurementValueUtils {
     return MeasurementDisplayFormatter.format(
       value: length,
       unitLabel: normalizeUnitLabel(calibration.unitLabel),
+      mode: mode,
     );
   }
 
@@ -147,6 +150,7 @@ class MeasurementValueUtils {
     required MultiSegmentMeasurement measurement,
     required ScaleCalibration? calibration,
     required Size? imagePixelSize,
+    MeasurementDisplayMode mode = MeasurementDisplayMode.tape,
   }) {
     final double? length = calibratedPolylineLength(
       normalizedPoints: measurement.normalizedPoints,
@@ -158,13 +162,14 @@ class MeasurementValueUtils {
     }
     final String unitLabel = normalizeUnitLabel(calibration!.unitLabel);
     return '${UiCopyConstants.multiSegmentLabelPrefix}: '
-        '${MeasurementDisplayFormatter.format(value: length, unitLabel: unitLabel)}';
+        '${MeasurementDisplayFormatter.format(value: length, unitLabel: unitLabel, mode: mode)}';
   }
 
   static String areaDisplayLabel({
     required AreaMeasurement measurement,
     required ScaleCalibration? calibration,
     required Size? imagePixelSize,
+    MeasurementDisplayMode mode = MeasurementDisplayMode.tape,
   }) {
     final double? perimeter = calibratedPolylineLength(
       normalizedPoints: <Offset>[
@@ -186,7 +191,7 @@ class MeasurementValueUtils {
     final String unitLabel = normalizeUnitLabel(calibration.unitLabel);
     return '${UiCopyConstants.areaLabelPrefix}: ${_formatValue(area)} sq $unitLabel\n'
         '${UiCopyConstants.perimeterLabelPrefix}: '
-        '${MeasurementDisplayFormatter.format(value: perimeter, unitLabel: unitLabel)}';
+        '${MeasurementDisplayFormatter.format(value: perimeter, unitLabel: unitLabel, mode: mode)}';
   }
 
   static String normalizeUnitLabel(String rawUnit) {

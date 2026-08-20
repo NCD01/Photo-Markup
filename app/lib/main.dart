@@ -31,6 +31,9 @@ import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/utils/measurement_value_utils.dart';
+import 'package:ncd_photo_markup/features/settings/models/app_settings.dart';
+import 'package:ncd_photo_markup/features/settings/services/settings_service.dart';
+import 'package:ncd_photo_markup/features/settings/widgets/settings_dialog.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_interaction_policy.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
@@ -76,6 +79,7 @@ class NcdPhotoMarkupApp extends StatelessWidget {
     this.openFileOverride,
     this.saveLocationOverride,
     this.showStartupSplash = true,
+    this.settingsServiceOverride,
   });
 
   final String? initialImagePath;
@@ -85,6 +89,9 @@ class NcdPhotoMarkupApp extends StatelessWidget {
   final SaveLocationCallback? saveLocationOverride;
   final bool showStartupSplash;
 
+  /// Lets a test point settings at a scratch folder instead of the real one.
+  final SettingsService? settingsServiceOverride;
+
   @override
   Widget build(BuildContext context) {
     final Widget shell = PhotoMarkupShellScreen(
@@ -93,6 +100,7 @@ class NcdPhotoMarkupApp extends StatelessWidget {
       launchErrorMessage: launchErrorMessage,
       openFileOverride: openFileOverride,
       saveLocationOverride: saveLocationOverride,
+      settingsServiceOverride: settingsServiceOverride,
     );
 
     return MaterialApp(
@@ -217,6 +225,7 @@ class PhotoMarkupShellScreen extends StatefulWidget {
     this.launchErrorMessage,
     this.openFileOverride,
     this.saveLocationOverride,
+    this.settingsServiceOverride,
   });
 
   final String? initialImagePath;
@@ -224,6 +233,9 @@ class PhotoMarkupShellScreen extends StatefulWidget {
   final String? launchErrorMessage;
   final OpenFileCallback? openFileOverride;
   final SaveLocationCallback? saveLocationOverride;
+
+  /// Lets a test point settings at a scratch folder instead of the real one.
+  final SettingsService? settingsServiceOverride;
 
   @override
   State<PhotoMarkupShellScreen> createState() => _PhotoMarkupShellScreenState();
@@ -252,6 +264,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   final TransformationController _canvasTransformController =
       TransformationController();
 
+  AppSettings _settings = AppSettings.defaults;
+  late final SettingsService _settingsService =
+      widget.settingsServiceOverride ?? SettingsService();
   MarkupTool _selectedTool = MarkupTool.none;
   bool _isSidebarExpanded = false;
   bool _isPanModeEnabled = false;
@@ -311,7 +326,86 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     if (initialPath != null && initialPath.isNotEmpty) {
       _loadImageFromPath(initialPath, showErrorForFailure: true);
     }
+    unawaited(_restoreSettings());
   }
+
+  /// Loads saved settings and applies the ones that seed new marks.
+  ///
+  /// Never touches an existing mark. These only decide what the next thing you
+  /// draw starts out as.
+  Future<void> _restoreSettings() async {
+    final AppSettings loaded = await _settingsService.load();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _settings = loaded;
+      _selectedStylePresetId = loaded.defaultStylePresetId;
+      _selectedFontSize = loaded.defaultFontSize;
+    });
+  }
+
+  /// Applies a setting immediately, then persists it in the background.
+  ///
+  /// The UI must not wait on a disk write. If the write fails the setting still
+  /// holds for this session and the user is told it will not survive a restart.
+  void _applySettings(AppSettings next) {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _settings = next;
+      // Seeding values follow the setting straight away, so the effect is
+      // visible without a restart.
+      _selectedStylePresetId = next.defaultStylePresetId;
+      _selectedFontSize = next.defaultFontSize;
+    });
+    unawaited(_persistSettings(next));
+  }
+
+  Future<void> _persistSettings(AppSettings next) async {
+    final bool saved = await _settingsService.save(next);
+    if (!saved && mounted) {
+      _showSnack(SettingsConstants.saveFailedMessage);
+    }
+  }
+
+  Future<void> _showSettingsDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return SettingsDialog(
+          settings: _settings,
+          appVersion: AppConstants.appVersion,
+          onChanged: _applySettings,
+        );
+      },
+    );
+  }
+
+  @visibleForTesting
+  AppSettings get debugSettings => _settings;
+
+  @visibleForTesting
+  String debugSuggestedExportName() => _suggestedExportName();
+
+  @visibleForTesting
+  String? debugPreferredExportDirectory() => _preferredExportDirectory();
+
+  @visibleForTesting
+  MarkupStylePresetId get debugSelectedStylePresetId => _selectedStylePresetId;
+
+  @visibleForTesting
+  double get debugSelectedFontSize => _selectedFontSize;
+
+  @visibleForTesting
+  void debugApplySettings(AppSettings next) => _applySettings(next);
+
+  @visibleForTesting
+  Future<void> debugPersistSettings(AppSettings next) => _persistSettings(next);
+
+  @visibleForTesting
+  Future<void> debugRestoreSettings() => _restoreSettings();
 
   @override
   void dispose() {
@@ -878,6 +972,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
+    if (label == ToolbarConstants.settings) {
+      unawaited(_showSettingsDialog());
+      return;
+    }
+
     if (label == ToolbarConstants.undo) {
       _undoMostRecentMarkup();
       return;
@@ -1329,12 +1428,18 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         _loadedSourceImagePath ?? _loadedFileName ?? 'photo';
     return _markupExportPathService.buildDefaultMarkupExportName(
       sourcePathOrFileName: sourceName,
+      suffixOverride: _settings.exportFileSuffix,
     );
   }
 
   String? _preferredExportDirectory() {
+    // Control Center's folder still wins when it hands one over: that is the
+    // job's folder for this photo. The setting is the fallback for everything
+    // opened by hand, and next-to-the-photo remains the last resort.
     return _markupExportPathService.resolveDefaultExportDirectory(
-      suggestedExportFolder: _launchContext?.suggestedExportFolder,
+      suggestedExportFolder:
+          _launchContext?.suggestedExportFolder ??
+          _settings.defaultExportDirectory,
       sourceImagePath: _loadedSourceImagePath,
     );
   }
@@ -3170,6 +3275,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       endNormalized: _dimensionLines[lineIndex].endNormalized,
       calibration: _scaleCalibration,
       imagePixelSize: _loadedImagePixelSize,
+      mode: _settings.measurementDisplayMode,
     );
   }
 
@@ -3190,8 +3296,11 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
-    final String? measuredValue = _measuredLabelForDimension(lineIndex);
+    final String? measuredValue = _settings.autoLabelDimensions
+        ? _measuredLabelForDimension(lineIndex)
+        : null;
     if (measuredValue == null) {
+      // No scale, or the user asked to type every label themselves.
       await _promptForDimensionLabelById(dimensionId);
       return;
     }
