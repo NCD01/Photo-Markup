@@ -1,0 +1,43 @@
+# Line endings
+#
+# The repository stores every text file with LF. Working copies get whatever
+# the platform uses, so Windows checkouts are CRLF and nothing has to be
+# configured per machine. This replaces relying on core.autocrlf, which is a
+# per-clone setting and was different on different checkouts of this repo.
+* text=auto
+
+# Shell scripts must keep LF in the working tree. Git for Windows runs them
+# through sh, and a CR at the end of a line becomes part of the command.
+# Governance/.githooks/pre-push is the one that matters here.
+*.sh text eol=lf
+Governance/.githooks/** text eol=lf
+
+# Images. Every one of these is in the tree or will be: icons, sidebar
+# artwork, splash screens, and the photos used as test fixtures.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.bmp binary
+*.webp binary
+*.tif binary
+*.tiff binary
+*.heic binary
+*.heif binary
+*.ico binary
+*.icns binary
+
+# Fonts.
+*.ttf binary
+*.otf binary
+*.ttc binary
+*.woff binary
+*.woff2 binary
+
+# Other binaries that turn up around a construction app.
+*.pdf binary
+*.dwg binary
+*.zip binary
+*.jar binary
+*.keystore binary
+*.jks binary
