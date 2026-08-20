@@ -1,12 +1,12 @@
 ﻿# NCD Photo Markup
 
 Document Path: `C:\apps\NCD_Photo_Markup\README.md`
-Version: `v0.6`
+Version: `v0.7`
 Owner: `NCD / M`
 Last Updated By: `Claude`
 Last Updated: `2026-08-19`
 Purpose: Root repo map, app overview, and quick start for the standalone Flutter app.
-Changes: Adopted the owner bump-and-push rule in the version rules section.
+Changes: Documented tape-style measured values, self-labelling dimensions, and the Settings section.
 
 ## What This Is
 Touch-first field photo markup app for internal and client annotation work.
@@ -34,7 +34,7 @@ Sidebar sections are `File`, `Markup Tools`, and `Edit`.
 | `Scale Calibration` | Drag a line across something of known length, then enter the real distance and unit. Every measurement tool afterwards reports real-world values. Draws **dashed in its own colour** and labels itself `SCALE: 8 ft`, so it never looks like an annotation. One per photo; drawing another replaces it. |
 | `Multi-Segment` | Tap point to point for a running length. Double-tap the last point or press Enter to finish. |
 | `Area / Perimeter` | Tap points to enclose a shape. Tap the first point again or double-tap the last point to close. Reports area and perimeter. |
-| `Dimension` | Two-point dimension line with an editable label. On a calibrated photo the label opens pre-filled with the measured value; type over it to change it. |
+| `Dimension` | Two-point dimension line. On a calibrated photo it labels itself with the measurement and no dialog opens. Tap it later to change the label. |
 | `Text Note` | Free text placed on the photo. |
 | `Arrow` | Straight arrow with a head. |
 | `Rectangle` | Rectangle outline. |
@@ -56,10 +56,32 @@ They look similar because both are a two-point line, but they do different jobs:
   `Area / Perimeter` compute their labels from it. A new `Dimension` is also
   pre-filled from it.
 
-A measured value you keep is stored exactly as shown. Only a label you type
-yourself goes through the imperial shorthand formatter, which turns `6'-0"` into
-`72"`. There is no unit conversion; a dimension is reported in the same unit you
-calibrated with.
+A measured value is stored exactly as measured. Only a label you type yourself
+goes through the imperial shorthand formatter, which turns `6'-0"` into `72"`.
+There is no conversion between imperial and metric; a dimension is reported in
+the same unit family you calibrated with.
+
+Measured lengths are written the way a tape reads them: under a foot shows whole
+inches (`5 in`), a foot and over shows feet and inches (`8 ft 6 in`), and whole
+feet show feet alone (`8 ft`). Metric shows m, cm or mm by size. Switch this to
+raw decimal in Settings if you are copying numbers into a quote.
+
+## Settings
+Open it from `Settings` in the Edit section of the sidebar. Grouped, with a
+plain-English line under every control and a Reset for each section on its own.
+
+| Setting | What it changes |
+|---|---|
+| Measured value format | Tape (`8 ft 6 in`) or Decimal (`8.5 ft`). |
+| Label dimensions automatically | Off brings back the type-it-yourself dialog even when a scale is set. |
+| Colour | The colour a new mark starts with. |
+| Text size | The starting size for text notes and dimension labels. |
+| Exported file name ending | `front.jpg` becomes `front - Markup.png`. |
+| Default export folder | Where exports are offered first. Control Center's folder still wins when it hands one over. |
+| About | The running version. |
+
+Settings are stored as JSON under your `APPDATA` folder and survive a restart and
+an update. Nothing in Settings ever changes a measurement already on a photo.
 
 Every mark is stored in normalized (`0..1`) coordinates against the source
 image, so marks stay in the right place when the window is resized.
@@ -170,7 +192,7 @@ run the Windows app, use a local-drive checkout such as `C:\apps\NCD_Photo_Marku
 - `powershell -ExecutionPolicy Bypass -File scripts/bump-version.ps1 -Bump minor -Reason "<reason>"`
 
 ## Version Rules
-- Current version: `v0.34`
+- Current version: `v0.37`
 - Use two-part versions only (`v0.1`, `v0.2`, `v0.3`, `v0.4`, ...)
 - **Every change bumps the version, gets committed, and gets pushed.** A one-line
   fix, a doc edit, and a test-only change all bump. Nothing stays at the same

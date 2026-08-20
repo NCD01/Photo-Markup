@@ -4,8 +4,155 @@ Document Path: `C:\apps\NCD_Photo_Markup\Operations\SESSION.md`
 Version: `v0.3`
 Owner: `NCD / M`
 Last Updated By: `Claude`
-Last Updated: `2026-08-19`
+Last Updated: `2026-08-20`
 Purpose: Track concise session history and handoff state.
+
+# SESSION_2026-08-20_overnight_run
+
+## 1. Open questions for Marcelo
+
+1. **The unit format rule is assumed and unconfirmed.** I made measured lengths
+   read `5 in` and `8 ft 6 in`. The exact rounding is my judgement, not yours.
+   It lives behind one function, `MeasurementDisplayFormatter.format`, and one
+   constants block, so changing it is a single edit. See DECISION-029.
+   Worth a look specifically: a measurement under half an inch currently shows
+   `0 in`, because the rule says round to the nearest whole inch.
+2. **Metric was not in tonight's brief but I implemented it anyway**, following
+   the rule from your daytime message: m at or above 1 m, cm below that, mm
+   below 1 cm. Say if you want it different or gone.
+3. **Tasks 4 to 8 were not started.** Crash recovery, metadata stamping,
+   presets, job grouping and the performance pass are untouched.
+
+## 2. Baseline
+
+- Test count at the Phase 0 gate: **106 passing**
+- Test count at the end: **144 passing**
+- `flutter analyze`: clean at every commit.
+
+## 3. Per task
+
+### Task 1, unit conversion: DONE
+- Version `v0.35`, commit `fb8f400`, pushed to NAS and GitHub.
+- Files: `app/lib/features/markup/utils/measurement_display_formatter.dart`
+  (new), `measurement_value_utils.dart`, `core/constants/app_constants.dart`,
+  `app/test/measurement_display_formatter_test.dart` (new).
+- What it does now: a measured dimension reads `5 in` instead of `0.42 ft`, and
+  `8 ft 6 in` instead of `8.5 ft`. Display only, stored geometry untouched.
+  Applied to the dimension label, the multi-segment length and the area tool's
+  perimeter. Area itself is unchanged, being in squared units.
+- Found and fixed a real pre-existing bug on the way: `_formatValue` used a `$1`
+  backreference with `replaceFirst`, which Dart treats as a literal string, so
+  `4.50` displayed as `4$1`.
+- Boundary tests added: 0.42, 0.98, 1.0, 8.0, 8.5, 0.0, 12 in, 30 in, negative,
+  NaN, infinity, unknown unit, and the metric boundaries at 1 m, 1 cm.
+
+### Task 2, dimensions stop asking: DONE
+- Version `v0.36`, commit `7e70b84`, pushed to NAS and GitHub.
+- Files: `app/lib/main.dart`,
+  `app/test/phase1x_interaction_regression_test.dart`.
+- What it does now: on a calibrated photo, drawing a dimension places the
+  measured label immediately with no dialog. No scale set still opens the dialog
+  with an empty box. Editing an existing dimension always opens the dialog, and
+  a typed override still runs through `DimensionLabelFormatter`. Measured values
+  store verbatim. DECISION-030.
+
+### Task 3, Settings section: DONE
+- Version `v0.37`, commit `672b2dd`, pushed to NAS and GitHub.
+- Files: `app/lib/features/settings/` (3 new files), `main.dart`,
+  `app_constants.dart`, `sidebar_icon_pack.dart`,
+  `markup_export_path_service.dart`, plus two new test files.
+- Audited first. What was hard-coded: default colour, default text size, export
+  file suffix, export destination, and the two new rules from tasks 1 and 2.
+- Shipped, each wired to real behaviour and each covered by a test that changes
+  the setting and observes the effect: measured value format (Tape or Decimal),
+  auto-label dimensions, default colour, default text size, export file name
+  ending, default export folder, and About showing the live version.
+- Persistence is `dart:io` JSON under APPDATA. No new dependency. Written to a
+  temp file then renamed, so an interrupted write leaves the last good file.
+  Every field is optional on read, so an older settings file survives an update.
+- Deliberately left out rather than shipping dead controls: default stroke width
+  (no stroke-width plumbing exists in the app), autosave interval (no autosave
+  exists), haptics (desktop), precision, full-resolution export and
+  flatten-vs-editable (the app already always writes both a flattened PNG and a
+  sidecar), and scale-persists-to-next-photo.
+
+### Tasks 4 to 8: NOT STARTED
+Crash and background recovery, metadata stamping, annotation presets, job
+grouping, and the large photo performance pass. I ran out of runway. None were
+begun, so there is no half-finished code to unpick.
+
+## 4. Relocation
+
+Phase 1 did not go as the brief described, because the brief's premise was
+wrong.
+
+- The NAS folder was **not** a stalled partial copy with no `.git`. It was a
+  real repo, already at `cc6a6e5`, with `origin` already pointing at GitHub.
+  What was broken was its working tree: 101 tracked files missing from disk.
+- I did **not** rename it aside. `Rename-Item` failed with access denied, and it
+  turned out to be unnecessary: nothing existed only on the NAS. Zero commits
+  unique to it, zero untracked files, and the one modified file had an empty
+  diff. So I repaired it in place with `git restore .`, which brought back all
+  101 files. 266 tracked files, 0 missing.
+- Nothing on the NAS or on H: was deleted or renamed.
+- `receive.denyCurrentBranch updateInstead` is set and **works**. Verified after
+  the first push: the NAS working tree moved to `fb8f400` and its VERSION read
+  `v0.35`. All three pushes landed on both the NAS and GitHub.
+- One snag worth knowing: the first NAS push was rejected with "Working
+  directory has unstaged changes". The cause was line-ending churn, git
+  reporting phantom modifications with no content difference. I set
+  `core.autocrlf false` on the NAS checkout and it has not recurred. The repo
+  has no `.gitattributes`, which is the root cause.
+
+## 5. What I assumed
+
+Every one, not only the comfortable ones.
+
+1. The imperial rounding rule in Task 1. Assumed, unconfirmed, DECISION-029.
+2. Metric formatting, implemented from your daytime message though tonight's
+   brief did not mention it.
+3. That an unrecognised calibration unit should pass through untouched rather
+   than be guessed at.
+4. That the area value itself should NOT get the feet-and-inches treatment,
+   being in squared units. Only its perimeter line did.
+5. That auto-labelling should default ON with a setting to turn it off.
+   Tonight's brief said remove the confirmation; your daytime message wanted a
+   toggle. I did both.
+6. That Control Center's suggested export folder still beats the new default
+   export folder setting, because that is the job's folder for that photo.
+7. That an empty export suffix must be refused, since it would make the export
+   collide with the source photo.
+8. That Settings belongs in the existing `AlertDialog` language rather than a
+   new full-screen page.
+9. That repairing the NAS repo in place beat the rename-and-reclone the brief
+   specified, given what was actually there.
+10. That deleting `C:\apps\NCD_Photo_Markup\_to_delete` was safe. One zero-byte
+    stranded lock file, untracked.
+11. That changing a setting should apply immediately and persist in the
+    background, rather than blocking the UI on a disk write.
+
+## 6. What I did not do
+
+- **Tasks 4 to 8.** Out of runway. Not started rather than half-done.
+- **Manual click-through of Settings.** I built the app and launched it from
+  `C:` with a pre-seeded non-default settings file. It started, held a real
+  window for 12 seconds and did not crash, which exercises the settings load
+  path. I could not click each control and watch it change: there is no UI
+  automation on this machine and you were asleep. Each setting's effect is
+  proven by an automated test that changes the setting and asserts different
+  behaviour, which is stronger evidence than a click but is not your eyes on it.
+  The test settings file was removed afterwards, so you start on defaults.
+- **`.gitattributes`.** It would fix the line-ending churn at the root but
+  renormalizes every tracked file. Too blunt to do unattended.
+- **Stroke width as a setting.** Needs stroke-width state threaded through every
+  markup model and the overlay. That is a task, not a setting.
+
+## Validation
+- `flutter analyze`: `PASS` at every commit
+- `flutter test`: `PASS`, 106 at the gate, 144 at the end
+- `verify-version-sync.ps1`: `PASS` at v0.35, v0.36 and v0.37
+- `flutter build windows --debug`: `PASS` from `C:\apps\NCD_Photo_Markup`
+- App launch smoke: `PASS`, real window, stopped cleanly, no lingering process
 
 # SESSION_2026-08-19_scale_and_dimension_separation
 

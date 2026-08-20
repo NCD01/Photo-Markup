@@ -570,3 +570,20 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.38 - 2026-08-20
+
+Linked changelog entries:
+- $newVersion - 2026-08-20
+
+Scope:
+  - Morning report written to Operations/SESSION.md.,Added VAL-216 to VAL-220 for the unit formatter, auto-label, settings persistence, settings behaviour and the build/launch smoke.,README documents tape-style measured values, self-labelling dimensions and the Settings section.
+
+Validation:
+  - flutter analyze: PASS,flutter test: PASS (144 tests),Documentation-only change to app behaviour: none
+
+Rollback:
+  - Revert this commit; no app code is affected.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.

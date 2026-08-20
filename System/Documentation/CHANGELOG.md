@@ -1715,3 +1715,15 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
   - flutter analyze: PASS,flutter test: PASS (144 tests, up from 127),10 persistence tests and 7 behaviour tests, each changing a setting and observing the effect
 - Rollback Notes:
   - Delete lib/features/settings and revert the settings wiring in main.dart.
+
+## v0.38 - 2026-08-20
+- Owner: NCD / M
+- Author: Claude
+- Type: Documentation
+- Reason: Overnight run paperwork: morning report, validation rows and README.
+- Changes:
+  - Morning report written to Operations/SESSION.md.,Added VAL-216 to VAL-220 for the unit formatter, auto-label, settings persistence, settings behaviour and the build/launch smoke.,README documents tape-style measured values, self-labelling dimensions and the Settings section.
+- Validation Evidence:
+  - flutter analyze: PASS,flutter test: PASS (144 tests),Documentation-only change to app behaviour: none
+- Rollback Notes:
+  - Revert this commit; no app code is affected.
