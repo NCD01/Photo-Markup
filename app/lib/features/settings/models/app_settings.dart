@@ -30,6 +30,7 @@ class AppSettings {
     this.measurementDisplayMode = SettingsConstants.defaultMeasurementDisplayMode,
     this.measurementUnitSystem = SettingsConstants.defaultMeasurementUnitSystem,
     this.autoLabelDimensions = SettingsConstants.defaultAutoLabelDimensions,
+    this.autosaveIntervalSeconds = RecoveryConstants.defaultIntervalSeconds,
     this.defaultStylePresetId = SettingsConstants.defaultStylePresetId,
     this.defaultFontSize = MarkupTypographyConstants.defaultFontSize,
     this.exportFileSuffix = ExportConstants.defaultFileSuffix,
@@ -39,6 +40,7 @@ class AppSettings {
   final MeasurementDisplayMode measurementDisplayMode;
   final MeasurementUnitSystem measurementUnitSystem;
   final bool autoLabelDimensions;
+  final int autosaveIntervalSeconds;
   final MarkupStylePresetId defaultStylePresetId;
   final double defaultFontSize;
   final String exportFileSuffix;
@@ -50,6 +52,7 @@ class AppSettings {
     MeasurementDisplayMode? measurementDisplayMode,
     MeasurementUnitSystem? measurementUnitSystem,
     bool? autoLabelDimensions,
+    int? autosaveIntervalSeconds,
     MarkupStylePresetId? defaultStylePresetId,
     double? defaultFontSize,
     String? exportFileSuffix,
@@ -62,6 +65,8 @@ class AppSettings {
       measurementUnitSystem:
           measurementUnitSystem ?? this.measurementUnitSystem,
       autoLabelDimensions: autoLabelDimensions ?? this.autoLabelDimensions,
+      autosaveIntervalSeconds:
+          autosaveIntervalSeconds ?? this.autosaveIntervalSeconds,
       defaultStylePresetId: defaultStylePresetId ?? this.defaultStylePresetId,
       defaultFontSize: defaultFontSize ?? this.defaultFontSize,
       exportFileSuffix: exportFileSuffix ?? this.exportFileSuffix,
@@ -77,6 +82,7 @@ class AppSettings {
       measurementDisplayMode: defaults.measurementDisplayMode,
       measurementUnitSystem: defaults.measurementUnitSystem,
       autoLabelDimensions: defaults.autoLabelDimensions,
+      autosaveIntervalSeconds: defaults.autosaveIntervalSeconds,
     );
   }
 
@@ -102,6 +108,7 @@ class AppSettings {
       'measurementDisplayMode': measurementDisplayMode.name,
       'measurementUnitSystem': measurementUnitSystem.name,
       'autoLabelDimensions': autoLabelDimensions,
+      'autosaveIntervalSeconds': autosaveIntervalSeconds,
       'defaultStylePresetId': defaultStylePresetId.name,
       'defaultFontSize': defaultFontSize,
       'exportFileSuffix': exportFileSuffix,
@@ -122,6 +129,9 @@ class AppSettings {
       autoLabelDimensions:
           _boolFrom(json['autoLabelDimensions']) ??
           defaults.autoLabelDimensions,
+      autosaveIntervalSeconds:
+          _autosaveIntervalFrom(json['autosaveIntervalSeconds']) ??
+          defaults.autosaveIntervalSeconds,
       defaultStylePresetId: _presetFrom(json['defaultStylePresetId']),
       defaultFontSize:
           _fontSizeFrom(json['defaultFontSize']) ?? defaults.defaultFontSize,
@@ -159,6 +169,19 @@ class AppSettings {
   }
 
   static bool? _boolFrom(Object? raw) => raw is bool ? raw : null;
+
+  /// Out-of-range values fall back to the default rather than being clamped,
+  /// because a number outside the range never came from the app's own control
+  /// and is more likely a hand-edited mistake than an intention.
+  static int? _autosaveIntervalFrom(Object? raw) {
+    final int? value = raw is num ? raw.round() : null;
+    if (value == null ||
+        value < RecoveryConstants.minimumIntervalSeconds ||
+        value > RecoveryConstants.maximumIntervalSeconds) {
+      return null;
+    }
+    return value;
+  }
 
   static double? _fontSizeFrom(Object? raw) {
     final double? value = raw is num ? raw.toDouble() : null;

@@ -7,7 +7,7 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'NCD Photo Markup';
-  static const String appVersion = 'v0.41';
+  static const String appVersion = 'v0.42';
   static const String startupImageEnvKey = 'NCD_STARTUP_IMAGE_PATH';
 }
 
@@ -466,6 +466,39 @@ class MeasurementToolConstants {
 ///
 /// Display only. Changing anything here changes labels, never stored geometry.
 /// Where settings live and what they default to.
+/// Crash and background recovery.
+///
+/// The autosave lives beside the settings file, in the app's own folder, and
+/// never anywhere near the user's photo. The source photo is never written to.
+class RecoveryConstants {
+  const RecoveryConstants._();
+
+  static const String fileName = 'recovery.ncdmarkup.json';
+  static const String partialSuffix = '.partial';
+
+  /// How long after the last change the autosave is written.
+  ///
+  /// Debounced rather than periodic, so a continuous scribble writes one file
+  /// when the hand stops instead of one file per stroke.
+  static const int defaultIntervalSeconds = 15;
+  static const int minimumIntervalSeconds = 5;
+  static const int maximumIntervalSeconds = 120;
+  static const int intervalStepSeconds = 5;
+
+  /// Older than this and the autosave is deleted rather than offered. A week
+  /// on, a recovery prompt is a puzzle rather than a rescue.
+  static const Duration maximumAge = Duration(days: 7);
+
+  // Dialog copy.
+  static const String dialogTitle = 'Unsaved markup found';
+  static const String restoreButton = 'Restore';
+  static const String discardButton = 'Discard';
+  static const String restoredMessage = 'Unsaved markup restored.';
+  static const String discardedMessage = 'Unsaved markup discarded.';
+  static const String photoMissingMessage =
+      'The photo that markup belonged to could not be opened.';
+}
+
 class SettingsConstants {
   const SettingsConstants._();
 
@@ -514,6 +547,13 @@ class SettingsConstants {
   static const String unitSystemAutoOption = 'Auto';
   static const String unitSystemImperialOption = 'Imperial';
   static const String unitSystemMetricOption = 'Metric';
+
+  static const String autosaveIntervalLabel = 'Autosave after';
+  static const String autosaveIntervalDescription =
+      'How long after you stop drawing the app saves a recovery copy. The copy '
+      'lives in the app folder, never next to your photo, and the photo itself '
+      'is never written to.';
+  static const String autosaveIntervalSuffix = 'seconds';
 
   static const String autoLabelLabel = 'Label dimensions automatically';
   static const String autoLabelDescription =

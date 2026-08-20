@@ -29,6 +29,7 @@ import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
+import 'package:ncd_photo_markup/features/recovery/services/recovery_service.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/utils/measurement_value_utils.dart';
 import 'package:ncd_photo_markup/features/settings/models/app_settings.dart';
@@ -80,6 +81,7 @@ class NcdPhotoMarkupApp extends StatelessWidget {
     this.saveLocationOverride,
     this.showStartupSplash = true,
     this.settingsServiceOverride,
+    this.recoveryServiceOverride,
   });
 
   final String? initialImagePath;
@@ -92,6 +94,10 @@ class NcdPhotoMarkupApp extends StatelessWidget {
   /// Lets a test point settings at a scratch folder instead of the real one.
   final SettingsService? settingsServiceOverride;
 
+  /// Lets a test point the autosave at a scratch folder instead of the real
+  /// one, so a test run never reads or writes the user's own recovery file.
+  final RecoveryService? recoveryServiceOverride;
+
   @override
   Widget build(BuildContext context) {
     final Widget shell = PhotoMarkupShellScreen(
@@ -101,6 +107,7 @@ class NcdPhotoMarkupApp extends StatelessWidget {
       openFileOverride: openFileOverride,
       saveLocationOverride: saveLocationOverride,
       settingsServiceOverride: settingsServiceOverride,
+      recoveryServiceOverride: recoveryServiceOverride,
     );
 
     return MaterialApp(
@@ -226,6 +233,7 @@ class PhotoMarkupShellScreen extends StatefulWidget {
     this.openFileOverride,
     this.saveLocationOverride,
     this.settingsServiceOverride,
+    this.recoveryServiceOverride,
   });
 
   final String? initialImagePath;
@@ -236,6 +244,10 @@ class PhotoMarkupShellScreen extends StatefulWidget {
 
   /// Lets a test point settings at a scratch folder instead of the real one.
   final SettingsService? settingsServiceOverride;
+
+  /// Lets a test point the autosave at a scratch folder instead of the real
+  /// one, so a test run never reads or writes the user's own recovery file.
+  final RecoveryService? recoveryServiceOverride;
 
   @override
   State<PhotoMarkupShellScreen> createState() => _PhotoMarkupShellScreenState();
@@ -258,7 +270,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   bool _isExporting = false;
   bool _isSavingMarkupDocument = false;
   bool _isShowingLoadErrorDialog = false;
-  final UnsavedChangesTracker _unsavedChangesTracker = UnsavedChangesTracker();
+  late final UnsavedChangesTracker _unsavedChangesTracker =
+      UnsavedChangesTracker(onChanged: _onUnsavedChangesChanged);
   Size? _loadedImagePixelSize;
   final GlobalKey _canvasExportKey = GlobalKey();
   final TransformationController _canvasTransformController =
@@ -267,6 +280,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   AppSettings _settings = AppSettings.defaults;
   late final SettingsService _settingsService =
       widget.settingsServiceOverride ?? SettingsService();
+  late final RecoveryService _recoveryService =
+      widget.recoveryServiceOverride ?? RecoveryService();
+  Timer? _autosaveTimer;
+  bool _hasOfferedRecovery = false;
   MarkupTool _selectedTool = MarkupTool.none;
   bool _isSidebarExpanded = false;
   bool _isPanModeEnabled = false;
@@ -329,6 +346,146 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     unawaited(_restoreSettings());
   }
 
+  // --- crash and background recovery ---------------------------------------
+
+  /// The single hook the autosave hangs off.
+  ///
+  /// Work becoming unsaved schedules an autosave; work becoming saved removes
+  /// the autosave, because a saved file is not something a crash can cost you.
+  void _onUnsavedChangesChanged(bool hasUnsavedChanges) {
+    if (hasUnsavedChanges) {
+      _scheduleAutosave();
+      return;
+    }
+    _autosaveTimer?.cancel();
+    unawaited(_recoveryService.clearDraft());
+  }
+
+  /// Schedules an autosave of the markup in progress.
+  ///
+  /// Debounced, not periodic. A continuous scribble writes one file when the
+  /// hand stops rather than one per stroke, and the interval is the Settings
+  /// control this was built for.
+  void _scheduleAutosave() {
+    _autosaveTimer?.cancel();
+    if (_imagePath == null || _loadedSourceImagePath == null) {
+      return;
+    }
+    _autosaveTimer = Timer(
+      Duration(seconds: _settings.autosaveIntervalSeconds),
+      () => unawaited(_writeAutosave()),
+    );
+  }
+
+  /// Writes the autosave, or clears it when there is nothing left to recover.
+  Future<void> _writeAutosave() async {
+    if (_imagePath == null || _loadedSourceImagePath == null) {
+      return;
+    }
+    if (!_hasUnsavedMarkupChanges) {
+      // Saved or exported work is not at risk, so the autosave stops
+      // representing anything and is removed rather than left to prompt.
+      await _recoveryService.clearDraft();
+      return;
+    }
+    await _recoveryService.saveDraft(_buildEditableMarkupDocument());
+  }
+
+  /// Writes now rather than waiting out the debounce.
+  ///
+  /// Called when the app is backgrounded, hidden or about to exit, which is
+  /// the last moment anything can be written.
+  void _flushAutosave() {
+    _autosaveTimer?.cancel();
+    unawaited(_writeAutosave());
+  }
+
+  /// Offers the autosave from a previous run, once, on launch.
+  ///
+  /// Never interrupts a photo that is already open. If Control Center handed
+  /// in a specific photo, that is the job in hand and a leftover autosave can
+  /// wait until the app is opened on its own.
+  Future<void> _offerRecovery() async {
+    final String? handedInPath = widget.initialImagePath;
+    if (_hasOfferedRecovery ||
+        _imagePath != null ||
+        _hasUnsavedMarkupChanges ||
+        (handedInPath != null && handedInPath.trim().isNotEmpty)) {
+      return;
+    }
+    _hasOfferedRecovery = true;
+
+    final RecoverableDraft? draft = await _recoveryService.loadDraft();
+    if (draft == null || !mounted) {
+      return;
+    }
+
+    final bool restore = await _showRecoveryDialog(draft);
+    if (!mounted) {
+      return;
+    }
+    if (!restore) {
+      // Declining deletes it. Leaving it would prompt again on every launch,
+      // and a prompt you have already said no to is noise.
+      await _recoveryService.clearDraft();
+      if (mounted) {
+        _showSnack(RecoveryConstants.discardedMessage);
+      }
+      return;
+    }
+
+    await _loadImageFromPath(draft.sourceImagePath, showErrorForFailure: true);
+    if (!mounted || _imagePath == null) {
+      if (mounted) {
+        _showSnack(RecoveryConstants.photoMissingMessage);
+      }
+      return;
+    }
+    setState(() {
+      _applyEditableMarkupDocument(draft.document);
+      // Restored work is unsaved work. It has been recovered, not saved.
+      _unsavedChangesTracker.markDirty();
+    });
+    _showSnack(RecoveryConstants.restoredMessage);
+  }
+
+  Future<bool> _showRecoveryDialog(RecoverableDraft draft) async {
+    final bool? restore = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text(RecoveryConstants.dialogTitle),
+          content: Text(
+            'The app closed with ${draft.markCount} unsaved '
+            '${draft.markCount == 1 ? 'mark' : 'marks'} on '
+            '${draft.sourceImageFileName}. Restore it?',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text(RecoveryConstants.discardButton),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text(RecoveryConstants.restoreButton),
+            ),
+          ],
+        );
+      },
+    );
+    return restore ?? false;
+  }
+
+  @visibleForTesting
+  Future<void> debugWriteAutosave() => _writeAutosave();
+
+  @visibleForTesting
+  Future<void> debugOfferRecovery() => _offerRecovery();
+
+  @visibleForTesting
+  RecoveryService get debugRecoveryService => _recoveryService;
+
   /// Loads saved settings and applies the ones that seed new marks.
   ///
   /// Never touches an existing mark. These only decide what the next thing you
@@ -343,6 +500,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _selectedStylePresetId = loaded.defaultStylePresetId;
       _selectedFontSize = loaded.defaultFontSize;
     });
+    await _offerRecovery();
   }
 
   /// Applies a setting immediately, then persists it in the background.
@@ -410,6 +568,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _autosaveTimer?.cancel();
     _canvasTransformController.dispose();
     unawaited(
       _imageImportService.deleteTemporaryDisplayPath(
@@ -1576,6 +1735,18 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return ui.AppExitResponse.exit;
     }
     return ui.AppExitResponse.cancel;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      // Backgrounded, screen locked, or about to be killed. Write now; there
+      // may not be a later.
+      _flushAutosave();
+    }
   }
 
   @override

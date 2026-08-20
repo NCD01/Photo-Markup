@@ -654,3 +654,30 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.42 - 2026-08-20
+
+Linked changelog entries:
+- `v0.42 - 2026-08-20`
+
+Scope:
+  - New RecoveryService: debounced autosave of the whole markup document, written to a .partial name then renamed so an interrupted write leaves the previous good copy.
+  - The recovery file lives beside settings.json in APPDATA, never beside the photo. The source photo is never opened for writing.
+  - On launch a usable recovery file is offered by photo name and mark count. Restore reopens and reapplies; Discard deletes it immediately.
+  - Stale, unparseable, empty, orphaned and over-a-week-old recovery files delete themselves rather than prompting forever.
+  - Wired the Autosave after control in Settings, which v0.37 left out for want of an autosave to point at. 5 to 120 seconds, 15 by default.
+  - UnsavedChangesTracker gained an onChanged hook so the autosave has one place to listen rather than fifteen call sites to remember.
+  - DECISION-032 records the reasoning.
+
+Validation:
+  - flutter test: 192 passed, 0 failed
+  - flutter analyze: no issues found
+  - 20 new tests: 14 on the service and 6 driving the real widget tree
+  - A test asserts the source photo bytes and modification time are unchanged across an autosave
+
+Rollback:
+  - Revert the version bump commit and delete the matching tag.
+  - Delete lib/features/recovery and the autosave block in main.dart; revert UnsavedChangesTracker to the two-method version.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.

@@ -73,7 +73,9 @@ plain-English line under every control and a Reset for each section on its own.
 | Setting | What it changes |
 |---|---|
 | Measured value format | Tape (`8 ft 6 in`) or Decimal (`8.5 ft`). |
+| Units | `Auto`, `Imperial` or `Metric`. Auto reports in whatever the photo was calibrated in. The other two convert for display only. |
 | Label dimensions automatically | Off brings back the type-it-yourself dialog even when a scale is set. |
+| Autosave after | How long after you stop drawing a recovery copy is written. 5 to 120 seconds, 15 by default. |
 | Colour | The colour a new mark starts with. |
 | Text size | The starting size for text notes and dimension labels. |
 | Exported file name ending | `front.jpg` becomes `front - Markup.png`. |
@@ -85,6 +87,48 @@ an update. Nothing in Settings ever changes a measurement already on a photo.
 
 Every mark is stored in normalized (`0..1`) coordinates against the source
 image, so marks stay in the right place when the window is resized.
+
+## Crash and background recovery
+Unsaved markup survives a crash, a power cut, or the app being killed. Nothing
+here touches your photo.
+
+**How it works.** Every time the markup goes from saved to unsaved, a timer
+starts. When it fires, the whole document is written to one recovery file. The
+timer is debounced rather than periodic, so a long scribble writes one file when
+your hand stops instead of one file per stroke. The wait is the `Autosave after`
+setting: 15 seconds by default, adjustable from 5 to 120.
+
+The app also writes immediately, without waiting out the timer, when it is
+backgrounded, hidden or told to exit. That is the last moment anything can be
+written.
+
+**Where the file lives.**
+
+```
+%APPDATA%\NCD Photo Markup\recovery.ncdmarkup.json
+```
+
+The same folder as `settings.json`, never next to your photo. It is written to a
+`.partial` name first and renamed into place, so a power cut mid-write leaves the
+previous good copy rather than a half-written file that will not open. It is
+exactly the same JSON format as a markup file you save yourself, which is why
+recovery is just an open.
+
+**What you see next time.** If the app finds a recovery file on launch it names
+the photo and the number of marks and asks. Restore reopens the photo and puts
+the marks back, still flagged unsaved, because recovered is not the same as
+saved. Discard deletes the recovery file there and then; it does not come back
+on the next launch, because a prompt you have already answered is noise.
+
+The app never interrupts a photo that is already open. If Control Center handed
+in a specific photo, that is the job in hand and the recovery file waits for a
+launch where you open the app on its own.
+
+**When the recovery file goes away by itself.** Saving or exporting your work
+deletes it, because saved work is not something a crash can cost you. It is also
+deleted, silently, when it will not parse, when it holds no marks, when the photo
+it belongs to is no longer on disk, or when it is more than seven days old. A
+week later a recovery prompt is a puzzle rather than a rescue.
 
 ## Supported Input
 `jpg`, `jpeg`, `png`, `webp`, `heic`, `heif`, `dwg`.

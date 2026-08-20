@@ -150,6 +150,50 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       ),
                     ),
                   ),
+                  _setting(
+                    label: SettingsConstants.autosaveIntervalLabel,
+                    description:
+                        SettingsConstants.autosaveIntervalDescription,
+                    control: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Slider(
+                            key: const ValueKey<String>(
+                              'settings-autosave-interval',
+                            ),
+                            min: RecoveryConstants.minimumIntervalSeconds
+                                .toDouble(),
+                            max: RecoveryConstants.maximumIntervalSeconds
+                                .toDouble(),
+                            divisions:
+                                (RecoveryConstants.maximumIntervalSeconds -
+                                    RecoveryConstants.minimumIntervalSeconds) ~/
+                                RecoveryConstants.intervalStepSeconds,
+                            value: _settings.autosaveIntervalSeconds
+                                .toDouble()
+                                .clamp(
+                                  RecoveryConstants.minimumIntervalSeconds
+                                      .toDouble(),
+                                  RecoveryConstants.maximumIntervalSeconds
+                                      .toDouble(),
+                                ),
+                            label:
+                                '${_settings.autosaveIntervalSeconds} '
+                                '${SettingsConstants.autosaveIntervalSuffix}',
+                            onChanged: (double value) => _apply(
+                              _settings.copyWith(
+                                autosaveIntervalSeconds: value.round(),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '${_settings.autosaveIntervalSeconds} '
+                          '${SettingsConstants.autosaveIntervalSuffix}',
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
               _section(
