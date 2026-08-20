@@ -518,3 +518,19 @@ Changes: Added DECISION-030, dimensions self-label when a scale is set.
 - Rollback or Reversal: Remove the `metadata` argument from `MarkedUpImageExportService.exportBoundaryToPng` and the `metadata` field from `EditableMarkupDocument`, then delete `png_metadata_writer.dart` and `export_metadata.dart`. Sidecars already written stay readable; the extra object is ignored.
 - Related Changes: v0.43
 - Review Date: N/A
+
+## DECISION-034
+- Date: 2026-08-20
+- Status: Accepted
+- Area: Markup Interaction
+- Owner: NCD / M
+- Decision: A preset holds a name, a tool, a colour and the label typography, and applying one is a single tap in a Presets section at the bottom of the sidebar. Four built-ins ship: Red callout arrow, Blue dimension, Yellow box, Big note. `Save current as preset` turns whatever is selected right now into a named preset; saving over an existing name replaces it rather than leaving two entries that look identical. Presets live in settings.json alongside every other setting, capped at twelve, and the oldest is dropped when a thirteenth is added. Applying a preset only decides what the next mark starts out as; a mark already on the photo is never touched.
+- Alternatives Considered:
+- Put presets in the Settings dialog. Rejected: applying one has to be one tap from where you are drawing, and a dialog is at least three.
+- Let a preset carry a stroke width, as the task described. Not done: see below.
+- Keep unlimited presets. Rejected: a preset list you have to read is slower than the tool buttons it was meant to replace, which is why the built-in set is four and the cap is twelve.
+- Rationale: The four built-ins are the ones a contractor actually reaches for, and the cap exists for the same reason the set is small. A preset that saves a tap but costs a scan of a list of twenty is not a saving.
+- Impact: Stroke width is NOT in a preset, because the app has no stroke-width setting for a preset to carry. This is the same gap that kept a default stroke width out of Settings in v0.37. The `AnnotationPreset` class is where it goes when stroke-width plumbing exists; nothing else needs to change to add it. A preset naming a tool, a colour or a font size this build does not have is dropped on read rather than repaired into something the user did not choose, and one broken preset does not take the good ones with it. An empty preset list is preserved as an empty list, because deleting every preset is a decision and not an absence; only a settings file with no preset key at all falls back to the built-ins. 15 tests.
+- Rollback or Reversal: Delete `annotation_preset.dart` and `AnnotationPresetConstants`, remove the `annotationPresets` field from `AppSettings`, and remove `_buildPresetsSection` and the preset actions from `main.dart`. A settings file with presets in it still loads; the extra key is ignored.
+- Related Changes: v0.44
+- Review Date: When stroke width exists, to add it to the preset

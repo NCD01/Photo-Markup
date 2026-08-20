@@ -88,6 +88,19 @@ an update. Nothing in Settings ever changes a measurement already on a photo.
 Every mark is stored in normalized (`0..1`) coordinates against the source
 image, so marks stay in the right place when the window is resized.
 
+## Presets
+The bottom section of the sidebar. One tap applies a saved tool, colour and
+label size. Four ship with the app: Red callout arrow, Blue dimension, Yellow
+box, Big note.
+
+`Save current as preset` names whatever is selected right now and adds it.
+Saving over a name you already used replaces it. Twelve is the cap; adding a
+thirteenth drops the oldest.
+
+A preset does not carry a stroke width, because the app has no stroke-width
+setting yet. Applying a preset only changes what the next mark starts out as
+and never touches a mark already on the photo.
+
 ## Crash and background recovery
 Unsaved markup survives a crash, a power cut, or the app being killed. Nothing
 here touches your photo.

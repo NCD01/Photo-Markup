@@ -30,6 +30,7 @@ import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
 import 'package:ncd_photo_markup/features/export/services/export_metadata.dart';
+import 'package:ncd_photo_markup/features/settings/models/annotation_preset.dart';
 import 'package:ncd_photo_markup/features/recovery/services/recovery_service.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/utils/measurement_value_utils.dart';
@@ -526,6 +527,210 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     final bool saved = await _settingsService.save(next);
     if (!saved && mounted) {
       _showSnack(SettingsConstants.saveFailedMessage);
+    }
+  }
+
+  // --- annotation presets ---------------------------------------------------
+
+  /// Applies a saved preset: tool, colour and label typography, in one tap.
+  ///
+  /// Only decides what the next mark starts out as. A mark already on the
+  /// photo is never touched, which is the same rule every setting follows.
+  void _applyAnnotationPreset(AnnotationPreset preset) {
+    setState(() {
+      _selectedTool = preset.tool;
+      _selectedStylePresetId = preset.stylePresetId;
+      _selectedFontFamily = preset.fontFamily;
+      _selectedFontSize = preset.fontSize;
+      if (preset.tool != MarkupTool.none) {
+        _isPanModeEnabled = false;
+      }
+    });
+    _showSnack(
+      '${AnnotationPresetConstants.appliedMessagePrefix} ${preset.name}',
+    );
+  }
+
+  /// The current tool and style, as a preset waiting for a name.
+  AnnotationPreset _currentAsPreset(String name) {
+    return AnnotationPreset(
+      name: name,
+      tool: _selectedTool,
+      stylePresetId: _selectedStylePresetId,
+      fontFamily: _selectedFontFamily,
+      fontSize: _selectedFontSize,
+    );
+  }
+
+  Future<void> _saveCurrentAsPreset() async {
+    final String? name = await _promptForPresetName();
+    if (name == null || !mounted) {
+      return;
+    }
+    final AnnotationPreset preset = _currentAsPreset(name);
+    final List<AnnotationPreset> next = <AnnotationPreset>[
+      ..._settings.annotationPresets,
+    ];
+    // Saving over a name you already used replaces it rather than leaving two
+    // presets with the same label and no way to tell them apart.
+    final int existing = next.indexWhere(
+      (AnnotationPreset item) =>
+          item.name.toLowerCase() == preset.name.toLowerCase(),
+    );
+    final bool replaced = existing >= 0;
+    if (replaced) {
+      next[existing] = preset;
+    } else {
+      if (next.length >= AnnotationPresetConstants.maximum) {
+        next.removeAt(0);
+      }
+      next.add(preset);
+    }
+    _applySettings(_settings.copyWith(annotationPresets: next));
+    _showSnack(
+      replaced
+          ? AnnotationPresetConstants.replacedMessage
+          : AnnotationPresetConstants.savedMessage,
+    );
+  }
+
+  Future<String?> _promptForPresetName() async {
+    final TextEditingController controller = TextEditingController(
+      text: _buildToolbarStyleLabel(),
+    );
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: const Text(AnnotationPresetConstants.saveDialogTitle),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              maxLength: AnnotationPresetConstants.maximumNameLength,
+              decoration: const InputDecoration(
+                hintText: AnnotationPresetConstants.saveDialogHint,
+              ),
+              onSubmitted: (String value) =>
+                  Navigator.of(dialogContext).pop(value.trim()),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text(AnnotationPresetConstants.cancelButton),
+              ),
+              FilledButton(
+                onPressed: () =>
+                    Navigator.of(dialogContext).pop(controller.text.trim()),
+                child: const Text(AnnotationPresetConstants.saveButton),
+              ),
+            ],
+          );
+        },
+      ).then((String? value) {
+        final String trimmed = value?.trim() ?? '';
+        return trimmed.isEmpty ? null : trimmed;
+      });
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  @visibleForTesting
+  void debugApplyAnnotationPreset(AnnotationPreset preset) =>
+      _applyAnnotationPreset(preset);
+
+  @visibleForTesting
+  AnnotationPreset debugCurrentAsPreset(String name) => _currentAsPreset(name);
+
+  /// The presets section of the sidebar: one tap per saved preset, plus the
+  /// action that turns whatever is currently selected into a new one.
+  Widget _buildPresetsSection() {
+    final List<AnnotationPreset> presets = _settings.annotationPresets;
+    return _SidebarActionSection(
+      title: AnnotationPresetConstants.sectionTitle,
+      isExpanded: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (presets.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: UiLayoutConstants.sidebarActionGap,
+              ),
+              child: Text(
+                AnnotationPresetConstants.emptyHint,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          for (final AnnotationPreset preset in presets)
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: UiLayoutConstants.sidebarActionGap,
+              ),
+              child: _SidebarActionButton(
+                actionKey: 'preset-${preset.name}',
+                label: preset.name,
+                tooltipLabel: preset.name,
+                iconDescriptor: _toolbarActionIconDescriptor(
+                  _toolbarLabelForTool(preset.tool),
+                ),
+                iconColor: MarkupStylePresets.byId(
+                  preset.stylePresetId,
+                ).dimensionLineColor,
+                isExpanded: true,
+                isSelected: false,
+                isDisabled: false,
+                onPressed: () => _applyAnnotationPreset(preset),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(
+              bottom: UiLayoutConstants.sidebarActionGap,
+            ),
+            child: _SidebarActionButton(
+              actionKey: 'preset-save-current',
+              label: AnnotationPresetConstants.saveCurrentLabel,
+              tooltipLabel: AnnotationPresetConstants.saveCurrentLabel,
+              iconDescriptor: _toolbarActionIconDescriptor(
+                ToolbarConstants.saveMarkup,
+              ),
+              iconColor: AppThemeConstants.sidebarSectionLabel,
+              isExpanded: true,
+              isSelected: false,
+              isDisabled: false,
+              onPressed: () => unawaited(_saveCurrentAsPreset()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The sidebar label whose icon matches a tool, so a preset button looks
+  /// like the tool it selects.
+  String _toolbarLabelForTool(MarkupTool tool) {
+    switch (tool) {
+      case MarkupTool.scaleCalibration:
+        return ToolbarConstants.scaleCalibration;
+      case MarkupTool.multiSegmentMeasurement:
+        return ToolbarConstants.multiSegmentMeasurement;
+      case MarkupTool.areaMeasurement:
+        return ToolbarConstants.areaMeasurement;
+      case MarkupTool.dimension:
+        return ToolbarConstants.dimension;
+      case MarkupTool.arrow:
+        return ToolbarConstants.arrow;
+      case MarkupTool.rectangle:
+        return ToolbarConstants.rectangle;
+      case MarkupTool.oval:
+        return ToolbarConstants.circle;
+      case MarkupTool.freehand:
+        return ToolbarConstants.freehand;
+      case MarkupTool.textNote:
+        return ToolbarConstants.textNote;
+      case MarkupTool.none:
+        return ToolbarConstants.style;
     }
   }
 
@@ -2200,8 +2405,13 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
                         top: UiLayoutConstants.sidebarSectionBottomPadding,
                         bottom: UiLayoutConstants.sidebarSectionBottomPadding,
                       ),
-                      itemCount: ToolbarConstants.sections.length,
+                      itemCount: ToolbarConstants.sections.length + 1,
                       itemBuilder: (BuildContext context, int sectionIndex) {
+                        // The presets section is last, because it is the one
+                        // whose contents the user controls.
+                        if (sectionIndex == ToolbarConstants.sections.length) {
+                          return _buildPresetsSection();
+                        }
                         final ToolbarSectionDefinition section =
                             ToolbarConstants.sections[sectionIndex];
                         return _SidebarActionSection(

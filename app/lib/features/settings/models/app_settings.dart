@@ -1,5 +1,6 @@
 import 'package:ncd_photo_markup/core/constants/app_constants.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
+import 'package:ncd_photo_markup/features/settings/models/annotation_preset.dart';
 
 /// How a measured length is written out.
 ///
@@ -35,7 +36,8 @@ class AppSettings {
     this.defaultFontSize = MarkupTypographyConstants.defaultFontSize,
     this.exportFileSuffix = ExportConstants.defaultFileSuffix,
     this.defaultExportDirectory,
-  });
+    List<AnnotationPreset>? annotationPresets,
+  }) : _annotationPresets = annotationPresets;
 
   final MeasurementDisplayMode measurementDisplayMode;
   final MeasurementUnitSystem measurementUnitSystem;
@@ -45,6 +47,14 @@ class AppSettings {
   final double defaultFontSize;
   final String exportFileSuffix;
   final String? defaultExportDirectory;
+
+  final List<AnnotationPreset>? _annotationPresets;
+
+  /// The saved presets, falling back to the built-in set for a settings file
+  /// written before presets existed. An empty list is kept as an empty list,
+  /// because deleting every preset is a decision, not an absence.
+  List<AnnotationPreset> get annotationPresets =>
+      _annotationPresets ?? AnnotationPresetConstants.builtIns;
 
   static const AppSettings defaults = AppSettings();
 
@@ -57,6 +67,7 @@ class AppSettings {
     double? defaultFontSize,
     String? exportFileSuffix,
     String? defaultExportDirectory,
+    List<AnnotationPreset>? annotationPresets,
     bool clearDefaultExportDirectory = false,
   }) {
     return AppSettings(
@@ -73,6 +84,7 @@ class AppSettings {
       defaultExportDirectory: clearDefaultExportDirectory
           ? null
           : (defaultExportDirectory ?? this.defaultExportDirectory),
+      annotationPresets: annotationPresets ?? _annotationPresets,
     );
   }
 
@@ -86,11 +98,12 @@ class AppSettings {
     );
   }
 
-  /// Restores only the new-mark defaults group.
+  /// Restores only the new-mark defaults group, presets included.
   AppSettings resetDefaultsGroup() {
     return copyWith(
       defaultStylePresetId: defaults.defaultStylePresetId,
       defaultFontSize: defaults.defaultFontSize,
+      annotationPresets: AnnotationPresetConstants.builtIns,
     );
   }
 
@@ -114,6 +127,9 @@ class AppSettings {
       'exportFileSuffix': exportFileSuffix,
       if (defaultExportDirectory != null)
         'defaultExportDirectory': defaultExportDirectory,
+      'annotationPresets': annotationPresets
+          .map((AnnotationPreset preset) => preset.toJson())
+          .toList(growable: false),
     };
   }
 
@@ -138,6 +154,9 @@ class AppSettings {
       exportFileSuffix:
           _suffixFrom(json['exportFileSuffix']) ?? defaults.exportFileSuffix,
       defaultExportDirectory: _directoryFrom(json['defaultExportDirectory']),
+      annotationPresets: json.containsKey('annotationPresets')
+          ? AnnotationPreset.listFromJson(json['annotationPresets'])
+          : null,
     );
   }
 

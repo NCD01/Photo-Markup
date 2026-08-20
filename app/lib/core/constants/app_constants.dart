@@ -1,13 +1,15 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart';
+import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
+import 'package:ncd_photo_markup/features/settings/models/annotation_preset.dart';
 import 'package:ncd_photo_markup/features/settings/models/app_settings.dart';
 
 class AppConstants {
   const AppConstants._();
 
   static const String appName = 'NCD Photo Markup';
-  static const String appVersion = 'v0.43';
+  static const String appVersion = 'v0.44';
   static const String startupImageEnvKey = 'NCD_STARTUP_IMAGE_PATH';
 }
 
@@ -470,6 +472,63 @@ class MeasurementToolConstants {
 ///
 /// The autosave lives beside the settings file, in the app's own folder, and
 /// never anywhere near the user's photo. The source photo is never written to.
+/// Saved ways of marking something up, applied in one tap.
+class AnnotationPresetConstants {
+  const AnnotationPresetConstants._();
+
+  /// Enough to cover a job without turning the sidebar into a list nobody
+  /// reads. Presets past this on read are dropped.
+  static const int maximum = 12;
+  static const int maximumNameLength = 32;
+
+  static const String sectionTitle = 'Presets';
+  static const String saveCurrentLabel = 'Save current as preset';
+  static const String saveDialogTitle = 'Save preset';
+  static const String saveDialogHint = 'Name it something you will recognise';
+  static const String saveButton = 'Save';
+  static const String cancelButton = 'Cancel';
+  static const String savedMessage = 'Preset saved.';
+  static const String appliedMessagePrefix = 'Preset applied:';
+  static const String replacedMessage = 'Preset replaced.';
+  static const String emptyHint =
+      'No presets yet. Set a tool and a colour, then save it here.';
+
+  /// The four a contractor reaches for, and no more.
+  ///
+  /// Deliberately small: a preset list you have to read is slower than the
+  /// tool buttons it was meant to replace.
+  static List<AnnotationPreset> get builtIns => <AnnotationPreset>[
+    const AnnotationPreset(
+      name: 'Red callout arrow',
+      tool: MarkupTool.arrow,
+      stylePresetId: MarkupStylePresetId.red,
+      fontFamily: MarkupTypographyConstants.defaultFontFamily,
+      fontSize: MarkupTypographyConstants.defaultFontSize,
+    ),
+    const AnnotationPreset(
+      name: 'Blue dimension',
+      tool: MarkupTool.dimension,
+      stylePresetId: MarkupStylePresetId.ncdBlue,
+      fontFamily: MarkupTypographyConstants.defaultFontFamily,
+      fontSize: MarkupTypographyConstants.defaultFontSize,
+    ),
+    const AnnotationPreset(
+      name: 'Yellow box',
+      tool: MarkupTool.rectangle,
+      stylePresetId: MarkupStylePresetId.yellow,
+      fontFamily: MarkupTypographyConstants.defaultFontFamily,
+      fontSize: MarkupTypographyConstants.defaultFontSize,
+    ),
+    const AnnotationPreset(
+      name: 'Big note',
+      tool: MarkupTool.textNote,
+      stylePresetId: MarkupStylePresetId.red,
+      fontFamily: MarkupTypographyConstants.defaultFontFamily,
+      fontSize: 24,
+    ),
+  ];
+}
+
 class RecoveryConstants {
   const RecoveryConstants._();
 

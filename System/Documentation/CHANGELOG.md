@@ -1819,3 +1819,23 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
   - Delete png_metadata_writer.dart and export_metadata.dart and remove the metadata arguments. Sidecars already written stay readable.
+
+## v0.44 - 2026-08-20
+- Owner: Documentation Maintainers
+- Author: NCD01
+- Type: Feature
+- Reason: One-tap annotation presets in the sidebar, with a save-current action.
+- Changes:
+  - New AnnotationPreset: a name, a tool, a colour and the label typography.
+  - Four built-ins: Red callout arrow, Blue dimension, Yellow box, Big note.
+  - Presets section at the bottom of the sidebar. One tap applies one.
+  - Save current as preset names what is selected now. Saving over an existing name replaces it. Cap of twelve, oldest dropped.
+  - Presets persist in settings.json. A broken preset is dropped on read without taking the good ones with it.
+  - DECISION-034 records the reasoning, including why stroke width is not in a preset.
+- Validation Evidence:
+  - flutter test: 222 passed, 0 failed
+  - flutter analyze: no issues found
+  - 15 new tests covering the built-in set, JSON round trip, malformed presets, applying one and the sidebar section rendering
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
+  - Delete annotation_preset.dart and the presets section in main.dart. A settings file with presets still loads; the key is ignored.
