@@ -1727,3 +1727,18 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
   - flutter analyze: PASS,flutter test: PASS (144 tests),Documentation-only change to app behaviour: none
 - Rollback Notes:
   - Revert this commit; no app code is affected.
+
+## v0.39 - 2026-08-20
+- Owner: Documentation Maintainers
+- Author: NCD01
+- Type: Structural
+- Reason: Declare line endings in .gitattributes so they stop being a per-clone setting.
+- Changes:
+  - Added .gitattributes: text stored as LF, checked out native, images and fonts marked binary, shell scripts and git hooks pinned to LF in the working tree.
+  - Ran git add --renormalize . across all 274 tracked files. No file changed; every text blob was already LF.
+- Validation Evidence:
+  - git add --renormalize . staged only .gitattributes itself.
+  - CR byte count of every tracked text blob in HEAD, read with git cat-file: zero.
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
+  - Deleting .gitattributes restores the previous behaviour, which was per-clone core.autocrlf.

@@ -95,7 +95,7 @@ $releaseBlock = @"
 ## $newVersion - $Date
 
 Linked changelog entries:
-- `$newVersion - $Date`
+- ``$newVersion - $Date``
 
 Scope:
 $(Convert-ToBulletList $Changes)

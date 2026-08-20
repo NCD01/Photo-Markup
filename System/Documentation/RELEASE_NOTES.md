@@ -587,3 +587,23 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.39 - 2026-08-20
+
+Linked changelog entries:
+- `v0.39 - 2026-08-20`
+
+Scope:
+  - Added .gitattributes: text stored as LF, checked out native, images and fonts marked binary, shell scripts and git hooks pinned to LF in the working tree.
+  - Ran git add --renormalize . across all 274 tracked files. No file changed; every text blob was already LF.
+
+Validation:
+  - git add --renormalize . staged only .gitattributes itself.
+  - CR byte count of every tracked text blob in HEAD, read with git cat-file: zero.
+
+Rollback:
+  - Revert the version bump commit and delete the matching tag.
+  - Deleting .gitattributes restores the previous behaviour, which was per-clone core.autocrlf.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.
