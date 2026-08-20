@@ -1839,3 +1839,22 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
   - Delete annotation_preset.dart and the presets section in main.dart. A settings file with presets still loads; the key is ignored.
+
+## v0.45 - 2026-08-20
+- Owner: Documentation Maintainers
+- Author: NCD01
+- Type: Feature
+- Reason: Job grouping data model and index. No UI yet; that is outstanding.
+- Changes:
+  - New JobKey, JobPhoto and JobGroup: photos group by Control Center project code, then client name, then the folder they live in.
+  - New JobIndexService writing jobs.json beside settings.json. Paths only; no photo is copied, moved, renamed or written to.
+  - The index is updated when a markup file is saved and when an export is written.
+  - Bounded at 200 jobs and 500 photos per job, oldest dropped first.
+  - DECISION-035 records the reasoning and states plainly that the UI is outstanding.
+- Validation Evidence:
+  - flutter test: 241 passed, 0 failed
+  - flutter analyze: no issues found
+  - 19 new tests, including one asserting a photo bytes and modification time are unchanged across a record and a prune
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
+  - Delete lib/features/jobs and the two _recordPhotoInJobIndex calls in main.dart. Any jobs.json already written is orphaned and harmless.

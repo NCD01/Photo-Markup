@@ -30,6 +30,7 @@ import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
 import 'package:ncd_photo_markup/features/export/services/export_metadata.dart';
+import 'package:ncd_photo_markup/features/jobs/services/job_index_service.dart';
 import 'package:ncd_photo_markup/features/settings/models/annotation_preset.dart';
 import 'package:ncd_photo_markup/features/recovery/services/recovery_service.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
@@ -84,6 +85,7 @@ class NcdPhotoMarkupApp extends StatelessWidget {
     this.showStartupSplash = true,
     this.settingsServiceOverride,
     this.recoveryServiceOverride,
+    this.jobIndexServiceOverride,
   });
 
   final String? initialImagePath;
@@ -100,6 +102,9 @@ class NcdPhotoMarkupApp extends StatelessWidget {
   /// one, so a test run never reads or writes the user's own recovery file.
   final RecoveryService? recoveryServiceOverride;
 
+  /// Lets a test point the job index at a scratch folder.
+  final JobIndexService? jobIndexServiceOverride;
+
   @override
   Widget build(BuildContext context) {
     final Widget shell = PhotoMarkupShellScreen(
@@ -110,6 +115,7 @@ class NcdPhotoMarkupApp extends StatelessWidget {
       saveLocationOverride: saveLocationOverride,
       settingsServiceOverride: settingsServiceOverride,
       recoveryServiceOverride: recoveryServiceOverride,
+      jobIndexServiceOverride: jobIndexServiceOverride,
     );
 
     return MaterialApp(
@@ -236,6 +242,7 @@ class PhotoMarkupShellScreen extends StatefulWidget {
     this.saveLocationOverride,
     this.settingsServiceOverride,
     this.recoveryServiceOverride,
+    this.jobIndexServiceOverride,
   });
 
   final String? initialImagePath;
@@ -250,6 +257,9 @@ class PhotoMarkupShellScreen extends StatefulWidget {
   /// Lets a test point the autosave at a scratch folder instead of the real
   /// one, so a test run never reads or writes the user's own recovery file.
   final RecoveryService? recoveryServiceOverride;
+
+  /// Lets a test point the job index at a scratch folder.
+  final JobIndexService? jobIndexServiceOverride;
 
   @override
   State<PhotoMarkupShellScreen> createState() => _PhotoMarkupShellScreenState();
@@ -284,6 +294,8 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       widget.settingsServiceOverride ?? SettingsService();
   late final RecoveryService _recoveryService =
       widget.recoveryServiceOverride ?? RecoveryService();
+  late final JobIndexService _jobIndexService =
+      widget.jobIndexServiceOverride ?? JobIndexService();
   Timer? _autosaveTimer;
   bool _hasOfferedRecovery = false;
   MarkupTool _selectedTool = MarkupTool.none;
@@ -529,6 +541,44 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       _showSnack(SettingsConstants.saveFailedMessage);
     }
   }
+
+  // --- job grouping ---------------------------------------------------------
+
+  /// Records the open photo against the job it belongs to.
+  ///
+  /// An index of paths. Nothing is copied, moved or written into the job
+  /// folder, and a failure here is swallowed: losing an index entry must never
+  /// cost anyone a photo.
+  Future<void> _recordPhotoInJobIndex({
+    String? markupFilePath,
+    String? exportPath,
+  }) async {
+    final String? path = _loadedSourceImagePath;
+    if (path == null || path.trim().isEmpty) {
+      return;
+    }
+    await _jobIndexService.recordPhoto(
+      sourceImagePath: path,
+      sourceImageFileName: _loadedFileName ?? _fileNameFromPath(path),
+      openedAtUtc: DateTime.now().toUtc(),
+      launchContext: _launchContext,
+      markCount: _totalMarkCount,
+      markupFilePath: markupFilePath,
+      exportPath: exportPath,
+    );
+  }
+
+  @visibleForTesting
+  Future<void> debugRecordPhotoInJobIndex({
+    String? markupFilePath,
+    String? exportPath,
+  }) => _recordPhotoInJobIndex(
+    markupFilePath: markupFilePath,
+    exportPath: exportPath,
+  );
+
+  @visibleForTesting
+  JobIndexService get debugJobIndexService => _jobIndexService;
 
   // --- annotation presets ---------------------------------------------------
 
@@ -1474,6 +1524,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       setState(() {
         _unsavedChangesTracker.markSaved();
       });
+      unawaited(_recordPhotoInJobIndex(exportPath: outputPath));
       _showSnack(UiCopyConstants.exportSuccessMessage);
       return true;
     } catch (_) {
@@ -1614,6 +1665,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       setState(() {
         _unsavedChangesTracker.markSaved();
       });
+      unawaited(_recordPhotoInJobIndex(markupFilePath: safePath));
       _showSnack(UiCopyConstants.markupDocumentSaveSuccessMessage);
     } catch (_) {
       if (!mounted) {

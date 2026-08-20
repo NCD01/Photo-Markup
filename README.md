@@ -88,6 +88,22 @@ an update. Nothing in Settings ever changes a measurement already on a photo.
 Every mark is stored in normalized (`0..1`) coordinates against the source
 image, so marks stay in the right place when the window is resized.
 
+## Job grouping
+Photos are grouped into jobs so a future release can offer "everything on this
+job". The index is written today; **there is no UI for it yet**, so nothing on
+screen shows a job list.
+
+A photo joins a job by the first of these that the app knows:
+
+1. Control Center's `--projectCode`.
+2. Control Center's `--clientName`.
+3. The folder the photo lives in.
+
+A photo with none of the three is not recorded rather than dropped into an
+unnamed bucket. The index lives at `%APPDATA%\NCD Photo Markup\jobs.json` and
+holds paths only. No photo is copied, moved, renamed or written to. Deleting
+the file loses a convenience and no work.
+
 ## Presets
 The bottom section of the sidebar. One tap applies a saved tool, colour and
 label size. Four ship with the app: Red callout arrow, Blue dimension, Yellow

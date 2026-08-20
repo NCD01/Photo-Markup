@@ -534,3 +534,20 @@ Changes: Added DECISION-030, dimensions self-label when a scale is set.
 - Rollback or Reversal: Delete `annotation_preset.dart` and `AnnotationPresetConstants`, remove the `annotationPresets` field from `AppSettings`, and remove `_buildPresetsSection` and the preset actions from `main.dart`. A settings file with presets in it still loads; the extra key is ignored.
 - Related Changes: v0.44
 - Review Date: When stroke width exists, to add it to the preset
+
+## DECISION-035
+- Date: 2026-08-20
+- Status: Accepted, DATA MODEL ONLY. UI OUTSTANDING.
+- Area: Data Model
+- Owner: NCD / M
+- Decision: Photos are grouped into jobs by one of three keys, checked in order: the Control Center project code, then the Control Center client name, then the folder the photo lives in. Nothing is guessed beyond that; a photo with no Control Center context and no parent folder is not recorded at all rather than dropped into an unnamed bucket. The index is a list of paths plus what the app knows about each photo, written to `jobs.json` beside settings.json and the recovery file. It is updated when a markup file is saved and when an export is written. Bounded at 200 jobs and 500 photos per job, oldest first in both cases. A job is named by its project code and client where they are known and by its folder name otherwise, never by a made-up label.
+- Alternatives Considered:
+- Group by the photo's EXIF capture date. Rejected: photos from one job span days, and photos from different jobs land on the same day.
+- Ask the user to name a job on first save. Rejected: it is a dialog in the middle of the work, and the folder answer is right most of the time without one.
+- Copy photos into a job folder the app manages. Rejected outright: the app does not move, rename or write to the customer's photos, and it is not going to start for a grouping feature.
+- One flat recent-photos list with no grouping. Rejected: it is the thing job grouping is meant to replace.
+- Rationale: People already group job photos by putting them in a folder per job. Reading that is free and matches what they did on purpose. Control Center's project code is better still when it is there, because it is an identifier someone entered deliberately and it survives the photos being moved. The ordering of the three keys is the ordering of how much someone meant it.
+- Impact: DATA MODEL AND SERVICE ONLY. There is no UI for this yet; nothing in the app displays a job list, and the index is written but never read back on screen. That is the honest state as of v0.45 and the outstanding work is a browse-by-job view. The index holds paths only: no pixels are copied, no photo is moved or renamed, and a test asserts a photo's bytes and modification time are unchanged across a record and a prune. Deleting jobs.json loses a convenience and no work at all. A file that will not parse loads as empty rather than throwing, and pruning missing photos is a separate call rather than part of every load, because checking every path on a network share at launch is slow and a stale entry is harmless until someone taps it. 19 tests.
+- Rollback or Reversal: Delete `lib/features/jobs`, remove the `jobIndexServiceOverride` parameter and the two `_recordPhotoInJobIndex` calls from `main.dart`. Any `jobs.json` already written is orphaned and harmless.
+- Related Changes: v0.45
+- Review Date: When the job browse UI is built

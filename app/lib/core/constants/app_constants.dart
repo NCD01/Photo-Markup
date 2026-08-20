@@ -9,7 +9,7 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'NCD Photo Markup';
-  static const String appVersion = 'v0.44';
+  static const String appVersion = 'v0.45';
   static const String startupImageEnvKey = 'NCD_STARTUP_IMAGE_PATH';
 }
 
@@ -472,6 +472,23 @@ class MeasurementToolConstants {
 ///
 /// The autosave lives beside the settings file, in the app's own folder, and
 /// never anywhere near the user's photo. The source photo is never written to.
+/// Grouping photos by the job they belong to.
+///
+/// An index of paths only. Nothing here copies, moves or writes a photo, and
+/// deleting the index file loses a convenience rather than any work.
+class JobIndexConstants {
+  const JobIndexConstants._();
+
+  static const String schemaVersion = '1.0';
+  static const String fileName = 'jobs.json';
+  static const String partialSuffix = '.partial';
+
+  /// Bounded so the index cannot grow without limit on a machine that has been
+  /// in use for years. Oldest goes first in both cases.
+  static const int maximumJobs = 200;
+  static const int maximumPhotosPerJob = 500;
+}
+
 /// Saved ways of marking something up, applied in one tap.
 class AnnotationPresetConstants {
   const AnnotationPresetConstants._();
