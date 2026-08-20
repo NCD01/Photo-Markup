@@ -777,3 +777,24 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.47 - 2026-08-20
+
+Linked changelog entries:
+- `v0.47 - 2026-08-20`
+
+Scope:
+  - Operations/SESSION.md leads with six open questions, then per-task detail, validation, the overnight-branch fork analysis and an honest abandoned list.
+  - Records the renormalize diff summary from task 0: one file staged, zero content change, verified two ways.
+  - Records that all eight of the owner worked examples in task 1 were correct as given.
+
+Validation:
+  - Documentation only. No app code changed.
+  - flutter analyze: no issues found
+  - flutter test: 244 passed, 0 failed
+
+Rollback:
+  - Revert this commit. No app behaviour is affected.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.

@@ -1877,3 +1877,19 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
   - Remove the _cache field from JobIndexService and put JsonEncoder.withIndent back in both writers. Files written compact still parse.
+
+## v0.47 - 2026-08-20
+- Owner: Documentation Maintainers
+- Author: NCD01
+- Type: Documentation
+- Reason: Run 2 session report.
+- Changes:
+  - Operations/SESSION.md leads with six open questions, then per-task detail, validation, the overnight-branch fork analysis and an honest abandoned list.
+  - Records the renormalize diff summary from task 0: one file staged, zero content change, verified two ways.
+  - Records that all eight of the owner worked examples in task 1 were correct as given.
+- Validation Evidence:
+  - Documentation only. No app code changed.
+  - flutter analyze: no issues found
+  - flutter test: 244 passed, 0 failed
+- Rollback Notes:
+  - Revert this commit. No app behaviour is affected.
