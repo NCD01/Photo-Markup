@@ -1,10 +1,10 @@
 ﻿# Scripts
 
 Document Path: `C:\apps\NCD_Photo_Markup\scripts\README.md`
-Version: `v0.3`
+Version: `v0.4`
 Owner: `NCD / M`
-Last Updated By: `Codex`
-Last Updated: `2026-05-24`
+Last Updated By: `Claude`
+Last Updated: `2026-08-20`
 Purpose: Governance support scripts for hooks and version bump workflow.
 
 ## Files
@@ -19,3 +19,17 @@ Purpose: Governance support scripts for hooks and version bump workflow.
   - `powershell -ExecutionPolicy Bypass -File scripts/bump-version.ps1 -Bump minor -Reason "<reason>"`
 - Version sync guard (run during validation):
   - `powershell -ExecutionPolicy Bypass -File scripts/verify-version-sync.ps1`
+
+## Passing multi-item lists
+
+`-Changes`, `-ValidationEvidence` and `-RollbackNotes` are string arrays. Run
+with `-File` and comma-separated text and PowerShell hands the whole thing over
+as one string, so the changelog gets a single run-on bullet. Use `-Command` and
+a real array instead:
+
+```
+powershell -ExecutionPolicy Bypass -Command "& ./scripts/bump-version.ps1 -Bump minor -Type Feature -Reason 'Why' -Changes 'First change','Second change'"
+```
+
+Read the appended block in `System/Documentation/CHANGELOG.md` afterwards and
+confirm it came out as separate bullets.

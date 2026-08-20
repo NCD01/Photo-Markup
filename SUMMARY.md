@@ -227,7 +227,7 @@ tree, the real painter and real files on disk.
 
 **CONFIRMED BY RUNNING (automated, driving the real widget tree):**
 
-222 tests pass. The ones that carry the important claims:
+223 tests pass on Windows. The ones that carry the important claims:
 
 - Every tool draws, all twelve marks save to a markup file, and reopening it
   returns every mark identical.
@@ -255,10 +255,11 @@ tree, the real painter and real files on disk.
 
 **VERIFIED BY READING CODE ONLY:**
 
-- Windows and Android builds. Neither was built; there is no Windows or Android
-  toolchain on this machine. The code is platform-neutral Dart and Flutter, and
-  no platform channel or native file changed, but a Windows build has not been
-  run.
+- The Windows and Android release builds. `flutter analyze` and the whole test
+  suite have since been run on the Windows machine and both are clean, but
+  `flutter build windows --release` has not been produced, and Android has not
+  been touched at all. The code is platform-neutral Dart and Flutter and no
+  platform channel or native file changed.
 - HEIC and DWG import. The existing services and their tests are untouched and
   still pass, but I had no HEIC or DWG file to open.
 - The Control Center launch handshake. Its tests still pass and the argument
@@ -291,11 +292,12 @@ is pushed:
   The app offered the draft by name, restored it, and exported at 6000x4000 with
   the mark in the right place and all four corner markers intact.
 
-**ONE KNOWN FAILURE, PRE-EXISTING:**
+**ONE TEST THAT ONLY PASSES ON WINDOWS:**
 `markup_export_path_service_test > buildSafeMarkupExportPath appends increment
 for duplicate output` fails on Linux and passes on Windows. It asserts a `\`
 separator and the service builds paths with `Platform.pathSeparator`. It failed
-the same way before I touched anything. Left alone.
+the same way before I touched anything. Left alone. Running the suite on the
+Windows machine afterwards gave 223 passed and none failed.
 
 ---
 

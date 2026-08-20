@@ -1579,3 +1579,26 @@ Changes: Added Phase 1Y offline DWG converter contract entry.
   - Automated version bump script: PASS
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
+
+## v0.33 - 2026-08-20
+- Owner: Documentation Maintainers
+- Author: NCD01
+- Type: Feature
+- Reason: Record the overnight markup run: editing after drawing, full-resolution export, dark field interface, autosave and recovery, Field Scale and Marker Mode.
+- Changes:
+  - Select, move, resize and delete any mark after it is drawn.
+  - Export at the photo's original pixel size instead of the on-screen size.
+  - Multi-step undo and redo, clear all, stroke width, contrast halo, Line, Highlighter, callout pins, blur, rotate, wider zoom.
+  - Dark high-contrast interface built on design tokens, with an edge rail and a persistent status bar.
+  - Remembered settings, autosave, crash recovery, one-tap export, keyboard shortcuts and touch gestures.
+  - Field Scale measurement labels and Marker Mode hand-drawn rendering, both off by default where they change an export.
+  - Restored app/pubspec.lock to the versions the Windows toolchain resolves.
+  - Fixed eight tests that failed on Windows because a temp folder was still locked when teardown deleted it.
+  - README corrected for the pass tags, the network-share build failure, and the view layer.
+- Validation Evidence:
+  - flutter analyze: PASS
+  - flutter test on Windows: 223 passed, 0 failed
+  - Full flow run end to end on a fresh clone: every tool, undo and redo, editing a mark after drawing it, zoom while annotating, export at 1200x1600 and at 6000x4000, SIGKILL and draft recovery
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
+  - To drop the whole overnight run, git checkout 3e4da98.

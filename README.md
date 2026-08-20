@@ -25,6 +25,10 @@ flutter test                    # the full test suite
 flutter build windows --release # a build to hand out
 ```
 
+Build from a local drive. A checkout on a network share fails during the
+Windows build because the Flutter plugin step cannot create the symlinks it
+needs there. Keep a working copy on `C:\` and build from that.
+
 The app can also be launched with a photo already open, which is how NCD
 Control Center starts it:
 
@@ -232,6 +236,7 @@ app/lib/
     session/                           Remembered settings, autosave, recovery.
     integration/                       Control Center launch arguments.
     sidebar/                           Toolbar icons.
+    view/utils/                        Zoom and pan maths for the canvas.
 ```
 
 ### Where to change things
@@ -315,7 +320,17 @@ License, so the app looks the same on every machine and needs no network.
 
 ## Changelog: the overnight run
 
-Three passes. Every commit leaves the app running; every pass is tagged.
+Three passes. Every commit leaves the app running.
+
+The pass tags are local to whoever ran the work; they were not pushed, because
+the build machine's credential was scoped to the branch ref. To recreate them
+after fetching the branch:
+
+```
+git tag pass-1-features 94a7b05
+git tag pass-2-design c490148
+git tag pass-3-flow claude/photo-markup-overnight-enjgup
+```
 
 ### Pass 1: features (`pass-1-features`)
 
@@ -370,8 +385,9 @@ Three passes. Every commit leaves the app running; every pass is tagged.
 - Two-finger pan and pinch mid-tool, and a double-tap guard.
 - Two wildcards: **Field Scale** and **Marker Mode**.
 
-Test count went from 93 to 222, with one pre-existing Windows-only failure on
-Linux.
+Test count went from 93 to 223. All 223 pass on Windows. On Linux one of them
+fails, `markup_export_path_service_test`, because it asserts a Windows path
+separator.
 
 ---
 
