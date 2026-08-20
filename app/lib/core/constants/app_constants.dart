@@ -7,7 +7,7 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'NCD Photo Markup';
-  static const String appVersion = 'v0.39';
+  static const String appVersion = 'v0.40';
   static const String startupImageEnvKey = 'NCD_STARTUP_IMAGE_PATH';
 }
 
@@ -542,6 +542,17 @@ class MeasurementDisplayConstants {
   static const int inchesPerFoot = 12;
   static const double centimetresPerMetre = 100;
   static const double millimetresPerCentimetre = 10;
+
+  /// A tape is marked in sixteenths, so that is the resolution every imperial
+  /// label rounds to, at every size. Change this one number and the whole
+  /// imperial display changes with it.
+  static const int fractionDenominator = 16;
+  static const int fractionsPerFoot = fractionDenominator * inchesPerFoot;
+
+  /// Shown instead of a bare zero when a real, positive length is smaller than
+  /// the smallest fraction a tape can show. `0 in` reads as "nothing here",
+  /// which is wrong and was the defect this replaced.
+  static const String belowSmallestFraction = '<';
 
   static const int metreDecimals = 2;
   static const int centimetreDecimals = 1;

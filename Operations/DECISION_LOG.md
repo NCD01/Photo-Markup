@@ -438,20 +438,20 @@ Changes: Added DECISION-030, dimensions self-label when a scale is set.
 - Review Date: N/A
 
 ## DECISION-029
-- Date: 2026-08-20
-- Status: Accepted, PENDING OWNER CONFIRMATION
+- Date: 2026-08-20 (revised 2026-08-20, superseding the whole-inch rule shipped in v0.35)
+- Status: Accepted, CONFIRMED BY OWNER
 - Owner: NCD / M
 - Area: Measurement Display
-- Decision: Measured lengths are reformatted for display into units a person reads on site. Imperial: below one foot shows whole inches (`0.42 ft` shows `5 in`); one foot and above shows feet and inches (`8.5 ft` shows `8 ft 6 in`); whole feet show feet alone (`8 ft`); inches that round up to twelve promote to the next foot (`0.98 ft` shows `1 ft`, never `12 in`). Metric: at or above one metre shows metres to two decimals, below one metre shows centimetres, below one centimetre shows millimetres. No conversion between imperial and metric ever happens; the unit family follows whatever the scale was calibrated in. An unrecognised unit is passed through untouched rather than guessed at.
+- Decision: Measured lengths are reformatted for display into units a person reads on site. Imperial rounds to the nearest sixteenth of an inch at every magnitude, because that is what a tape is marked in and a tape does not change its markings when the number gets big. The fraction is reduced, so eight sixteenths reads `1/2`, four reads `1/4`, two reads `1/8` and twelve reads `3/4`. Zero sixteenths shows no fraction at all, so `5 in` and never `5 0/16 in`. Sixteen sixteenths promotes to the next whole inch and twelve inches promotes to the next foot, so nothing ever reads `16/16` or `12 in`. Under a foot is inches alone; a foot and over is feet then inches, with inches dropped when they are zero. A real, positive length below a sixteenth displays `< 1/16 in`, never `0 in`. Metric is unchanged: at or above one metre shows metres to two decimals, below one metre shows centimetres, below one centimetre shows millimetres. Invalid, infinite or negative input is passed through rather than guessed at.
 - Alternatives Considered:
-- Leave raw decimal values as they were, and let the reader convert in their head.
-- Always show decimal feet with more precision.
-- Ask the user to pick a display format per photo.
-- Rationale: THIS RULE WAS ASSUMED DURING AN UNATTENDED RUN AND HAS NOT BEEN CONFIRMED BY THE OWNER. `0.42 ft` is a spreadsheet number, not a tape reading, and a contractor reading a marked-up photo on a ladder should not have to convert anything. The exact rounding rule is a judgement call, so it lives behind one named function, `MeasurementDisplayFormatter.format`, plus one constants block, `MeasurementDisplayConstants`, so it can be changed in a single edit if the owner wants it different.
-- Impact: Display only. Stored geometry is untouched, which keeps the measured-value-stored-verbatim invariant intact. Typed labels are unaffected and still run through `DimensionLabelFormatter`. Applied to the dimension prefill, the multi-segment running length, and the area tool's perimeter line. Area itself is left alone because it is in squared units and the feet-and-inches rule does not apply to it. Known consequence of rounding to whole inches: a measurement under half an inch displays as `0 in`.
-- Rollback or Reversal: Revert the three call sites in `measurement_value_utils.dart` back to `_formatValue`, and delete `measurement_display_formatter.dart`.
-- Related Changes: v0.35
-- Review Date: First morning Marcelo reads this
+- Round to whole inches, which is what v0.35 shipped. Superseded: it displayed anything under half an inch as `0 in`, which reads as "nothing here" rather than "smaller than I can show".
+- Sixteenths only under some threshold, whole inches above it. Rejected by the owner: the tape rule applies at every size, and a rule with a threshold in it is a rule people have to remember.
+- Show a decimal inch instead of a fraction. Rejected: nobody on a site reads `5.06 in` off a tape.
+- Rationale: Owner ruling on 2026-08-20. `0.42 ft` is a spreadsheet number; `5 1/16 in` is a tape reading. The whole-inch version of this rule was assumed during an unattended run and was wrong in the one place it mattered most, at the small end, where it printed `0 in` for a real measurement. The rounding rule lives behind one named function, `MeasurementDisplayFormatter.format`, plus one constants block, `MeasurementDisplayConstants`, where `fractionDenominator` is the single number that controls the resolution.
+- Impact: Display only. Stored geometry is untouched, which keeps the measured-value-stored-verbatim invariant intact. Typed labels are unaffected and still run through `DimensionLabelFormatter`. Applied to the dimension prefill, the multi-segment running length, and the area tool's perimeter line. Area itself is left alone because it is in squared units and the feet-and-inches rule does not apply to it. Known and accepted consequence: a scale calibrated by dragging across a photo is not accurate to a sixteenth of an inch, so the display now claims more precision than the underlying measurement has. The owner chose this knowingly, on the grounds that a reader who wants a sixteenth can see one and a reader who does not can ignore it, whereas a rounded number hides the fact that a measurement was ever taken.
+- Rollback or Reversal: Revert the three call sites in `measurement_value_utils.dart` back to `_formatValue`, and delete `measurement_display_formatter.dart`. To go back to whole inches without losing the rest, set `MeasurementDisplayConstants.fractionDenominator` to 1, which also removes the `< 1/16 in` case.
+- Related Changes: v0.35, revised in v0.40
+- Review Date: N/A, confirmed by the owner
 
 ## DECISION-030
 - Date: 2026-08-20

@@ -57,34 +57,89 @@ class MeasurementDisplayFormatter {
 
   /// A value already expressed in feet.
   static String _formatFeet(double feetValue) {
-    final int totalInches = (feetValue * MeasurementDisplayConstants.inchesPerFoot)
-        .round();
-    return _fromTotalInches(totalInches);
+    return _fromSixteenths(
+      (feetValue * MeasurementDisplayConstants.fractionsPerFoot).round(),
+    );
   }
 
   /// A value already expressed in inches.
   static String _formatInchesValue(double inchesValue) {
-    return _fromTotalInches(inchesValue.round());
+    return _fromSixteenths(
+      (inchesValue * MeasurementDisplayConstants.fractionDenominator).round(),
+    );
   }
 
-  /// Single place that decides how whole inches read.
+  /// Single place that decides how an imperial length reads.
   ///
-  /// Under a foot it is inches alone. A foot or more is feet plus inches, and
-  /// inches are dropped when they are zero. Inches that round up to a full foot
-  /// are promoted, so nothing ever displays as `12 in`.
-  static String _fromTotalInches(int totalInches) {
-    final int perFoot = MeasurementDisplayConstants.inchesPerFoot;
-    final int feet = totalInches ~/ perFoot;
-    final int inches = totalInches % perFoot;
+  /// Everything arrives here as a whole number of sixteenths of an inch, which
+  /// is what a tape is marked in, so the rounding has already happened and this
+  /// only has to decide how to say it. Under a foot it is inches alone. A foot
+  /// or more is feet then inches, with inches dropped when there are none. The
+  /// fraction is reduced, so eight sixteenths reads as a half, and it is left
+  /// off entirely when it is zero. Sixteen sixteenths became a whole inch and
+  /// twelve inches became a foot before we got here, by arithmetic, so nothing
+  /// can ever read `16/16` or `12 in`.
+  static String _fromSixteenths(int totalSixteenths) {
+    if (totalSixteenths <= 0) {
+      // A real length too small for a tape to show. Never `0 in`.
+      return '${MeasurementDisplayConstants.belowSmallestFraction} '
+          '1/${MeasurementDisplayConstants.fractionDenominator} '
+          '${MeasurementDisplayConstants.inchShort}';
+    }
 
+    final int perFoot = MeasurementDisplayConstants.fractionsPerFoot;
+    final int perInch = MeasurementDisplayConstants.fractionDenominator;
+    final int feet = totalSixteenths ~/ perFoot;
+    final int withinFoot = totalSixteenths % perFoot;
+    final int inches = withinFoot ~/ perInch;
+    final String fraction = _reducedFraction(withinFoot % perInch);
+
+    final String inchText = _inchText(inches: inches, fraction: fraction);
     if (feet == 0) {
-      return '$inches ${MeasurementDisplayConstants.inchShort}';
+      return inchText;
+    }
+    final String feetText =
+        '$feet ${MeasurementDisplayConstants.footShort}';
+    if (inchText.isEmpty) {
+      return feetText;
+    }
+    return '$feetText $inchText';
+  }
+
+  /// The inches half of a reading, empty when there is nothing to say.
+  static String _inchText({required int inches, required String fraction}) {
+    if (inches == 0 && fraction.isEmpty) {
+      return '';
+    }
+    final String unit = MeasurementDisplayConstants.inchShort;
+    if (fraction.isEmpty) {
+      return '$inches $unit';
     }
     if (inches == 0) {
-      return '$feet ${MeasurementDisplayConstants.footShort}';
+      return '$fraction $unit';
     }
-    return '$feet ${MeasurementDisplayConstants.footShort} '
-        '$inches ${MeasurementDisplayConstants.inchShort}';
+    return '$inches $fraction $unit';
+  }
+
+  /// `8` sixteenths reads `1/2`, `12` reads `3/4`, `0` reads as nothing.
+  static String _reducedFraction(int sixteenths) {
+    if (sixteenths <= 0) {
+      return '';
+    }
+    final int denominator = MeasurementDisplayConstants.fractionDenominator;
+    final int divisor = _greatestCommonDivisor(sixteenths, denominator);
+    return '${sixteenths ~/ divisor}/${denominator ~/ divisor}';
+  }
+
+  static int _greatestCommonDivisor(int a, int b) {
+    int x = a;
+    int y = b;
+    while (y != 0) {
+      final int next = x % y;
+      x = y;
+      y = next;
+    }
+    return x;
   }
 
   // --- metric ---------------------------------------------------------------

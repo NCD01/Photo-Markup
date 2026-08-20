@@ -1742,3 +1742,22 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
   - Deleting .gitattributes restores the previous behaviour, which was per-clone core.autocrlf.
+
+## v0.40 - 2026-08-20
+- Owner: Documentation Maintainers
+- Author: NCD01
+- Type: Fix
+- Reason: Imperial measurements read in sixteenths at every size, and a length under a sixteenth no longer reads as zero.
+- Changes:
+  - MeasurementDisplayFormatter rounds imperial lengths to the nearest sixteenth of an inch at every magnitude, not to whole inches.
+  - Fractions are reduced: 8/16 reads 1/2, 4/16 reads 1/4, 2/16 reads 1/8, 12/16 reads 3/4. Zero sixteenths shows no fraction.
+  - 16/16 promotes to the next inch and 12 in promotes to the next foot, so neither can ever be displayed.
+  - A real length below a sixteenth reads < 1/16 in instead of 0 in. This was the defect.
+  - DECISION-029 revised in place rather than contradicted by a new record.
+- Validation Evidence:
+  - flutter test: 155 passed, 0 failed
+  - flutter analyze: no issues found
+  - All eight of the owner worked examples asserted in measurement_display_formatter_test.dart and checked against the arithmetic first
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
+  - Set MeasurementDisplayConstants.fractionDenominator to 1 to return to whole inches.
