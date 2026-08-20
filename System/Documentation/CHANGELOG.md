@@ -1667,3 +1667,15 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
   - flutter analyze: PASS,flutter test: PASS (106 tests),verify-version-sync.ps1: PASS,flutter build windows --debug: NOT RUN from the H: network checkout
 - Rollback Notes:
   - git checkout 66e7a68 to return to the state before this work.
+
+## v0.34 - 2026-08-19
+- Owner: NCD / M
+- Author: Claude
+- Type: Documentation
+- Reason: Owner directive: every change bumps the version, is committed, and is pushed. A version is no longer withheld pending validation.
+- Changes:
+  - Governance/VERSIONING_AND_CHANGE_CONTROL.md now states the bump-and-push rule and drops the do-not-bump-before-validation gate.,Root README version rules updated to match.,DECISION-028 records the directive.
+- Validation Evidence:
+  - Documentation-only change; no app code touched.,flutter analyze: PASS,flutter test: PASS (106 tests)
+- Rollback Notes:
+  - Revert this commit to restore the previous versioning policy wording.

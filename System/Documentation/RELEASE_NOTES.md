@@ -502,3 +502,20 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.34 - 2026-08-19
+
+Linked changelog entries:
+- $newVersion - 2026-08-19
+
+Scope:
+  - Governance/VERSIONING_AND_CHANGE_CONTROL.md now states the bump-and-push rule and drops the do-not-bump-before-validation gate.,Root README version rules updated to match.,DECISION-028 records the directive.
+
+Validation:
+  - Documentation-only change; no app code touched.,flutter analyze: PASS,flutter test: PASS (106 tests)
+
+Rollback:
+  - Revert this commit to restore the previous versioning policy wording.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.

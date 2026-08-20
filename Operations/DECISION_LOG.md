@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Claude`
 Last Updated: `2026-08-19`
 Purpose: Record material architecture/process decisions.
-Changes: Added Phase 1Z decision separating Scale Calibration from Dimension.
+Changes: Added the owner bump-and-push versioning directive.
 
 ## DECISION-001
 - Date: 2026-05-22
@@ -421,4 +421,19 @@ Changes: Added Phase 1Z decision separating Scale Calibration from Dimension.
 - Rollback or Reversal: Revert the calibration paints in dimension_lines_overlay.dart and the pre-fill block in _promptForDimensionLabelById.
 - Related Changes: Phase 1Z measurement tools MVP
 - Review Date: After owner validation on real site photos
+
+## DECISION-028
+- Date: 2026-08-19
+- Status: Accepted
+- Owner: NCD / M
+- Area: Versioning and Change Control
+- Decision: Every change bumps the version, is committed, and is pushed. A version is never withheld pending owner validation.
+- Alternatives Considered:
+- Keep withholding the bump until the owner validates the change.
+- Bump only for changes that touch app code.
+- Rationale: Owner directive. Withholding the number left several commits sharing one version, so the version stopped identifying what was actually running. Validation is a separate judgement about whether a version is good; it is not a gate on issuing the number. Leaving main ahead of origin also meant work existed only on one machine.
+- Impact: `Governance/VERSIONING_AND_CHANGE_CONTROL.md` and the root `README.md` version rules now state the bump-and-push rule. The previous instruction not to bump before owner validation is removed. Unvalidated versions are recorded as unvalidated in the changelog and still get a number. The existing pre-push hook already enforced the bump half of this.
+- Rollback or Reversal: Restore the previous Quick Rules and README version rules, and reinstate the do-not-bump-before-validation line.
+- Related Changes: v0.34
+- Review Date: N/A
 

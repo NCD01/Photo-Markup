@@ -1,12 +1,12 @@
 ﻿# NCD Photo Markup
 
 Document Path: `C:\apps\NCD_Photo_Markup\README.md`
-Version: `v0.5`
+Version: `v0.6`
 Owner: `NCD / M`
 Last Updated By: `Claude`
 Last Updated: `2026-08-19`
 Purpose: Root repo map, app overview, and quick start for the standalone Flutter app.
-Changes: Documented the Scale Calibration and Dimension split, dashed calibration styling, and dimension label pre-fill.
+Changes: Adopted the owner bump-and-push rule in the version rules section.
 
 ## What This Is
 Touch-first field photo markup app for internal and client annotation work.
@@ -170,9 +170,17 @@ run the Windows app, use a local-drive checkout such as `C:\apps\NCD_Photo_Marku
 - `powershell -ExecutionPolicy Bypass -File scripts/bump-version.ps1 -Bump minor -Reason "<reason>"`
 
 ## Version Rules
-- Current version: `v0.32`
+- Current version: `v0.34`
 - Use two-part versions only (`v0.1`, `v0.2`, `v0.3`, `v0.4`, ...)
-- Do not bump version before owner validation/approval.
+- **Every change bumps the version, gets committed, and gets pushed.** A one-line
+  fix, a doc edit, and a test-only change all bump. Nothing stays at the same
+  version.
+- A version is never withheld pending validation. Validation decides whether a
+  version is good, not whether it gets a number. An unvalidated version is
+  recorded as unvalidated and still gets its number.
+- Bump with `scripts/bump-version.ps1`; the pre-push hook rejects a push with no
+  bump.
+- See `Governance/VERSIONING_AND_CHANGE_CONTROL.md`.
 
 ## Current State and Known Gaps
 - Phase 1Z measurement tools are MVP wiring. Owner manual validation on real
