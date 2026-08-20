@@ -7,7 +7,7 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'NCD Photo Markup';
-  static const String appVersion = 'v0.40';
+  static const String appVersion = 'v0.41';
   static const String startupImageEnvKey = 'NCD_STARTUP_IMAGE_PATH';
 }
 
@@ -484,6 +484,12 @@ class SettingsConstants {
 
   static const MeasurementDisplayMode defaultMeasurementDisplayMode =
       MeasurementDisplayMode.tape;
+
+  /// Auto, because NCD is an imperial shop and nearly every photo is
+  /// calibrated in feet. Reporting in whatever the photo was calibrated in is
+  /// the answer that cannot be wrong.
+  static const MeasurementUnitSystem defaultMeasurementUnitSystem =
+      MeasurementUnitSystem.auto;
   static const bool defaultAutoLabelDimensions = true;
   static const MarkupStylePresetId defaultStylePresetId =
       MarkupStylePresetId.ncdBlue;
@@ -500,6 +506,15 @@ class SettingsConstants {
       'Decimal shows the raw calibrated number, better for copying into a quote.';
   static const String displayModeTapeOption = 'Tape (8 ft 6 in)';
   static const String displayModeDecimalOption = 'Decimal (8.5 ft)';
+  static const String unitSystemLabel = 'Units';
+  static const String unitSystemDescription =
+      'Auto reports in whatever the photo was calibrated in. Imperial and '
+      'Metric convert for display. Either way the measured value is stored '
+      'exactly as it was measured and nothing on the photo changes.';
+  static const String unitSystemAutoOption = 'Auto';
+  static const String unitSystemImperialOption = 'Imperial';
+  static const String unitSystemMetricOption = 'Metric';
+
   static const String autoLabelLabel = 'Label dimensions automatically';
   static const String autoLabelDescription =
       'When the photo has a scale set, a new dimension takes the measurement '
@@ -553,6 +568,11 @@ class MeasurementDisplayConstants {
   /// the smallest fraction a tape can show. `0 in` reads as "nothing here",
   /// which is wrong and was the defect this replaced.
   static const String belowSmallestFraction = '<';
+
+  /// Exact by definition since 1959, so a conversion never introduces error of
+  /// its own on top of whatever the calibration already has.
+  static const double metresPerFoot = 0.3048;
+  static const double metresPerInch = metresPerFoot / inchesPerFoot;
 
   static const int metreDecimals = 2;
   static const int centimetreDecimals = 1;

@@ -631,3 +631,26 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.41 - 2026-08-20
+
+Linked changelog entries:
+- `v0.41 - 2026-08-20`
+
+Scope:
+  - Settings gains Auto, Imperial and Metric. Auto is the default and is the existing behaviour.
+  - Imperial and Metric convert for display only, in both tape and decimal modes.
+  - An unrecognised unit, a negative value and a non-finite value are passed through unconverted in all three settings.
+  - DECISION-031 records why Auto is the default.
+
+Validation:
+  - flutter test: 172 passed, 0 failed
+  - flutter analyze: no issues found
+  - measurement_unit_system_test.dart proves the invariant: a metric calibration read as Imperial changes the label and leaves the stored distance, unit label and both endpoints untouched
+
+Rollback:
+  - Revert the version bump commit and delete the matching tag.
+  - Remove the system argument from MeasurementDisplayFormatter.format and the three MeasurementValueUtils display functions, and delete the chooser from settings_dialog.dart.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.

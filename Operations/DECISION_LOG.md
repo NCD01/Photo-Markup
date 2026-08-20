@@ -469,3 +469,18 @@ Changes: Added DECISION-030, dimensions self-label when a scale is set.
 - Related Changes: v0.36
 - Review Date: N/A
 
+## DECISION-031
+- Date: 2026-08-20
+- Status: Accepted
+- Owner: NCD / M
+- Area: Measurement Display
+- Decision: Settings gains a three-way unit system chooser: Auto, Imperial, Metric. Auto is the default and is the behaviour that existed before the setting, which is to report in whatever the photo was calibrated in, so an imperial calibration reads feet and inches and a metric calibration reads m, cm or mm. Imperial and Metric convert for display regardless of what the calibration used. Conversion happens in one place, `MeasurementDisplayFormatter._convert`, and applies to both the tape and decimal display modes, because a chooser that says Imperial and then prints metres is a bug rather than a nuance. A unit the app does not recognise is passed through untouched in all three settings, since converting from a unit you cannot identify is guessing. Negative and non-finite values are never converted either.
+- Alternatives Considered:
+- Keep the formatter's refusal to convert and require the user to recalibrate in the unit they want to read. Rejected: a CAD-derived metric scale is not something the user chose, and recalibrating a photo to change a label is destructive work to solve a display problem.
+- Default to Imperial rather than Auto. Rejected: see rationale.
+- A two-way Imperial or Metric switch with no Auto. Rejected: it forces a choice on every user of every photo, and removes the only option that cannot produce a wrong unit.
+- Rationale: NCD is a US shop and uses imperial nearly all the time; metric arrives through CAD. Auto is the default because in an imperial-first shop a wrong unit on a client markup is worse than an extra setting. Auto reports what was measured in the unit it was measured in, which is the one answer that is never wrong. Imperial and Metric exist for the case that made this necessary: a scale that came in from a CAD drawing in metres, on a job that is quoted in feet.
+- Impact: Display only, and the invariant is enforced by test. `measurement_unit_system_test.dart` sets a metric calibration, reads the same segment under all three settings, asserts the Imperial label differs from the Auto label, and asserts every stored number on the calibration is byte-for-byte what it was: real distance, unit label and both normalized endpoints. Changing the setting rewrites every existing label on reopen without touching stored geometry. The setting round-trips through settings.json and a settings file written before this existed reads back as Auto. Conversion uses 0.3048 m per foot, exact by definition, so it adds no error of its own to whatever the calibration already had.
+- Rollback or Reversal: Remove the `system` argument from the three `MeasurementValueUtils` display functions and from `MeasurementDisplayFormatter.format`, and delete the chooser from `settings_dialog.dart`. The stored `measurementUnitSystem` field can stay; it is optional on read.
+- Related Changes: v0.41
+- Review Date: N/A

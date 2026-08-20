@@ -9,6 +9,17 @@ import 'package:ncd_photo_markup/features/markup/models/markup_style_preset.dart
 /// a quote or a spreadsheet.
 enum MeasurementDisplayMode { tape, decimal }
 
+/// Which system measured lengths are reported in.
+///
+/// [auto] reports in whatever the photo was calibrated in, which is what the
+/// app did before this setting existed. [imperial] and [metric] convert for
+/// display, whatever the calibration was.
+///
+/// Conversion is display only. The stored geometry keeps the value that was
+/// actually measured, in the unit it was measured in, and changing this
+/// setting rewrites every label without touching a single stored number.
+enum MeasurementUnitSystem { auto, imperial, metric }
+
 /// Everything the app remembers between runs.
 ///
 /// Settings never touch stored geometry. Changing anything here changes how new
@@ -17,6 +28,7 @@ enum MeasurementDisplayMode { tape, decimal }
 class AppSettings {
   const AppSettings({
     this.measurementDisplayMode = SettingsConstants.defaultMeasurementDisplayMode,
+    this.measurementUnitSystem = SettingsConstants.defaultMeasurementUnitSystem,
     this.autoLabelDimensions = SettingsConstants.defaultAutoLabelDimensions,
     this.defaultStylePresetId = SettingsConstants.defaultStylePresetId,
     this.defaultFontSize = MarkupTypographyConstants.defaultFontSize,
@@ -25,6 +37,7 @@ class AppSettings {
   });
 
   final MeasurementDisplayMode measurementDisplayMode;
+  final MeasurementUnitSystem measurementUnitSystem;
   final bool autoLabelDimensions;
   final MarkupStylePresetId defaultStylePresetId;
   final double defaultFontSize;
@@ -35,6 +48,7 @@ class AppSettings {
 
   AppSettings copyWith({
     MeasurementDisplayMode? measurementDisplayMode,
+    MeasurementUnitSystem? measurementUnitSystem,
     bool? autoLabelDimensions,
     MarkupStylePresetId? defaultStylePresetId,
     double? defaultFontSize,
@@ -45,6 +59,8 @@ class AppSettings {
     return AppSettings(
       measurementDisplayMode:
           measurementDisplayMode ?? this.measurementDisplayMode,
+      measurementUnitSystem:
+          measurementUnitSystem ?? this.measurementUnitSystem,
       autoLabelDimensions: autoLabelDimensions ?? this.autoLabelDimensions,
       defaultStylePresetId: defaultStylePresetId ?? this.defaultStylePresetId,
       defaultFontSize: defaultFontSize ?? this.defaultFontSize,
@@ -59,6 +75,7 @@ class AppSettings {
   AppSettings resetMeasurementGroup() {
     return copyWith(
       measurementDisplayMode: defaults.measurementDisplayMode,
+      measurementUnitSystem: defaults.measurementUnitSystem,
       autoLabelDimensions: defaults.autoLabelDimensions,
     );
   }
@@ -83,6 +100,7 @@ class AppSettings {
     return <String, dynamic>{
       'schemaVersion': SettingsConstants.schemaVersion,
       'measurementDisplayMode': measurementDisplayMode.name,
+      'measurementUnitSystem': measurementUnitSystem.name,
       'autoLabelDimensions': autoLabelDimensions,
       'defaultStylePresetId': defaultStylePresetId.name,
       'defaultFontSize': defaultFontSize,
@@ -100,6 +118,7 @@ class AppSettings {
   static AppSettings fromJson(Map<String, dynamic> json) {
     return AppSettings(
       measurementDisplayMode: _modeFrom(json['measurementDisplayMode']),
+      measurementUnitSystem: _unitSystemFrom(json['measurementUnitSystem']),
       autoLabelDimensions:
           _boolFrom(json['autoLabelDimensions']) ??
           defaults.autoLabelDimensions,
@@ -119,6 +138,15 @@ class AppSettings {
       }
     }
     return defaults.measurementDisplayMode;
+  }
+
+  static MeasurementUnitSystem _unitSystemFrom(Object? raw) {
+    for (final MeasurementUnitSystem system in MeasurementUnitSystem.values) {
+      if (system.name == raw) {
+        return system;
+      }
+    }
+    return defaults.measurementUnitSystem;
   }
 
   static MarkupStylePresetId _presetFrom(Object? raw) {

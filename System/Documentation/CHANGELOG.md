@@ -1761,3 +1761,21 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
   - Set MeasurementDisplayConstants.fractionDenominator to 1 to return to whole inches.
+
+## v0.41 - 2026-08-20
+- Owner: Documentation Maintainers
+- Author: NCD01
+- Type: Feature
+- Reason: A unit system chooser in Settings, so a CAD-derived metric scale can be read in feet without recalibrating the photo.
+- Changes:
+  - Settings gains Auto, Imperial and Metric. Auto is the default and is the existing behaviour.
+  - Imperial and Metric convert for display only, in both tape and decimal modes.
+  - An unrecognised unit, a negative value and a non-finite value are passed through unconverted in all three settings.
+  - DECISION-031 records why Auto is the default.
+- Validation Evidence:
+  - flutter test: 172 passed, 0 failed
+  - flutter analyze: no issues found
+  - measurement_unit_system_test.dart proves the invariant: a metric calibration read as Imperial changes the label and leaves the stored distance, unit label and both endpoints untouched
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
+  - Remove the system argument from MeasurementDisplayFormatter.format and the three MeasurementValueUtils display functions, and delete the chooser from settings_dialog.dart.

@@ -17,39 +17,123 @@ class MeasurementDisplayFormatter {
 
   /// Formats [value], expressed in [unitLabel], for display.
   ///
-  /// Never converts between imperial and metric. A value calibrated in feet is
-  /// reported in feet and inches; a value calibrated in metres is reported in
-  /// metric. An unrecognised unit is passed through untouched rather than
-  /// guessed at.
+  /// With [system] left at [MeasurementUnitSystem.auto] nothing is converted:
+  /// a value calibrated in feet is reported in feet and inches, and a value
+  /// calibrated in metres is reported in metric. Choosing imperial or metric
+  /// converts for display and nothing else. An unrecognised unit is passed
+  /// through untouched in every case, because there is nothing to convert from.
   static String format({
     required double value,
     required String unitLabel,
     MeasurementDisplayMode mode = MeasurementDisplayMode.tape,
+    MeasurementUnitSystem system = MeasurementUnitSystem.auto,
   }) {
     final String unit = unitLabel.trim();
-    if (mode == MeasurementDisplayMode.decimal) {
-      // The raw calibrated number, for copying into a quote.
-      return _plain(value: value, unit: unit);
-    }
     if (!value.isFinite || value < 0) {
       // Nonsense in, nonsense out, but no crash and no invented number.
+      // Converting it would only dress the nonsense up in a different unit.
       return _plain(value: value, unit: unit);
     }
 
-    final _UnitFamily family = _familyFor(unit);
+    final _UnitFamily sourceFamily = _familyFor(unit);
+    final _Converted converted = _convert(
+      value: value,
+      family: sourceFamily,
+      sourceUnit: unit,
+      system: system,
+    );
+
+    if (mode == MeasurementDisplayMode.decimal) {
+      // The calibrated number rather than a tape reading, for copying into a
+      // quote. Still reported in the chosen system.
+      return _plain(value: converted.value, unit: converted.unit);
+    }
+
+    switch (converted.family) {
+      case _UnitFamily.feet:
+        return _formatFeet(converted.value);
+      case _UnitFamily.inches:
+        return _formatInchesValue(converted.value);
+      case _UnitFamily.metres:
+        return _formatMetres(converted.value);
+      case _UnitFamily.centimetres:
+        return _formatCentimetres(converted.value);
+      case _UnitFamily.millimetres:
+        return _formatMillimetres(converted.value);
+      case _UnitFamily.unknown:
+        return _plain(value: converted.value, unit: converted.unit);
+    }
+  }
+
+  // --- unit system ----------------------------------------------------------
+
+  /// Moves a value into the system the user asked to read in.
+  ///
+  /// Display only, and the only place a measured number is ever multiplied by
+  /// anything for presentation. A unit we do not recognise is left alone, on
+  /// the grounds that converting from a unit you cannot identify is guessing.
+  static _Converted _convert({
+    required double value,
+    required _UnitFamily family,
+    required String sourceUnit,
+    required MeasurementUnitSystem system,
+  }) {
+    // Anything not converted keeps the unit label it arrived with, so a unit
+    // we do not recognise still prints the way the user wrote it.
+    final _Converted unchanged = _Converted(
+      value: value,
+      family: family,
+      unit: sourceUnit,
+    );
+    if (system == MeasurementUnitSystem.auto ||
+        family == _UnitFamily.unknown) {
+      return unchanged;
+    }
+    if (system == MeasurementUnitSystem.imperial && _isImperial(family)) {
+      return unchanged;
+    }
+    if (system == MeasurementUnitSystem.metric && !_isImperial(family)) {
+      return unchanged;
+    }
+
+    final double metres = _toMetres(value: value, family: family);
+    if (system == MeasurementUnitSystem.metric) {
+      return _Converted(
+        value: metres,
+        family: _UnitFamily.metres,
+        unit: MeasurementDisplayConstants.metreShort,
+      );
+    }
+    return _Converted(
+      value: metres / MeasurementDisplayConstants.metresPerFoot,
+      family: _UnitFamily.feet,
+      unit: MeasurementDisplayConstants.footShort,
+    );
+  }
+
+  static bool _isImperial(_UnitFamily family) {
+    return family == _UnitFamily.feet || family == _UnitFamily.inches;
+  }
+
+  static double _toMetres({
+    required double value,
+    required _UnitFamily family,
+  }) {
     switch (family) {
       case _UnitFamily.feet:
-        return _formatFeet(value);
+        return value * MeasurementDisplayConstants.metresPerFoot;
       case _UnitFamily.inches:
-        return _formatInchesValue(value);
+        return value * MeasurementDisplayConstants.metresPerInch;
       case _UnitFamily.metres:
-        return _formatMetres(value);
+        return value;
       case _UnitFamily.centimetres:
-        return _formatCentimetres(value);
+        return value / MeasurementDisplayConstants.centimetresPerMetre;
       case _UnitFamily.millimetres:
-        return _formatMillimetres(value);
+        return value /
+            (MeasurementDisplayConstants.centimetresPerMetre *
+                MeasurementDisplayConstants.millimetresPerCentimetre);
       case _UnitFamily.unknown:
-        return _plain(value: value, unit: unit);
+        return value;
     }
   }
 
@@ -226,3 +310,16 @@ class MeasurementDisplayFormatter {
 }
 
 enum _UnitFamily { feet, inches, metres, centimetres, millimetres, unknown }
+
+/// A value after the unit system has been applied, with the unit it is now in.
+class _Converted {
+  const _Converted({
+    required this.value,
+    required this.family,
+    required this.unit,
+  });
+
+  final double value;
+  final _UnitFamily family;
+  final String unit;
+}

@@ -130,6 +130,7 @@ class MeasurementValueUtils {
     required ScaleCalibration? calibration,
     required Size? imagePixelSize,
     MeasurementDisplayMode mode = MeasurementDisplayMode.tape,
+    MeasurementUnitSystem system = MeasurementUnitSystem.auto,
   }) {
     final double? length = calibratedPolylineLength(
       normalizedPoints: <Offset>[startNormalized, endNormalized],
@@ -143,6 +144,7 @@ class MeasurementValueUtils {
       value: length,
       unitLabel: normalizeUnitLabel(calibration.unitLabel),
       mode: mode,
+      system: system,
     );
   }
 
@@ -151,6 +153,7 @@ class MeasurementValueUtils {
     required ScaleCalibration? calibration,
     required Size? imagePixelSize,
     MeasurementDisplayMode mode = MeasurementDisplayMode.tape,
+    MeasurementUnitSystem system = MeasurementUnitSystem.auto,
   }) {
     final double? length = calibratedPolylineLength(
       normalizedPoints: measurement.normalizedPoints,
@@ -162,7 +165,7 @@ class MeasurementValueUtils {
     }
     final String unitLabel = normalizeUnitLabel(calibration!.unitLabel);
     return '${UiCopyConstants.multiSegmentLabelPrefix}: '
-        '${MeasurementDisplayFormatter.format(value: length, unitLabel: unitLabel, mode: mode)}';
+        '${MeasurementDisplayFormatter.format(value: length, unitLabel: unitLabel, mode: mode, system: system)}';
   }
 
   static String areaDisplayLabel({
@@ -170,6 +173,7 @@ class MeasurementValueUtils {
     required ScaleCalibration? calibration,
     required Size? imagePixelSize,
     MeasurementDisplayMode mode = MeasurementDisplayMode.tape,
+    MeasurementUnitSystem system = MeasurementUnitSystem.auto,
   }) {
     final double? perimeter = calibratedPolylineLength(
       normalizedPoints: <Offset>[
@@ -191,7 +195,7 @@ class MeasurementValueUtils {
     final String unitLabel = normalizeUnitLabel(calibration.unitLabel);
     return '${UiCopyConstants.areaLabelPrefix}: ${_formatValue(area)} sq $unitLabel\n'
         '${UiCopyConstants.perimeterLabelPrefix}: '
-        '${MeasurementDisplayFormatter.format(value: perimeter, unitLabel: unitLabel, mode: mode)}';
+        '${MeasurementDisplayFormatter.format(value: perimeter, unitLabel: unitLabel, mode: mode, system: system)}';
   }
 
   static String normalizeUnitLabel(String rawUnit) {

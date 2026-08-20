@@ -105,6 +105,38 @@ class _SettingsDialogState extends State<SettingsDialog> {
                     ),
                   ),
                   _setting(
+                    label: SettingsConstants.unitSystemLabel,
+                    description: SettingsConstants.unitSystemDescription,
+                    control: SegmentedButton<MeasurementUnitSystem>(
+                      key: const ValueKey<String>('settings-unit-system'),
+                      segments: const <ButtonSegment<MeasurementUnitSystem>>[
+                        ButtonSegment<MeasurementUnitSystem>(
+                          value: MeasurementUnitSystem.auto,
+                          label: Text(SettingsConstants.unitSystemAutoOption),
+                        ),
+                        ButtonSegment<MeasurementUnitSystem>(
+                          value: MeasurementUnitSystem.imperial,
+                          label: Text(
+                            SettingsConstants.unitSystemImperialOption,
+                          ),
+                        ),
+                        ButtonSegment<MeasurementUnitSystem>(
+                          value: MeasurementUnitSystem.metric,
+                          label: Text(SettingsConstants.unitSystemMetricOption),
+                        ),
+                      ],
+                      selected: <MeasurementUnitSystem>{
+                        _settings.measurementUnitSystem,
+                      },
+                      onSelectionChanged:
+                          (Set<MeasurementUnitSystem> selection) => _apply(
+                            _settings.copyWith(
+                              measurementUnitSystem: selection.first,
+                            ),
+                          ),
+                    ),
+                  ),
+                  _setting(
                     label: SettingsConstants.autoLabelLabel,
                     description: SettingsConstants.autoLabelDescription,
                     control: Align(

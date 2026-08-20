@@ -3276,6 +3276,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       calibration: _scaleCalibration,
       imagePixelSize: _loadedImagePixelSize,
       mode: _settings.measurementDisplayMode,
+      system: _settings.measurementUnitSystem,
     );
   }
 
