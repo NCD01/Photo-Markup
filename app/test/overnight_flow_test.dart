@@ -13,6 +13,7 @@ import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay
 import 'package:ncd_photo_markup/features/session/services/session_state_service.dart';
 import 'package:flutter/services.dart';
 import 'package:ncd_photo_markup/main.dart';
+import 'test_temp_dir.dart';
 
 Future<void> pumpFrames(WidgetTester tester, {int frames = 10}) async {
   for (int i = 0; i < frames; i++) {
@@ -63,9 +64,7 @@ Future<dynamic> loadedShell(
 SessionStateService isolatedSessionState() {
   final Directory dir = Directory.systemTemp.createTempSync('ncd_flow_state');
   addTearDown(() {
-    if (dir.existsSync()) {
-      dir.deleteSync(recursive: true);
-    }
+    deleteTempDirBestEffort(dir);
   });
   return SessionStateService.inMemoryFolder(dir.path);
 }
@@ -245,9 +244,7 @@ void main() {
   ) async {
     final Directory workDir = Directory.systemTemp.createTempSync('ncd_shell');
     addTearDown(() {
-      if (workDir.existsSync()) {
-        workDir.deleteSync(recursive: true);
-      }
+      deleteTempDirBestEffort(workDir);
     });
 
     // A real 2400x1600 photo on disk for the shell to load and export.
@@ -335,9 +332,7 @@ void main() {
   ) async {
     final Directory workDir = Directory.systemTemp.createTempSync('ncd_quick');
     addTearDown(() {
-      if (workDir.existsSync()) {
-        workDir.deleteSync(recursive: true);
-      }
+      deleteTempDirBestEffort(workDir);
     });
     final String sourcePath = '${workDir.path}/site_photo.png';
     await tester.runAsync(() async {
@@ -554,9 +549,7 @@ void main() {
   ) async {
     final Directory dir = Directory.systemTemp.createTempSync('ncd_prefs_flow');
     addTearDown(() {
-      if (dir.existsSync()) {
-        dir.deleteSync(recursive: true);
-      }
+      deleteTempDirBestEffort(dir);
     });
     final SessionStateService store = SessionStateService.inMemoryFolder(
       dir.path,
@@ -605,9 +598,7 @@ void main() {
     final Directory photoDir = Directory.systemTemp.createTempSync('ncd_photo');
     addTearDown(() {
       for (final Directory dir in <Directory>[stateDir, photoDir]) {
-        if (dir.existsSync()) {
-          dir.deleteSync(recursive: true);
-        }
+        deleteTempDirBestEffort(dir);
       }
     });
     final SessionStateService store = SessionStateService.inMemoryFolder(
@@ -674,9 +665,7 @@ void main() {
     final Directory photoDir = Directory.systemTemp.createTempSync('ncd_pho2');
     addTearDown(() {
       for (final Directory dir in <Directory>[stateDir, photoDir]) {
-        if (dir.existsSync()) {
-          dir.deleteSync(recursive: true);
-        }
+        deleteTempDirBestEffort(dir);
       }
     });
     final SessionStateService store = SessionStateService.inMemoryFolder(

@@ -15,6 +15,7 @@ import 'package:ncd_photo_markup/features/markup/models/oval_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/rendering/markup_scene_renderer.dart';
+import 'test_temp_dir.dart';
 
 /// A plain white source photo of a given pixel size.
 Future<ui.Image> whiteImage(int width, int height) async {
@@ -112,9 +113,7 @@ void main() {
   });
 
   tearDown(() {
-    if (outputDir.existsSync()) {
-      outputDir.deleteSync(recursive: true);
-    }
+    deleteTempDirBestEffort(outputDir);
   });
 
   test('the markup scale is the ratio of export width to on-screen width', () {

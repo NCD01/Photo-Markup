@@ -13,6 +13,7 @@ import 'package:ncd_photo_markup/features/markup/models/markup_tool.dart';
 import 'package:ncd_photo_markup/features/markup/widgets/dimension_lines_overlay.dart';
 import 'package:ncd_photo_markup/features/session/services/session_state_service.dart';
 import 'package:ncd_photo_markup/main.dart';
+import 'test_temp_dir.dart';
 
 Future<void> pumpFrames(WidgetTester tester, {int frames = 10}) async {
   for (int i = 0; i < frames; i++) {
@@ -105,9 +106,7 @@ void main() {
   });
 
   tearDown(() {
-    if (workDir.existsSync()) {
-      workDir.deleteSync(recursive: true);
-    }
+    deleteTempDirBestEffort(workDir);
   });
 
   Future<dynamic> openShell(

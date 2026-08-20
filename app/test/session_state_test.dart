@@ -16,6 +16,7 @@ import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/session/models/session_preferences.dart';
 import 'package:ncd_photo_markup/features/session/services/app_data_directory.dart';
 import 'package:ncd_photo_markup/features/session/services/session_state_service.dart';
+import 'test_temp_dir.dart';
 
 EditableMarkupDocument documentFor(
   String sourcePath, {
@@ -60,9 +61,7 @@ void main() {
   });
 
   tearDown(() {
-    if (workDir.existsSync()) {
-      workDir.deleteSync(recursive: true);
-    }
+    deleteTempDirBestEffort(workDir);
   });
 
   group('app data directory', () {
