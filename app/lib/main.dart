@@ -747,6 +747,10 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
   }
 
   @visibleForTesting
+  Future<void> debugPromptForDimensionLabel(int dimensionId) =>
+      _promptForDimensionLabelById(dimensionId);
+
+  @visibleForTesting
   Rect? debugCurrentImageRect() => _computeExportCropRect();
 
   @visibleForTesting
@@ -3053,7 +3057,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       if (!mounted || newLineId == null) {
         return;
       }
-      await _promptForDimensionLabelById(newLineId!);
+      await _labelNewDimension(newLineId!);
     }
   }
 
@@ -3158,6 +3162,51 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     });
   }
 
+  /// The measured value for a dimension, or null when the photo has no usable
+  /// scale. Display formatting only; the line's geometry is never touched.
+  String? _measuredLabelForDimension(int lineIndex) {
+    return MeasurementValueUtils.calibratedSegmentDisplayValue(
+      startNormalized: _dimensionLines[lineIndex].startNormalized,
+      endNormalized: _dimensionLines[lineIndex].endNormalized,
+      calibration: _scaleCalibration,
+      imagePixelSize: _loadedImagePixelSize,
+    );
+  }
+
+  /// Labels a dimension the moment it is drawn.
+  ///
+  /// On a calibrated photo the measurement is the answer, so it is placed
+  /// straight onto the line and no dialog opens. Asking a man on a ladder to
+  /// confirm a number the app just worked out earns nothing.
+  ///
+  /// With no scale set there is nothing to place, so the dialog opens with an
+  /// empty box exactly as before. Editing an existing dimension always opens
+  /// the dialog; this path only runs for a dimension that has just been drawn.
+  Future<void> _labelNewDimension(int dimensionId) async {
+    final int lineIndex = _dimensionLines.indexWhere(
+      (DimensionLine line) => line.id == dimensionId,
+    );
+    if (lineIndex == -1) {
+      return;
+    }
+
+    final String? measuredValue = _measuredLabelForDimension(lineIndex);
+    if (measuredValue == null) {
+      await _promptForDimensionLabelById(dimensionId);
+      return;
+    }
+
+    // Stored verbatim. A measured value never goes through
+    // DimensionLabelFormatter, which is for imperial shorthand a person types.
+    setState(() {
+      _dimensionLines[lineIndex] = _dimensionLines[lineIndex].copyWith(
+        label: measuredValue,
+      );
+      _selectDimensionById(dimensionId);
+      _unsavedChangesTracker.markDirty();
+    });
+  }
+
   Future<void> _promptForDimensionLabelById(int dimensionId) async {
     final int lineIndex = _dimensionLines.indexWhere(
       (DimensionLine line) => line.id == dimensionId,
@@ -3173,12 +3222,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     // themselves. Typing over it still works, and an existing label is never
     // overwritten.
     final String? measuredValue = existingLabel.isEmpty
-        ? MeasurementValueUtils.calibratedSegmentDisplayValue(
-            startNormalized: _dimensionLines[lineIndex].startNormalized,
-            endNormalized: _dimensionLines[lineIndex].endNormalized,
-            calibration: _scaleCalibration,
-            imagePixelSize: _loadedImagePixelSize,
-          )
+        ? _measuredLabelForDimension(lineIndex)
         : null;
     final String initialLabel = measuredValue ?? existingLabel;
 

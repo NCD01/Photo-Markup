@@ -6,7 +6,7 @@ Owner: `NCD / M`
 Last Updated By: `Claude`
 Last Updated: `2026-08-19`
 Purpose: Record material architecture/process decisions.
-Changes: Added DECISION-029, the assumed measured-value display rule.
+Changes: Added DECISION-030, dimensions self-label when a scale is set.
 
 ## DECISION-001
 - Date: 2026-05-22
@@ -452,4 +452,20 @@ Changes: Added DECISION-029, the assumed measured-value display rule.
 - Rollback or Reversal: Revert the three call sites in `measurement_value_utils.dart` back to `_formatValue`, and delete `measurement_display_formatter.dart`.
 - Related Changes: v0.35
 - Review Date: First morning Marcelo reads this
+
+## DECISION-030
+- Date: 2026-08-20
+- Status: Accepted
+- Owner: NCD / M
+- Area: Markup Interaction
+- Decision: On a photo with a scale calibration, a newly drawn dimension takes its measured value directly and no confirmation dialog opens. With no scale set the dialog opens with an empty box, unchanged. Editing an existing dimension always opens the dialog regardless of scale.
+- Alternatives Considered:
+- Keep pre-filling the dialog and make the user press Save, as shipped in v0.34.
+- Auto-label and show a dismissable confirmation toast instead.
+- Auto-label only above a minimum line length.
+- Rationale: The measurement is the answer. Pre-filling a dialog and then asking a man on a ladder to confirm a number the app just computed is a tap that earns nothing. The dialog still exists for the two cases where there is a real question: no scale set, so there is nothing to place, and editing an existing label, where silently overwriting would destroy what someone typed.
+- Impact: Removes one tap per dimension on any calibrated photo. Auto-labelling does not make a dimension read-only; tapping a placed dimension still opens the dialog with the current label, and a typed override still runs through `DimensionLabelFormatter`. The measured value is stored verbatim and never routed through that formatter, which would convert whole feet to inches and corrupt a metric unit. Creation is the only path that auto-labels; the two edit call sites are untouched.
+- Rollback or Reversal: Point the creation call site in `_onDimensionEnd` back at `_promptForDimensionLabelById` and delete `_labelNewDimension`.
+- Related Changes: v0.36
+- Review Date: N/A
 

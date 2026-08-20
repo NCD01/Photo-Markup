@@ -292,8 +292,7 @@ void main() {
     expect(movedArrow.endNormalized, isNot(arrow.endNormalized));
   });
   testWidgets(
-    'a new dimension on a calibrated photo is pre-filled with the measured '
-    'value',
+    'a new dimension on a calibrated photo is labelled without asking',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const NcdPhotoMarkupApp(showStartupSplash: false),
@@ -357,30 +356,18 @@ void main() {
       );
       await _pumpFrames(tester, frames: 12);
 
+      // Task 2: with a scale set the measurement IS the answer, so no dialog
+      // opens at all. The label lands on the line directly.
       expect(
         find.text(UiCopyConstants.dimensionLabelDialogTitle),
-        findsOneWidget,
+        findsNothing,
       );
-      final TextField labelField = tester.widget<TextField>(
-        find.descendant(
-          of: find.byType(AlertDialog),
-          matching: find.byType(TextField),
-        ),
-      );
-      expect(labelField.controller!.text, '5 ft');
-      expect(
-        find.text(UiCopyConstants.dimensionMeasuredHint),
-        findsOneWidget,
-      );
-
-      // Keeping the measured value must not push it through the imperial
-      // shorthand formatter, which would turn "5 ft" into 60 inches.
-      await tester.tap(find.text(UiCopyConstants.dimensionLabelSaveButton));
-      await _pumpFrames(tester, frames: 12);
 
       final dynamic savedState = tester.state(
         find.byType(PhotoMarkupShellScreen),
       );
+      // Stored verbatim: never routed through the imperial shorthand
+      // formatter, which would turn "5 ft" into 60 inches.
       expect(savedState.debugDimensionLinesSnapshot.last.label, '5 ft');
     },
   );
@@ -416,5 +403,90 @@ void main() {
     await tester.tap(find.text(UiCopyConstants.dimensionLabelSkipButton));
     await _pumpFrames(tester, frames: 12);
   });
+
+  testWidgets(
+    'editing an existing dimension still opens the dialog even when a scale '
+    'is set',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const NcdPhotoMarkupApp(showStartupSplash: false),
+      );
+      await _pumpFrames(tester, frames: 12);
+
+      final dynamic state = tester.state(find.byType(PhotoMarkupShellScreen));
+      state.debugSeedLoadedImageState();
+      await _pumpFrames(tester, frames: 12);
+
+      // Calibrate so the auto-label path is live.
+      await _tapSidebarAction(tester, ToolbarConstants.scaleCalibration);
+      final Rect imageRect = state.debugCurrentImageRect() as Rect;
+      final Offset cStart =
+          imageRect.topLeft +
+          Offset(imageRect.width * 0.20, imageRect.height * 0.20);
+      unawaited(
+        state.debugCanvasDrag(
+          start: cStart,
+          end: cStart + Offset(imageRect.width * 0.50, 0),
+        ),
+      );
+      await _pumpFrames(tester, frames: 12);
+      final Finder dialogFields = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(dialogFields.first, '10');
+      await tester.enterText(dialogFields.at(1), 'ft');
+      await _pumpFrames(tester, frames: 4);
+      await tester.tap(find.text(UiCopyConstants.scaleCalibrationSaveButton));
+      await _pumpFrames(tester, frames: 12);
+
+      // Draw one: auto-labelled, no dialog.
+      await _tapSidebarAction(tester, ToolbarConstants.dimension);
+      final dynamic s2 = tester.state(find.byType(PhotoMarkupShellScreen));
+      final Rect rect = s2.debugCurrentImageRect() as Rect;
+      final Offset dStart =
+          rect.topLeft + Offset(rect.width * 0.20, rect.height * 0.60);
+      unawaited(
+        s2.debugCanvasDrag(
+          start: dStart,
+          end: dStart + Offset(rect.width * 0.25, 0),
+        ),
+      );
+      await _pumpFrames(tester, frames: 12);
+      expect(find.text(UiCopyConstants.dimensionLabelDialogTitle), findsNothing);
+
+      final dynamic s3 = tester.state(find.byType(PhotoMarkupShellScreen));
+      final int placedId = s3.debugDimensionLinesSnapshot.last.id as int;
+      expect(s3.debugDimensionLinesSnapshot.last.label, '5 ft');
+
+      // Auto-labelling must not make the dimension read-only. Asking to edit it
+      // opens the dialog, carrying the existing label.
+      unawaited(s3.debugPromptForDimensionLabel(placedId));
+      await _pumpFrames(tester, frames: 12);
+      expect(
+        find.text(UiCopyConstants.dimensionLabelDialogTitle),
+        findsOneWidget,
+      );
+      final TextField field = tester.widget<TextField>(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(field.controller!.text, '5 ft');
+
+      // A typed override still runs through DimensionLabelFormatter.
+      await tester.enterText(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ), "6'-0\"");
+      await _pumpFrames(tester, frames: 4);
+      await tester.tap(find.text(UiCopyConstants.dimensionLabelSaveButton));
+      await _pumpFrames(tester, frames: 12);
+
+      final dynamic s4 = tester.state(find.byType(PhotoMarkupShellScreen));
+      expect(s4.debugDimensionLinesSnapshot.last.label, '72"');
+    },
+  );
 
 }

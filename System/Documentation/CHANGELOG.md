@@ -1691,3 +1691,15 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
   - flutter analyze: PASS,flutter test: PASS (126 tests, up from 106)
 - Rollback Notes:
   - Revert the call sites in measurement_value_utils.dart and delete measurement_display_formatter.dart.
+
+## v0.36 - 2026-08-20
+- Owner: NCD / M
+- Author: Claude
+- Type: Feature
+- Reason: A dimension drawn on a calibrated photo labels itself without asking for confirmation.
+- Changes:
+  - New dimensions take the measured value directly when a scale is set; no dialog opens.,No scale set still opens the dialog with an empty box, unchanged.,Editing an existing dimension always opens the dialog; auto-labelling does not make a dimension read-only.,Measured values continue to store verbatim and never run through DimensionLabelFormatter.
+- Validation Evidence:
+  - flutter analyze: PASS,flutter test: PASS (127 tests)
+- Rollback Notes:
+  - Point the creation call site back at _promptForDimensionLabelById and delete _labelNewDimension.

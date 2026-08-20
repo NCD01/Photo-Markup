@@ -536,3 +536,20 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.36 - 2026-08-20
+
+Linked changelog entries:
+- $newVersion - 2026-08-20
+
+Scope:
+  - New dimensions take the measured value directly when a scale is set; no dialog opens.,No scale set still opens the dialog with an empty box, unchanged.,Editing an existing dimension always opens the dialog; auto-labelling does not make a dimension read-only.,Measured values continue to store verbatim and never run through DimensionLabelFormatter.
+
+Validation:
+  - flutter analyze: PASS,flutter test: PASS (127 tests)
+
+Rollback:
+  - Point the creation call site back at _promptForDimensionLabelById and delete _labelNewDimension.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.
