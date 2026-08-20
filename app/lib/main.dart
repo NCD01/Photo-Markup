@@ -30,6 +30,7 @@ import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
+import 'package:ncd_photo_markup/features/markup/utils/measurement_value_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_handle_utils.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_interaction_policy.dart';
 import 'package:ncd_photo_markup/features/markup/utils/markup_move_utils.dart';
@@ -3166,8 +3167,24 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
 
     final String existingLabel = _dimensionLines[lineIndex].label ?? '';
+
+    // A new dimension on a calibrated photo starts with the measured value
+    // already filled in, the same way Multi-Segment and Area / Perimeter label
+    // themselves. Typing over it still works, and an existing label is never
+    // overwritten.
+    final String? measuredValue = existingLabel.isEmpty
+        ? MeasurementValueUtils.calibratedSegmentDisplayValue(
+            startNormalized: _dimensionLines[lineIndex].startNormalized,
+            endNormalized: _dimensionLines[lineIndex].endNormalized,
+            calibration: _scaleCalibration,
+            imagePixelSize: _loadedImagePixelSize,
+          )
+        : null;
+    final String initialLabel = measuredValue ?? existingLabel;
+
     final String? updatedLabel = await _showDimensionLabelDialog(
-      initialValue: existingLabel,
+      initialValue: initialLabel,
+      isMeasuredFromScale: measuredValue != null,
     );
 
     if (!mounted || updatedLabel == null) {
@@ -3181,7 +3198,9 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       return;
     }
 
-    final String normalized = DimensionLabelFormatter.format(updatedLabel);
+    final String normalized = updatedLabel.trim() == measuredValue
+        ? updatedLabel.trim()
+        : DimensionLabelFormatter.format(updatedLabel);
     setState(() {
       _dimensionLines[refreshIndex] = normalized.isEmpty
           ? _dimensionLines[refreshIndex].copyWith(
@@ -3196,11 +3215,15 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
 
   Future<String?> _showDimensionLabelDialog({
     required String initialValue,
+    bool isMeasuredFromScale = false,
   }) async {
     return showDialog<String>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return _DimensionLabelDialog(initialValue: initialValue);
+        return _DimensionLabelDialog(
+          initialValue: initialValue,
+          isMeasuredFromScale: isMeasuredFromScale,
+        );
       },
     );
   }
@@ -5708,9 +5731,13 @@ class _SidebarActionButton extends StatelessWidget {
 }
 
 class _DimensionLabelDialog extends StatefulWidget {
-  const _DimensionLabelDialog({required this.initialValue});
+  const _DimensionLabelDialog({
+    required this.initialValue,
+    this.isMeasuredFromScale = false,
+  });
 
   final String initialValue;
+  final bool isMeasuredFromScale;
 
   @override
   State<_DimensionLabelDialog> createState() => _DimensionLabelDialogState();
@@ -5755,10 +5782,15 @@ class _DimensionLabelDialogState extends State<_DimensionLabelDialog> {
               style: const TextStyle(
                 fontSize: UiLayoutConstants.dimensionLabelFontSize,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: UiCopyConstants.dimensionLabelHint,
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.all(
+                helperText: widget.isMeasuredFromScale
+                    ? UiCopyConstants.dimensionMeasuredHint
+                    : null,
+                helperMaxLines:
+                    UiLayoutConstants.dimensionLabelHelperMaxLines,
+                border: const OutlineInputBorder(),
+                contentPadding: const EdgeInsets.all(
                   UiLayoutConstants.dimensionLabelDialogFieldPadding,
                 ),
               ),

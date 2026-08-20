@@ -1,11 +1,58 @@
-# Session Log
+﻿# Session Log
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\SESSION.md`
 Version: `v0.3`
 Owner: `NCD / M`
-Last Updated By: `Codex`
-Last Updated: `2026-05-25`
+Last Updated By: `Claude`
+Last Updated: `2026-08-19`
 Purpose: Track concise session history and handoff state.
+
+# SESSION_2026-08-19_scale_and_dimension_separation
+
+## Context
+- App: NCD Photo Markup
+- Owner: NCD / M
+- Agent/Author: Claude
+- Branch/Workspace: main / H:\Marcelo\Programming\apps\NCD_Photo_Markup
+- Baseline before work: `v0.32` / `4533396`
+
+## Goal
+- Commit the pending Phase 1Z measurement tools work and bring the READMEs up to date.
+- Answer the owner question "scale calibration and dimension do the same thing?" and fix the cause.
+
+## Actions
+- Committed the pending Phase 1Z measurement tools MVP as `4533396`.
+- Rewrote the root `README.md` and replaced the stock Flutter template in `app/README.md`.
+- Made Scale Calibration visually distinct: dashed stroke, its own colour, `SCALE:` label prefix, applied to the finished line and the drag preview.
+- Made a new dimension on a calibrated photo open pre-filled with the measured value, with a helper note, still editable, never overwriting an existing label.
+- Stopped a kept measured value from passing through `DimensionLabelFormatter`, which turns whole feet into inches and would corrupt a metric unit.
+- Added `MeasurementValueUtils.calibratedSegmentDisplayValue`.
+- Removed `_measurementEndpointStrokePaint` and `_measurementLeaderPaint`, unreferenced after the change.
+- Added 6 tests: 4 measurement value tests and 2 interaction tests covering the pre-fill with and without a scale.
+- Made a local-drive copy at C:\apps\NCD_Photo_Markup so the Windows build can be run off the network share.
+
+## Logging/Debug Notes
+- No new logging paths added.
+- No detached app process left running.
+
+## Validation
+- `flutter analyze`: `PASS`
+- `flutter test`: `PASS` (106 tests, up from 100)
+- `flutter test test/phase1x_interaction_regression_test.dart`: `PASS` (7 tests)
+- `flutter test test/measurement_value_utils_test.dart`: `PASS` (7 tests)
+- `verify-version-sync.ps1`: `PASS` (`v0.32`)
+- `flutter build windows --debug`: `NOT RUN` from this checkout. The Flutter tool cannot create its plugin symlinks on the `H:` SMB share. Errors observed: `Cannot create link ... errno = 183`, then `ERROR_ACCESS_DENIED ... trying to create a symlink`. Directory junctions fail with `Local NTFS volumes are required`. Developer Mode is already enabled. Build from C:\apps\NCD_Photo_Markup instead.
+
+## Constraints Confirmed
+- No version bump.
+- No Control Center code changes.
+- No DWG converter work.
+- No autosave, full-resolution export, or PDF export added.
+- Sidecar schema stays at `1.0`.
+
+## Open For Owner
+- Windows runtime check of the dashed calibration line and the pre-filled dimension label on real site photos.
+- Whether the dimension pre-fill should convert units, for example a scale set in `ft` labelling a short dimension in `in`.
 
 # SESSION_2026-06-19_0001_dwg_free_renderer_research_note
 

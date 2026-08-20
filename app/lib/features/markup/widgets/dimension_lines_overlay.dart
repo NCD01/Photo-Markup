@@ -296,9 +296,6 @@ class _DimensionLinesPainter extends CustomPainter {
 
     final ScaleCalibration? currentScaleCalibration = scaleCalibration;
     if (currentScaleCalibration != null) {
-      final MarkupStylePreset preset = MarkupStylePresets.byId(
-        currentScaleCalibration.stylePresetId,
-      );
       final bool isSelected =
           selectedScaleCalibrationId == currentScaleCalibration.id;
       final Offset start = currentScaleCalibration.startInRect(imageRect);
@@ -318,9 +315,10 @@ class _DimensionLinesPainter extends CustomPainter {
         canvas,
         start,
         end,
-        _measurementLinePaint(preset, isSelected: isSelected),
+        _calibrationLinePaint(isSelected: isSelected),
         endpointFillPaint,
-        _measurementEndpointStrokePaint(preset, isSelected: isSelected),
+        _calibrationEndpointStrokePaint(isSelected: isSelected),
+        dashed: true,
       );
       _drawLabelIfPresent(
         canvas: canvas,
@@ -328,8 +326,8 @@ class _DimensionLinesPainter extends CustomPainter {
         start: start,
         end: end,
         labelBackgroundPaint: labelBackgroundPaint,
-        labelBorderPaint: _measurementLabelBorderPaint(preset),
-        leaderPaint: _measurementLeaderPaint(preset, isSelected: isSelected),
+        labelBorderPaint: _calibrationLabelBorderPaint(),
+        leaderPaint: _calibrationLeaderPaint(isSelected: isSelected),
       );
     }
 
@@ -633,9 +631,10 @@ class _DimensionLinesPainter extends CustomPainter {
           canvas,
           activeStart!,
           activeEnd!,
-          _measurementLinePaint(activePreset, isSelected: false),
+          _calibrationLinePaint(isSelected: false),
           endpointFillPaint,
-          _measurementEndpointStrokePaint(activePreset, isSelected: false),
+          _calibrationEndpointStrokePaint(isSelected: false),
+          dashed: true,
         );
       }
     }
@@ -745,15 +744,42 @@ class _DimensionLinesPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
   }
 
-  Paint _measurementEndpointStrokePaint(
-    MarkupStylePreset preset, {
-    required bool isSelected,
-  }) {
+  Paint _calibrationLinePaint({required bool isSelected}) {
     return Paint()
       ..color = isSelected
-          ? preset.dimensionSelectedLineColor
-          : preset.dimensionLineColor
+          ? MeasurementToolConstants.calibrationSelectedLineColor
+          : MeasurementToolConstants.calibrationLineColor
+      ..strokeWidth =
+          MeasurementToolConstants.lineStrokeWidth *
+          (isSelected ? MeasurementToolConstants.selectedStrokeMultiplier : 1.0)
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _calibrationEndpointStrokePaint({required bool isSelected}) {
+    return Paint()
+      ..color = isSelected
+          ? MeasurementToolConstants.calibrationSelectedLineColor
+          : MeasurementToolConstants.calibrationLineColor
       ..strokeWidth = DimensionLineConstants.endpointStrokeWidth
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _calibrationLabelBorderPaint() {
+    return Paint()
+      ..color = MeasurementToolConstants.calibrationLineColor
+      ..strokeWidth = DimensionLineConstants.labelBorderWidth
+      ..style = PaintingStyle.stroke;
+  }
+
+  Paint _calibrationLeaderPaint({required bool isSelected}) {
+    return Paint()
+      ..color = isSelected
+          ? MeasurementToolConstants.calibrationSelectedLineColor
+          : MeasurementToolConstants.calibrationLineColor
+      ..strokeWidth = DimensionLineConstants.labelLeaderStrokeWidth
+      ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
   }
 
@@ -761,19 +787,6 @@ class _DimensionLinesPainter extends CustomPainter {
     return Paint()
       ..color = preset.dimensionLineColor
       ..strokeWidth = DimensionLineConstants.labelBorderWidth
-      ..style = PaintingStyle.stroke;
-  }
-
-  Paint _measurementLeaderPaint(
-    MarkupStylePreset preset, {
-    required bool isSelected,
-  }) {
-    return Paint()
-      ..color = isSelected
-          ? preset.dimensionSelectedLineColor
-          : preset.dimensionLineColor
-      ..strokeWidth = DimensionLineConstants.labelLeaderStrokeWidth
-      ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
   }
 
@@ -1096,9 +1109,14 @@ class _DimensionLinesPainter extends CustomPainter {
     Offset end,
     Paint linePaint,
     Paint endpointFillPaint,
-    Paint endpointStrokePaint,
-  ) {
-    canvas.drawLine(start, end, linePaint);
+    Paint endpointStrokePaint, {
+    bool dashed = false,
+  }) {
+    if (dashed) {
+      _drawDashedLine(canvas, start, end, linePaint);
+    } else {
+      canvas.drawLine(start, end, linePaint);
+    }
     canvas.drawCircle(
       start,
       UiLayoutConstants.dimensionEndpointOuterRadius,
@@ -1129,6 +1147,28 @@ class _DimensionLinesPainter extends CustomPainter {
       UiLayoutConstants.dimensionEndpointInnerRadius,
       endpointStrokePaint,
     );
+  }
+
+  /// Straight dashed run from start to end. Only the scale calibration uses
+  /// this, so a dashed line on the photo always means "this is the reference".
+  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
+    final double total = (end - start).distance;
+    if (total <= 0) {
+      return;
+    }
+    final Offset step = (end - start) / total;
+    final double dash = MeasurementToolConstants.calibrationDashLength;
+    final double gap = MeasurementToolConstants.calibrationDashGap;
+    double drawn = 0;
+    while (drawn < total) {
+      final double segmentEnd = math.min(drawn + dash, total);
+      canvas.drawLine(
+        start + (step * drawn),
+        start + (step * segmentEnd),
+        paint,
+      );
+      drawn = segmentEnd + gap;
+    }
   }
 
   void _drawLabelIfPresent({

@@ -1,12 +1,44 @@
-# Changelog
+﻿# Changelog
 
 Document Path: `C:\apps\NCD_Photo_Markup\System\Documentation\CHANGELOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
-Last Updated By: `Codex`
-Last Updated: `2026-06-19`
+Last Updated By: `Claude`
+Last Updated: `2026-08-19`
 Purpose: Canonical changelog for project changes.
-Changes: Added unreleased Phase 1Z measurement tools MVP working-note entry.
+Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
+
+## Unreleased - 2026-08-19 (Phase 1Z Scale and Dimension Separation)
+- Owner: NCD / M
+- Author: Claude
+- Type: Measurement / Canvas Workflow
+- Reason: Scale Calibration and Dimension were drawn identically and read as duplicate tools. The calibration is a reference for the measurement tools, not an annotation, and nothing made that visible.
+- Scope:
+  - `app/lib/main.dart`
+  - `app/lib/core/constants/app_constants.dart`
+  - `app/lib/features/markup/utils/measurement_value_utils.dart`
+  - `app/lib/features/markup/widgets/dimension_lines_overlay.dart`
+  - `app/test/measurement_value_utils_test.dart`
+  - `app/test/phase1x_interaction_regression_test.dart`
+  - `README.md`
+  - `app/README.md`
+- Changes:
+  - Scale Calibration now draws as a dashed line in its own colour, distinct from every style preset, for both the finished line and the drag preview.
+  - Calibration label now reads `SCALE: <distance> <unit>` instead of a bare value.
+  - A new dimension drawn on a calibrated photo opens with the measured value already filled in, with a helper note saying where the number came from. An existing label is never overwritten and the value stays editable.
+  - A kept measured value is stored verbatim instead of being passed through the imperial shorthand formatter, which converts whole feet to inches and would corrupt a metric unit.
+  - Added `MeasurementValueUtils.calibratedSegmentDisplayValue` for straight two-point measurement.
+  - Removed two paint helpers left unreferenced by the change.
+  - Rewrote the root README and replaced the stock Flutter template in `app/README.md`.
+- Validation Evidence:
+  - `flutter analyze`: `PASS`
+  - `flutter test`: `PASS` (106 tests)
+  - `verify-version-sync.ps1`: `PASS` (`v0.32`)
+  - `flutter build windows --debug`: `NOT RUN` from the `H:` network checkout; the Flutter tool cannot create its plugin symlinks on an SMB path. A local-drive copy exists at `C:\apps\NCD_Photo_Markup`.
+- Risks / Known Gaps:
+  - Owner manual validation on real site photos is still pending.
+  - Windows runtime smoke for these specific changes has not been run.
+  - Dimension pre-fill uses the calibration unit as typed; there is no unit conversion.
 
 ## Unreleased - 2026-06-19 (Phase 1Z New Measurement Tools MVP)
 - Owner: NCD / M

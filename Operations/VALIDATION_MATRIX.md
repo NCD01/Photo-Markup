@@ -1,9 +1,9 @@
-# Validation Matrix
+﻿# Validation Matrix
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\VALIDATION_MATRIX.md`
 Version: `v0.5`
 Owner: `NCD / M`
-Last Updated By: `Codex`
+Last Updated By: `Claude`
 Last Updated: `2026-05-29`
 Purpose: Track required validation activities and outcomes.
 Changes: Added Phase 1U compact sidebar rail/drawer validation gates.
@@ -225,3 +225,6 @@ Changes: Added Phase 1U compact sidebar rail/drawer validation gates.
 | `VAL-210` | Phase 1Z Full Regression Gate | `flutter test --timeout 20m -r expanded` | New measurement tool MVP wiring | Full automated suite passes with no regressions across import, DWG handling, save/reopen, export, sidebar, and prior measurement/text workflows | `NCD / M` | `PASS` | `Terminal output 2026-06-19 (full suite)` |
 | `VAL-211` | Phase 1Z Windows Build/Run Gate | `flutter build windows --debug` + `flutter run -d windows --debug --no-resident` | Runtime shell/overlay changes for new measurement tools | Windows debug build passes and startup smoke succeeds without leaving a detached app process running | `NCD / M` | `PASS` | `Terminal output 2026-06-19 (build + startup smoke, process id 3080 stopped)` |
 | `VAL-212` | Phase 1Z Version/Ignore Guardrail Gate | `verify-version-sync.ps1` + `.agent_temp` ignore check + process audit | Non-hanging validation discipline for active measurement-tools phase | Version remains in sync, temp artifacts stay ignored, and validation completed without indefinite waits or lingering app process | `NCD / M` | `PASS` | `Terminal output 2026-06-19 (guardrail check)` |
+| `VAL-213` | Phase 1Z Scale/Dimension Separation Gate | `flutter test test/phase1x_interaction_regression_test.dart` | Scale Calibration and Dimension were visually and functionally indistinguishable | A new dimension on a calibrated photo opens pre-filled with the measured value and the helper note, an uncalibrated photo still opens an empty label field, and a kept measured value is stored verbatim rather than converted to inches | `NCD / M` | `PASS` | `Terminal output 2026-08-19 (7 tests passed)` |
+| `VAL-214` | Phase 1Z Measurement Value Gate | `flutter test test/measurement_value_utils_test.dart` | Calibration label prefix and new segment measurement helper | Calibration label carries the SCALE prefix, a straight segment measures correctly against the calibration on both axes, and an uncalibrated segment returns no value | `NCD / M` | `PASS` | `Terminal output 2026-08-19 (7 tests passed)` |
+| `VAL-215` | Phase 1Z Post-Change Regression Gate | `flutter analyze` + `flutter test` | Calibration rendering and dimension label pre-fill changes | Analyzer reports no issues and the full suite passes | `NCD / M` | `PASS` | `Terminal output 2026-08-19 (analyze clean, 106 tests passed)` |

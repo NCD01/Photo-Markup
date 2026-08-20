@@ -114,7 +114,29 @@ class MeasurementValueUtils {
   }
 
   static String calibrationDisplayLabel(ScaleCalibration calibration) {
-    return '${_formatValue(calibration.realDistance)} ${normalizeUnitLabel(calibration.unitLabel)}';
+    return '${UiCopyConstants.scaleCalibrationLabelPrefix}: '
+        '${_formatValue(calibration.realDistance)} '
+        '${normalizeUnitLabel(calibration.unitLabel)}';
+  }
+
+  /// Real-world value for a straight two-point segment, or null when there is
+  /// no usable scale yet. Used to pre-fill a new dimension label so the photo
+  /// scale is worth setting for dimensions too, not just the polyline tools.
+  static String? calibratedSegmentDisplayValue({
+    required Offset startNormalized,
+    required Offset endNormalized,
+    required ScaleCalibration? calibration,
+    required Size? imagePixelSize,
+  }) {
+    final double? length = calibratedPolylineLength(
+      normalizedPoints: <Offset>[startNormalized, endNormalized],
+      calibration: calibration,
+      imagePixelSize: imagePixelSize,
+    );
+    if (length == null || calibration == null) {
+      return null;
+    }
+    return '${_formatValue(length)} ${normalizeUnitLabel(calibration.unitLabel)}';
   }
 
   static String multiSegmentDisplayLabel({

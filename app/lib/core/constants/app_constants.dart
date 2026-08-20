@@ -248,6 +248,9 @@ class UiCopyConstants {
   static const String measurementCancelledMessage = 'Measurement canceled.';
   static const String measurementRequiresPointsMessage =
       'Add more points to finish this measurement.';
+  static const String scaleCalibrationLabelPrefix = 'SCALE';
+  static const String dimensionMeasuredHint =
+      'Measured from the photo scale. Type over it to change it.';
   static const String multiSegmentLabelPrefix = 'Length';
   static const String areaLabelPrefix = 'Area';
   static const String perimeterLabelPrefix = 'Perimeter';
@@ -441,6 +444,14 @@ class MeasurementToolConstants {
   static const double labelClampPadding = 4;
   static const double activeCloseHitDistance = 22;
   static const Duration completionTapWindow = Duration(milliseconds: 550);
+
+  // Scale Calibration is drawn differently from a Dimension line on purpose.
+  // It is a reference, not an annotation, so it gets its own colour and a
+  // dashed stroke that no other tool uses.
+  static const Color calibrationLineColor = Color(0xFFAA00FF);
+  static const Color calibrationSelectedLineColor = Color(0xFFD500F9);
+  static const double calibrationDashLength = 12;
+  static const double calibrationDashGap = 7;
 }
 
 class SidebarAssetConstants {
@@ -585,6 +596,7 @@ class UiLayoutConstants {
   static const double dimensionLabelDialogFieldMinHeight = 64;
   static const double dimensionLabelDialogFieldPadding = 12;
   static const double dimensionLabelDialogButtonTopGap = 8;
+  static const int dimensionLabelHelperMaxLines = 2;
 }
 
 class DimensionLineConstants {

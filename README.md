@@ -1,12 +1,12 @@
 ﻿# NCD Photo Markup
 
 Document Path: `C:\apps\NCD_Photo_Markup\README.md`
-Version: `v0.4`
+Version: `v0.5`
 Owner: `NCD / M`
 Last Updated By: `Claude`
 Last Updated: `2026-08-19`
 Purpose: Root repo map, app overview, and quick start for the standalone Flutter app.
-Changes: Full rewrite covering the Phase 1Z measurement tools, file outputs, launch arguments, source map, and the network-drive build limitation.
+Changes: Documented the Scale Calibration and Dimension split, dashed calibration styling, and dimension label pre-fill.
 
 ## What This Is
 Touch-first field photo markup app for internal and client annotation work.
@@ -31,10 +31,10 @@ Sidebar sections are `File`, `Markup Tools`, and `Edit`.
 
 | Tool | What it does |
 |---|---|
-| `Scale Calibration` | Drag a line across something of known length, then enter the real distance and unit. Every measurement tool afterwards reports real-world values. |
+| `Scale Calibration` | Drag a line across something of known length, then enter the real distance and unit. Every measurement tool afterwards reports real-world values. Draws **dashed in its own colour** and labels itself `SCALE: 8 ft`, so it never looks like an annotation. One per photo; drawing another replaces it. |
 | `Multi-Segment` | Tap point to point for a running length. Double-tap the last point or press Enter to finish. |
 | `Area / Perimeter` | Tap points to enclose a shape. Tap the first point again or double-tap the last point to close. Reports area and perimeter. |
-| `Dimension` | Two-point dimension line with an editable label. |
+| `Dimension` | Two-point dimension line with an editable label. On a calibrated photo the label opens pre-filled with the measured value; type over it to change it. |
 | `Text Note` | Free text placed on the photo. |
 | `Arrow` | Straight arrow with a head. |
 | `Rectangle` | Rectangle outline. |
@@ -45,6 +45,21 @@ Sidebar sections are `File`, `Markup Tools`, and `Edit`.
 
 Measurement tools without a calibration show `Set scale` instead of a value.
 Calibration is stored per photo and saved into the markup sidecar file.
+
+### Scale Calibration is not a Dimension
+They look similar because both are a two-point line, but they do different jobs:
+
+- A `Dimension` is an annotation. You type the label. Nothing is calculated from
+  it, and you can place as many as you like.
+- `Scale Calibration` is the reference. There is one per photo. It tells the app
+  how many real units a pixel is worth, and `Multi-Segment` and
+  `Area / Perimeter` compute their labels from it. A new `Dimension` is also
+  pre-filled from it.
+
+A measured value you keep is stored exactly as shown. Only a label you type
+yourself goes through the imperial shorthand formatter, which turns `6'-0"` into
+`72"`. There is no unit conversion; a dimension is reported in the same unit you
+calibrated with.
 
 Every mark is stored in normalized (`0..1`) coordinates against the source
 image, so marks stay in the right place when the window is resized.

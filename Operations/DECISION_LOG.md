@@ -1,12 +1,12 @@
-# Decision Log
+﻿# Decision Log
 
 Document Path: `C:\apps\NCD_Photo_Markup\Operations\DECISION_LOG.md`
 Version: `v0.5`
 Owner: `NCD / M`
-Last Updated By: `Codex`
-Last Updated: `2026-05-28`
+Last Updated By: `Claude`
+Last Updated: `2026-08-19`
 Purpose: Record material architecture/process decisions.
-Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decision.
+Changes: Added Phase 1Z decision separating Scale Calibration from Dimension.
 
 ## DECISION-001
 - Date: 2026-05-22
@@ -406,3 +406,19 @@ Changes: Added Phase 1T-A HEIC preview-cap conversion and import cleanup decisio
 - Rollback or Reversal: Remove the Phase 1Z measurement models/helpers and return to dimension/text-only measurement behavior.
 - Related Changes: Phase 1Z New Measurement Tools MVP (working tree)
 - Review Date: N/A
+
+## DECISION-027
+- Date: 2026-08-19
+- Status: Accepted
+- Owner: NCD / M
+- Area: Markup Tools
+- Decision: Give Scale Calibration its own on-canvas identity, and let Dimension pre-fill its label from the calibration.
+- Alternatives Considered:
+- Leave both looking the same and explain the difference in documentation only.
+- Merge the two tools into one.
+- Rationale: Scale Calibration was drawn through the same DimensionLine renderer as a Dimension, so the two were indistinguishable on the photo and read as duplicates. They are not duplicates: a Dimension is an annotation you type, and the calibration is the single reference that gives Multi-Segment and Area / Perimeter their real numbers. Making the reference look like a reference removes the confusion, and pre-filling the dimension label makes the calibration pay off for the dimension tool too instead of leaving the user to measure twice.
+- Impact: Calibration draws dashed in its own colour with a SCALE prefix on the label. A new dimension on a calibrated photo opens with the measured value already filled in and is still fully editable. A measured value kept as-is bypasses the imperial shorthand formatter, which would otherwise convert whole feet to inches and corrupt metric units.
+- Rollback or Reversal: Revert the calibration paints in dimension_lines_overlay.dart and the pre-fill block in _promptForDimensionLabelById.
+- Related Changes: Phase 1Z measurement tools MVP
+- Review Date: After owner validation on real site photos
+

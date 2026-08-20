@@ -291,4 +291,130 @@ void main() {
     expect(movedArrow.startNormalized, isNot(arrow.startNormalized));
     expect(movedArrow.endNormalized, isNot(arrow.endNormalized));
   });
+  testWidgets(
+    'a new dimension on a calibrated photo is pre-filled with the measured '
+    'value',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const NcdPhotoMarkupApp(showStartupSplash: false),
+      );
+      await _pumpFrames(tester, frames: 12);
+
+      final dynamic state = tester.state(find.byType(PhotoMarkupShellScreen));
+      state.debugSeedLoadedImageState();
+      await _pumpFrames(tester, frames: 12);
+
+      // Calibrate: half the photo width is 10 ft.
+      await _tapSidebarAction(tester, ToolbarConstants.scaleCalibration);
+      final Rect imageRect = state.debugCurrentImageRect() as Rect;
+      final Offset calibrationStart =
+          imageRect.topLeft +
+          Offset(imageRect.width * 0.20, imageRect.height * 0.20);
+      final Offset calibrationEnd =
+          calibrationStart + Offset(imageRect.width * 0.50, 0);
+      unawaited(
+        state.debugCanvasDrag(start: calibrationStart, end: calibrationEnd),
+      );
+      await _pumpFrames(tester, frames: 12);
+
+      // The sidebar action carries the same label, so scope to the dialog.
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text(UiCopyConstants.scaleCalibrationDialogTitle),
+        ),
+        findsOneWidget,
+      );
+      final Finder dialogFields = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      );
+      final Finder distanceField = dialogFields.first;
+      final Finder unitField = dialogFields.at(1);
+      await tester.enterText(distanceField, '10');
+      await tester.enterText(unitField, 'ft');
+      await _pumpFrames(tester, frames: 4);
+      await tester.tap(
+        find.text(UiCopyConstants.scaleCalibrationSaveButton),
+      );
+      await _pumpFrames(tester, frames: 12);
+
+      // Draw a dimension across a quarter of the photo width: 5 ft.
+      await _tapSidebarAction(tester, ToolbarConstants.dimension);
+      final dynamic calibratedState = tester.state(
+        find.byType(PhotoMarkupShellScreen),
+      );
+      final Rect rect = calibratedState.debugCurrentImageRect() as Rect;
+      final Offset dimensionStart =
+          rect.topLeft + Offset(rect.width * 0.20, rect.height * 0.60);
+      final Offset dimensionEnd =
+          dimensionStart + Offset(rect.width * 0.25, 0);
+      unawaited(
+        calibratedState.debugCanvasDrag(
+          start: dimensionStart,
+          end: dimensionEnd,
+        ),
+      );
+      await _pumpFrames(tester, frames: 12);
+
+      expect(
+        find.text(UiCopyConstants.dimensionLabelDialogTitle),
+        findsOneWidget,
+      );
+      final TextField labelField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(labelField.controller!.text, '5 ft');
+      expect(
+        find.text(UiCopyConstants.dimensionMeasuredHint),
+        findsOneWidget,
+      );
+
+      // Keeping the measured value must not push it through the imperial
+      // shorthand formatter, which would turn "5 ft" into 60 inches.
+      await tester.tap(find.text(UiCopyConstants.dimensionLabelSaveButton));
+      await _pumpFrames(tester, frames: 12);
+
+      final dynamic savedState = tester.state(
+        find.byType(PhotoMarkupShellScreen),
+      );
+      expect(savedState.debugDimensionLinesSnapshot.last.label, '5 ft');
+    },
+  );
+
+  testWidgets('a dimension without a scale still prompts for a typed label', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const NcdPhotoMarkupApp(showStartupSplash: false));
+    await _pumpFrames(tester, frames: 12);
+
+    final dynamic state = tester.state(find.byType(PhotoMarkupShellScreen));
+    state.debugSeedLoadedImageState();
+    await _pumpFrames(tester, frames: 12);
+
+    await _tapSidebarAction(tester, ToolbarConstants.dimension);
+    final Rect imageRect = state.debugCurrentImageRect() as Rect;
+    final Offset start =
+        imageRect.topLeft +
+        Offset(imageRect.width * 0.20, imageRect.height * 0.40);
+    final Offset end = start + Offset(imageRect.width * 0.30, 0);
+    unawaited(state.debugCanvasDrag(start: start, end: end));
+    await _pumpFrames(tester, frames: 12);
+
+    final TextField labelField = tester.widget<TextField>(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(labelField.controller!.text, isEmpty);
+    expect(find.text(UiCopyConstants.dimensionMeasuredHint), findsNothing);
+
+    await tester.tap(find.text(UiCopyConstants.dimensionLabelSkipButton));
+    await _pumpFrames(tester, frames: 12);
+  });
+
 }
