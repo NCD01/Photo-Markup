@@ -33,6 +33,7 @@ class EditableMarkupDocument {
     required this.ovals,
     required this.freehands,
     required this.textNotes,
+    this.metadata = const <String, String>{},
   });
 
   final String schemaVersion;
@@ -54,6 +55,13 @@ class EditableMarkupDocument {
   final List<OvalMarkup> ovals;
   final List<FreehandMarkup> freehands;
   final List<TextNoteMarkup> textNotes;
+
+  /// Job and capture facts, the same set stamped onto the exported PNG.
+  ///
+  /// Optional on read so a markup file written before this existed still opens,
+  /// and left out of the JSON entirely when empty so a file with nothing to
+  /// record does not carry an empty object around.
+  final Map<String, String> metadata;
 
   factory EditableMarkupDocument.fromJson(Map<String, dynamic> json) {
     final String schemaVersion = (json['schemaVersion'] ?? '')
@@ -94,6 +102,7 @@ class EditableMarkupDocument {
       ovals: _readOvals(json['ovals']),
       freehands: _readFreehands(json['freehands']),
       textNotes: _readTextNotes(json['textNotes']),
+      metadata: _readMetadata(json['metadata']),
     );
   }
 
@@ -219,7 +228,26 @@ class EditableMarkupDocument {
             },
           )
           .toList(growable: false),
+      if (metadata.isNotEmpty) 'metadata': metadata,
     };
+  }
+
+  /// Reads the metadata block, keeping only string-to-string entries.
+  ///
+  /// A hand-edited file with a number or a nested object in there loses that
+  /// entry rather than failing the whole open.
+  static Map<String, String> _readMetadata(dynamic raw) {
+    final Map<String, dynamic>? map = _asMap(raw);
+    if (map == null) {
+      return const <String, String>{};
+    }
+    final Map<String, String> fields = <String, String>{};
+    map.forEach((String key, dynamic value) {
+      if (value is String && key.trim().isNotEmpty && value.trim().isNotEmpty) {
+        fields[key] = value;
+      }
+    });
+    return fields;
   }
 
   static ScaleCalibration? _readScaleCalibration(dynamic raw) {

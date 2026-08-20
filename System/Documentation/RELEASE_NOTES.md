@@ -681,3 +681,26 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.43 - 2026-08-20
+
+Linked changelog entries:
+- `v0.43 - 2026-08-20`
+
+Scope:
+  - New PngMetadataWriter: inserts PNG tEXt chunks into an already-encoded file. No pixel is decoded or re-encoded.
+  - New ExportMetadata: the nine-field set, all of it drawn from the launch context or from facts about the photo. Nothing invented, no placeholders.
+  - The same field set is written into the .ncdmarkup.json sidecar under a metadata object, optional on read so older files still open.
+  - DECISION-033 lists the field set and why each field is there.
+
+Validation:
+  - flutter test: 207 passed, 0 failed
+  - flutter analyze: no issues found
+  - 15 new tests, including one asserting the PNG signature, IHDR and all following bytes are byte-for-byte unchanged by stamping
+
+Rollback:
+  - Revert the version bump commit and delete the matching tag.
+  - Delete png_metadata_writer.dart and export_metadata.dart and remove the metadata arguments. Sidecars already written stay readable.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.

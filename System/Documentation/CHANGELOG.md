@@ -1801,3 +1801,21 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
   - Delete lib/features/recovery and the autosave block in main.dart; revert UnsavedChangesTracker to the two-method version.
+
+## v0.43 - 2026-08-20
+- Owner: Documentation Maintainers
+- Author: NCD01
+- Type: Feature
+- Reason: Exports carry the job and capture facts the app already knows, so a markup file a year old still says where it came from.
+- Changes:
+  - New PngMetadataWriter: inserts PNG tEXt chunks into an already-encoded file. No pixel is decoded or re-encoded.
+  - New ExportMetadata: the nine-field set, all of it drawn from the launch context or from facts about the photo. Nothing invented, no placeholders.
+  - The same field set is written into the .ncdmarkup.json sidecar under a metadata object, optional on read so older files still open.
+  - DECISION-033 lists the field set and why each field is there.
+- Validation Evidence:
+  - flutter test: 207 passed, 0 failed
+  - flutter analyze: no issues found
+  - 15 new tests, including one asserting the PNG signature, IHDR and all following bytes are byte-for-byte unchanged by stamping
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
+  - Delete png_metadata_writer.dart and export_metadata.dart and remove the metadata arguments. Sidecars already written stay readable.

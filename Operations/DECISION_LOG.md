@@ -501,3 +501,20 @@ Changes: Added DECISION-030, dimensions self-label when a scale is set.
 - Rollback or Reversal: Delete `lib/features/recovery`, remove the `recoveryServiceOverride` parameter and the autosave block from `main.dart`, revert `UnsavedChangesTracker` to the plain two-method version, and remove the `autosaveIntervalSeconds` control from the settings dialog. The stored setting can stay; it is optional on read.
 - Related Changes: v0.42
 - Review Date: N/A
+
+## DECISION-033
+- Date: 2026-08-20
+- Status: Accepted
+- Area: Export
+- Owner: NCD / M
+- Decision: Every flattened PNG export carries job and capture metadata in PNG `tEXt` chunks, and the same field set is written into the `.ncdmarkup.json` sidecar under a `metadata` object. The field set is exactly this, and nothing else: `Software` (app name and version), `Creation Time` (export moment, ISO 8601 UTC), `Source` (source photo file name), `NCD Client` (launch context clientName), `NCD Project` (launch context projectCode), `NCD Source Label` (launch context sourceLabel), `NCD Photo Size` (source pixel dimensions), `NCD Scale` (the calibration line exactly as the app displays it), `NCD Marks` (count of marks on the photo). A field the app does not know is left out entirely rather than written as a placeholder. `Software`, `Creation Time` and `Source` are standard PNG keywords so other tools already understand them; the rest are prefixed `NCD ` so their origin is obvious in Explorer.
+- Alternatives Considered:
+- Prompt for client and project on export. Rejected: it is a dialog on the one action that should be one tap, and it invents a client-facing field the app was not given.
+- Write EXIF instead of PNG text chunks. Rejected: PNG EXIF support is an extension chunk that many readers ignore, while `tEXt` is in the base specification and is what Explorer, ImageMagick and ExifTool all read.
+- Add an image encoding package to write metadata. Rejected: the app has no network dependency and adding a package to write nine strings is not worth it. The chunk format is a length, a type, the data and a CRC.
+- Fill unknown fields with "Unknown" so the set is always complete. Rejected: a document going to a client that says Client: Unknown is worse than one that does not mention a client.
+- Rationale: An exported markup ends up in an email, a folder and eventually a dispute. Being able to open the file a year later and read which job it came from, which photo, what scale was set and which version of the app drew it costs nothing at export time and is the difference between evidence and a picture. Everything stamped is something the app was already told or already knows, which is what keeps this from becoming a data-entry feature.
+- Impact: The metadata is inserted into the encoded byte stream after IHDR; no pixel is decoded or re-encoded, and a test asserts the signature, IHDR and every byte after them are unchanged. Bytes that are not valid PNG are returned untouched rather than rewritten, because an export that lost its metadata is a nuisance and an export that is now corrupt is a disaster. PNG text is Latin-1, so a character outside it becomes a question mark rather than being dropped or breaking the chunk. The sidecar field is optional on read, so a markup file written before this still opens, and is left out of the JSON when empty. 15 tests.
+- Rollback or Reversal: Remove the `metadata` argument from `MarkedUpImageExportService.exportBoundaryToPng` and the `metadata` field from `EditableMarkupDocument`, then delete `png_metadata_writer.dart` and `export_metadata.dart`. Sidecars already written stay readable; the extra object is ignored.
+- Related Changes: v0.43
+- Review Date: N/A

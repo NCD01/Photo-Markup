@@ -147,6 +147,26 @@ Two separate files, written next to the photo unless another folder is chosen.
 
 The source photo is never written to.
 
+### Metadata on an export
+Both outputs carry the same field set: the PNG in `tEXt` chunks that Explorer,
+ImageMagick and ExifTool all read, and the sidecar in a `metadata` object.
+
+| Field | Where it comes from |
+|---|---|
+| `Software` | App name and version. |
+| `Creation Time` | When the export was written, ISO 8601 UTC. |
+| `Source` | The source photo file name. |
+| `NCD Client` | Control Center's `--clientName`. |
+| `NCD Project` | Control Center's `--projectCode`. |
+| `NCD Source Label` | Control Center's `--sourceLabel`. |
+| `NCD Photo Size` | The source photo's pixel dimensions. |
+| `NCD Scale` | The calibration line, exactly as the app displays it. |
+| `NCD Marks` | How many marks are on the photo. |
+
+A field the app was not told is left out, not filled with a placeholder. The
+pixels are not re-encoded to add metadata; the chunks are inserted into the
+already-encoded file.
+
 ## Control Center Launch Arguments
 The app accepts these on the command line, all in `--key=value` form:
 

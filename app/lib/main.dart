@@ -29,6 +29,7 @@ import 'package:ncd_photo_markup/features/markup/models/rectangle_markup.dart';
 import 'package:ncd_photo_markup/features/markup/models/scale_calibration.dart';
 import 'package:ncd_photo_markup/features/markup/models/text_note_markup.dart';
 import 'package:ncd_photo_markup/features/markup/services/editable_markup_document_service.dart';
+import 'package:ncd_photo_markup/features/export/services/export_metadata.dart';
 import 'package:ncd_photo_markup/features/recovery/services/recovery_service.dart';
 import 'package:ncd_photo_markup/features/markup/utils/dimension_label_formatter.dart';
 import 'package:ncd_photo_markup/features/markup/utils/measurement_value_utils.dart';
@@ -1177,6 +1178,33 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
     }
   }
 
+  /// The job and capture facts stamped into an export and written into the
+  /// sidecar. Only things the app already knows; nothing is invented.
+  Map<String, String> _buildExportMetadata() {
+    return ExportMetadata.build(
+      appVersion: AppConstants.appVersion,
+      exportedAtUtc: DateTime.now().toUtc(),
+      launchContext: _launchContext,
+      sourceImageFileName: _loadedFileName,
+      imagePixelSize: _loadedImagePixelSize,
+      scaleCalibration: _scaleCalibration,
+      markCount: _totalMarkCount,
+    );
+  }
+
+  int get _totalMarkCount =>
+      _dimensionLines.length +
+      _arrows.length +
+      _rectangles.length +
+      _ovals.length +
+      _freehands.length +
+      _textNotes.length +
+      _multiSegmentMeasurements.length +
+      _areaMeasurements.length;
+
+  @visibleForTesting
+  Map<String, String> debugExportMetadata() => _buildExportMetadata();
+
   Future<bool> _exportMarkedUpImage() async {
     if (_isExporting) {
       return false;
@@ -1232,6 +1260,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
         outputPath: outputPath,
         pixelRatio: pixelRatio,
         cropRectLogical: exportCropRect,
+        metadata: _buildExportMetadata(),
       );
 
       if (!mounted) {
@@ -1418,6 +1447,7 @@ class _PhotoMarkupShellScreenState extends State<PhotoMarkupShellScreen>
       ovals: List<OvalMarkup>.unmodifiable(_ovals),
       freehands: List<FreehandMarkup>.unmodifiable(_freehands),
       textNotes: List<TextNoteMarkup>.unmodifiable(_textNotes),
+      metadata: _buildExportMetadata(),
     );
   }
 

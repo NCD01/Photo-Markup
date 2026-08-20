@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:ncd_photo_markup/features/export/services/png_metadata_writer.dart';
 
 class MarkedUpImageExportResult {
   const MarkedUpImageExportResult({
@@ -27,6 +28,7 @@ class MarkedUpImageExportService {
     required String outputPath,
     required double pixelRatio,
     Rect? cropRectLogical,
+    Map<String, String> metadata = const <String, String>{},
   }) async {
     await WidgetsBinding.instance.endOfFrame;
 
@@ -67,7 +69,13 @@ class MarkedUpImageExportService {
           throw StateError('Could not encode export image as PNG.');
         }
 
-        final Uint8List pngBytes = byteData.buffer.asUint8List();
+        // Stamped after encoding, by inserting text chunks into the byte
+        // stream. The pixels are never decoded or re-encoded, so the exported
+        // image is identical whether or not there was metadata to add.
+        final Uint8List pngBytes = PngMetadataWriter.withTextFields(
+          byteData.buffer.asUint8List(),
+          metadata,
+        );
         final File outputFile = File(outputPath);
         await outputFile.writeAsBytes(pngBytes, flush: true);
 
