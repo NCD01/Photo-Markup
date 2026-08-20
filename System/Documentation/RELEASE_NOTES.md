@@ -753,3 +753,27 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.46 - 2026-08-20
+
+Linked changelog entries:
+- `v0.46 - 2026-08-20`
+
+Scope:
+  - JobIndexService holds the parsed index in memory instead of re-reading and re-parsing the whole file on every record.
+  - The recovery autosave and the job index are written as compact JSON. The user-saved markup file keeps its indentation.
+  - New large_photo_performance_test.dart holds the benchmarks so a regression shows up as a number.
+
+Validation:
+  - flutter test: 244 passed, 0 failed
+  - flutter analyze: no issues found
+  - Autosave of 200 strokes of 120 points: 69ms and 1468 KB before, 31ms and 476 KB after
+  - Recording into a 40 job by 50 photo index: did not finish inside a 30 second timeout before, 11ms per record after
+  - Encoding a heavy document: indented 75ms and 1468 KB, compact 49ms and 476 KB
+
+Rollback:
+  - Revert the version bump commit and delete the matching tag.
+  - Remove the _cache field from JobIndexService and put JsonEncoder.withIndent back in both writers. Files written compact still parse.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.

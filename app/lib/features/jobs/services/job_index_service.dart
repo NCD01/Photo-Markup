@@ -22,6 +22,14 @@ class JobIndexService {
   final String? _overrideDirectory;
   final Map<String, String> _environment;
 
+  /// The index, held in memory after the first read.
+  ///
+  /// Measured: without this, recording a photo re-read and re-parsed the whole
+  /// file every time, so building a 40-job index of 50 photos each took longer
+  /// than thirty seconds and never finished. It is O(n) work per record for no
+  /// reason; the only writer of this file is the running app.
+  List<JobGroup>? _cache;
+
   String resolveDirectory() {
     final String? override = _overrideDirectory;
     if (override != null && override.trim().isNotEmpty) {
@@ -50,6 +58,16 @@ class JobIndexService {
   /// broken index is a lost convenience; it is never a reason to stop someone
   /// marking up a photo.
   Future<List<JobGroup>> load() async {
+    final List<JobGroup>? cached = _cache;
+    if (cached != null) {
+      return cached;
+    }
+    final List<JobGroup> loaded = await _readFromDisk();
+    _cache = loaded;
+    return loaded;
+  }
+
+  Future<List<JobGroup>> _readFromDisk() async {
     try {
       final File file = File(indexFilePath);
       if (!file.existsSync()) {
@@ -103,6 +121,7 @@ class JobIndexService {
     }
 
     final List<JobGroup> jobs = <JobGroup>[...await load()];
+
     final JobPhoto photo = JobPhoto(
       sourceImagePath: sourceImagePath,
       sourceImageFileName: sourceImageFileName,
@@ -136,11 +155,13 @@ class JobIndexService {
     }
 
     _trim(jobs);
-    await _write(jobs);
     jobs.sort(
       (JobGroup a, JobGroup b) => b.lastOpenedUtc.compareTo(a.lastOpenedUtc),
     );
-    return List<JobGroup>.unmodifiable(jobs);
+    final List<JobGroup> result = List<JobGroup>.unmodifiable(jobs);
+    _cache = result;
+    await _write(jobs);
+    return result;
   }
 
   /// Removes jobs whose photos are all gone from disk.
@@ -165,11 +186,14 @@ class JobIndexService {
         );
       }
     }
+    final List<JobGroup> result = List<JobGroup>.unmodifiable(kept);
+    _cache = result;
     await _write(kept);
-    return List<JobGroup>.unmodifiable(kept);
+    return result;
   }
 
   Future<void> clear() async {
+    _cache = const <JobGroup>[];
     for (final String path in <String>[indexFilePath, _partialPath]) {
       try {
         final File file = File(path);
@@ -214,7 +238,10 @@ class JobIndexService {
       await Directory(resolveDirectory()).create(recursive: true);
       final File temporaryFile = File(_partialPath);
       await temporaryFile.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(<String, dynamic>{
+        // Compact rather than indented. Nobody reads this file by hand, and
+        // measured on a heavy document indenting costs half again as much time
+        // and three times the bytes.
+        jsonEncode(<String, dynamic>{
           'schemaVersion': JobIndexConstants.schemaVersion,
           'jobs': jobs.map((JobGroup job) => job.toJson()).toList(
             growable: false,

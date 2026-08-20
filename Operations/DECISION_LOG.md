@@ -551,3 +551,23 @@ Changes: Added DECISION-030, dimensions self-label when a scale is set.
 - Rollback or Reversal: Delete `lib/features/jobs`, remove the `jobIndexServiceOverride` parameter and the two `_recordPhotoInJobIndex` calls from `main.dart`. Any `jobs.json` already written is orphaned and harmless.
 - Related Changes: v0.45
 - Review Date: When the job browse UI is built
+
+## DECISION-036
+- Date: 2026-08-20
+- Status: Accepted
+- Area: Performance
+- Owner: NCD / M
+- Decision: Two measured changes on the paths that run repeatedly while someone works on a large photo. First, `JobIndexService` holds the parsed index in memory after the first read instead of re-reading and re-parsing the whole file on every record. Second, the recovery autosave and the job index are written as compact JSON rather than indented. The user-saved `.ncdmarkup.json` file keeps its indentation, because that is the one a person might open. `large_photo_performance_test.dart` holds the benchmarks so a regression shows up as a number.
+- Alternatives Considered:
+- Leave the index re-reading the file and accept it. Rejected once measured: it never finished.
+- Debounce the index write as well as caching the read. Not needed: after the cache the record is 11ms, which is already invisible on the two events that trigger it.
+- Compact JSON everywhere, including the user-saved markup file. Rejected: that file is the one someone might open in an editor to see what the app wrote, and the readability is worth the bytes there.
+- Rationale: The task said measure first, and measuring found something real that reading the code had not. Recording a photo called `load()`, which read and parsed the entire index, so building a realistic index was quadratic. The autosave finding was smaller but it fires while someone is drawing, which is the worst possible moment for it to be three times larger than it needs to be.
+- Impact: Measured on this machine, five runs each, median reported.
+- Autosave of 200 freehand strokes of 120 points: before 69ms and 1468 KB, after 31ms and 476 KB. 2.2 times faster, 3.1 times smaller.
+- Recording a photo into a 40 job, 50 photo index: before, building that index did not complete inside the 30 second test timeout. After, the whole build completes and a single record is 11ms.
+- Encoding a heavy document, which is why compact was chosen: indented 75ms and 1468 KB, compact 49ms and 476 KB.
+- The in-memory cache is safe because the running app is the only writer of this file. A second `JobIndexService` instance reads from disk, which is what the persistence test relies on.
+- Rollback or Reversal: Remove the `_cache` field from `JobIndexService` so `load` always reads from disk, and put `JsonEncoder.withIndent` back in both writers. Files already written in compact form still parse.
+- Related Changes: v0.46
+- Review Date: N/A

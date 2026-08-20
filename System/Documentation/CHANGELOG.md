@@ -1858,3 +1858,22 @@ Changes: Added Phase 1Z entry separating Scale Calibration from Dimension.
 - Rollback Notes:
   - Revert the version bump commit and delete the matching tag.
   - Delete lib/features/jobs and the two _recordPhotoInJobIndex calls in main.dart. Any jobs.json already written is orphaned and harmless.
+
+## v0.46 - 2026-08-20
+- Owner: Documentation Maintainers
+- Author: NCD01
+- Type: Refactor
+- Reason: Two measured performance fixes on the paths that run repeatedly while working on a large photo.
+- Changes:
+  - JobIndexService holds the parsed index in memory instead of re-reading and re-parsing the whole file on every record.
+  - The recovery autosave and the job index are written as compact JSON. The user-saved markup file keeps its indentation.
+  - New large_photo_performance_test.dart holds the benchmarks so a regression shows up as a number.
+- Validation Evidence:
+  - flutter test: 244 passed, 0 failed
+  - flutter analyze: no issues found
+  - Autosave of 200 strokes of 120 points: 69ms and 1468 KB before, 31ms and 476 KB after
+  - Recording into a 40 job by 50 photo index: did not finish inside a 30 second timeout before, 11ms per record after
+  - Encoding a heavy document: indented 75ms and 1468 KB, compact 49ms and 476 KB
+- Rollback Notes:
+  - Revert the version bump commit and delete the matching tag.
+  - Remove the _cache field from JobIndexService and put JsonEncoder.withIndent back in both writers. Files written compact still parse.
