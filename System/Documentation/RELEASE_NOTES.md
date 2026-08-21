@@ -798,3 +798,28 @@ Rollback:
 
 Migration Notes:
 - Add migration notes here before release if this is a breaking change.
+
+## v0.48 - 2026-08-20
+
+Linked changelog entries:
+- `v0.48 - 2026-08-20`
+
+Scope:
+  - H: was on the abandoned overnight branch with its local main 14 behind origin. Switched to main and fast-forwarded cc6a6e5 to cf65ede. No unpushed work existed on H:.
+  - H: origin had no NAS push URL, so a push from master would have updated GitHub and silently skipped the NAS. Added both push URLs to match C:.
+  - README Workspace Paths rewritten: H: is master, C: is the build and test copy, sync one way.
+  - APP_PROFILE.md primary branch corrected from master to main, which README already flagged as out of step.
+  - README current version line corrected from v0.37.
+
+Validation:
+  - H: now on main at cf65ede, clean, matching origin/main
+  - git log --branches --not --remotes on H: is empty: nothing was unpushed
+  - git add --renormalize . on H: produced zero churn, so run 2 line-ending work holds from this checkout too
+  - core.autocrlf on H: is true from system config with no local override, matching what run 2 found on C:
+
+Rollback:
+  - Revert this commit for the docs.
+  - git remote set-url --delete --push origin to undo the H: push URLs.
+
+Migration Notes:
+- Add migration notes here before release if this is a breaking change.

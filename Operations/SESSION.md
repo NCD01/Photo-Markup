@@ -7,6 +7,16 @@ Last Updated By: `Claude`
 Last Updated: `2026-08-20`
 Purpose: Track concise session history and handoff state.
 
+# SESSION_2026-08-21_run_3
+
+**IN PROGRESS.** Phase status is appended below as each phase lands, so a
+crashed session can resume from this file alone. The finished report replaces
+this note.
+
+## Phase status
+
+- **Phase 0, workspace reconciliation and README fix: DONE.** v0.48.
+
 # SESSION_2026-08-20_run_2
 
 ## 1. Open questions for Marcelo

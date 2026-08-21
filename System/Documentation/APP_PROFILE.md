@@ -22,7 +22,7 @@ Changes: Added Phase 1D dimension-label validation scope and updated tunable-con
 | Product Owner | `NCD / M` |
 | Technical Owner | `NCD / M` |
 | Primary Repo | `C:\apps\NCD_Photo_Markup` |
-| Primary Branch | `master` |
+| Primary Branch | `main` |
 | Primary Workspace Path | `C:\apps\NCD_Photo_Markup` |
 | Target Platforms | `Windows tablet first; Android (Samsung tablet) later` |
 | Main Stack | `Flutter` |

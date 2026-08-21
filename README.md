@@ -255,9 +255,23 @@ insists on creating links.
 run the Windows app, use a local-drive checkout such as `C:\apps\NCD_Photo_Markup`.
 
 ## Workspace Paths
-- Canonical path in governance docs: `C:\apps\NCD_Photo_Markup`
-- Current working checkout: `H:\Marcelo\Programming\apps\NCD_Photo_Markup`
-- Active branch: `main` (`System/Documentation/APP_PROFILE.md` still records `master`)
+`H:\Marcelo\Programming\apps\NCD_Photo_Markup` is master. Every edit, commit and
+push happens there. `C:\apps\NCD_Photo_Markup` is the build and test copy and
+nothing else; it exists only because Flutter's Windows build tooling cannot
+create the `plugin_symlinks` it needs on a network share, so H: cannot build.
+
+Sync is one way, H: to C:. Only information comes back the other way: build
+output, test results, screenshots. A change made on C: is a mistake rather than
+a shortcut, and must not survive the pass that produced it.
+
+Older governance documents call `C:\apps\NCD_Photo_Markup` the canonical path.
+They are describing where the build runs, not where the source lives. This line
+is the one to believe.
+
+- Active branch: `main`, on both checkouts and on `origin`.
+- `origin` fetches GitHub and pushes to two places, GitHub and the NAS copy at
+  `N:\Internal Resources\Applications\NCD_Photo_Markup`, so one `git push`
+  updates both.
 
 ## Key Documents
 - `System/Documentation/APP_PROFILE.md`
@@ -285,7 +299,7 @@ run the Windows app, use a local-drive checkout such as `C:\apps\NCD_Photo_Marku
 - `powershell -ExecutionPolicy Bypass -File scripts/bump-version.ps1 -Bump minor -Reason "<reason>"`
 
 ## Version Rules
-- Current version: `v0.37`
+- Current version: `v0.48`
 - Use two-part versions only (`v0.1`, `v0.2`, `v0.3`, `v0.4`, ...)
 - **Every change bumps the version, gets committed, and gets pushed.** A one-line
   fix, a doc edit, and a test-only change all bump. Nothing stays at the same
